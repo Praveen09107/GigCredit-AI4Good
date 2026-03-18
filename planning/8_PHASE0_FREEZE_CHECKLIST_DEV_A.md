@@ -22,7 +22,7 @@ Acceptance gate: no unresolved source-of-truth conflict remains.
 
 ## 2) Scoring Contract Freeze Validation (Cross-Team Critical)
 
-- [ ] Final-score method frozen to LR meta-learner on 20 inputs.
+- [ ] Final-score method frozen to LR meta-learner on 44 inputs.
 - [ ] No weighted-sum final-score path exists in implementation plan.
 - [ ] Feature slicing is frozen as:
   - P1 [0:13], P2 [13:28], P3 [28:37], P4 [37:49], P5 [49:67], P6 [67:78], P7 [78:88], P8 [88:95]

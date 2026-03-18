@@ -39,6 +39,8 @@ The backend NEVER receives raw financial data, documents, or OCR text.
 | PDF Generation | `pdf` Dart package (on-device) |
 
 ## THE 8 SCORING PILLARS
+Note: pillar weights are **reference feature-importance priors** only. Final score is produced by LR meta-learner, not weighted-sum aggregation.
+
 | Pillar | Type | Algorithm | Features | Weight |
 |--------|------|-----------|----------|--------|
 | P1 Income Stability | ML | XGBoost (m2cgen Dart) | 13 | 0.25 |
@@ -60,7 +62,7 @@ The backend NEVER receives raw financial data, documents, or OCR text.
 6. Output validation (NaN/bounds check per pillar)
 7. Debt Band Hard Cap: if EMI/income > 0.80, P3 capped at 0.30
 8. Confidence Engine adjusts: `adjusted = raw × confidence + 0.50 × (1 - confidence)`
-9. Meta-Learner (Logistic Regression, 20 inputs) produces probability
+9. Meta-Learner (Logistic Regression, 44 inputs) produces probability
 10. `final_score = round(probability × 600 + 300)` → range 300-900
 
 ## THE m2cgen APPROACH (CRITICAL TO UNDERSTAND)
@@ -76,7 +78,7 @@ Models are NOT loaded as `.tflite` files at runtime. Instead:
 1. **Basic Profile** — Name, DOB, phone, address, work type (4 options), income, vehicle ownership
 2. **Identity Verification** — Aadhaar (front+back), PAN card, live selfie, face match
 3. **Bank Verification** — Bank details, 6+ month statement PDF, optional secondary bank + UPI
-4. **Utility Bills** — 6 months each: electricity, gas, mobile (18 mandatory uploads)
+4. **Utility Bills** — recommended 6 months each: electricity, gas, mobile (strongly improves confidence; not a hard scoring block if minimum gate is already met)
 5. **Gig Work Proof** — Dynamic based on work type (Platform/Vendor/Tradesperson/Freelancer)
 6. **Government Schemes** — eShram, PM-SYM, PMJJBY, MUDRA, PPF (all optional)
 7. **Insurance** — Health, Vehicle (mandatory if owns vehicle), Life
@@ -88,6 +90,7 @@ Models are NOT loaded as `.tflite` files at runtime. Instead:
 - **SHAP via binned lookup:** Not real-time SHAP — precomputed 10-percentile bins
 - **Session recovery:** Encrypted profile cached for 24 hours, resume on crash
 - **Offline capability:** OCR, scoring, PDF all work offline. API verification queued.
+- **PaddleOCR integration:** native Android bridge (plugin/MethodChannel/FFI path), not `tflite_flutter` model loading.
 
 ## DIRECTORY STRUCTURE (PRODUCTION-GRADE)
 ```
@@ -172,7 +175,7 @@ gigcredit_app/
 │   │   └── efficientnet_lite0.tflite
 │   └── constants/
 │       ├── shap_lookup.json               # Binned SHAP values (~8-12KB)
-│       ├── meta_coefficients.json         # LR 20 coefficients + intercept
+│       ├── meta_coefficients.json         # LR 44 coefficients + intercept
 │       ├── state_income_anchors.json      # 36 state median incomes
 │       └── feature_means.json             # 95-feature training means
 ├── test/
@@ -227,11 +230,11 @@ planning/                                  # This folder — planning documents
 ## GRADE AND RISK BANDS
 | Score | Grade | Risk |
 |-------|-------|------|
-| ≥ 800 | S (Exceptional) | Low |
-| ≥ 720 | A (Excellent) | Low |
-| ≥ 640 | B (Good) | Low |
-| ≥ 560 | C (Average) | Medium |
-| ≥ 480 | D (Below Average) | Medium |
-| < 480 | E (Poor) | High |
+| ≥ 850 | S (Exceptional) | Low |
+| ≥ 750 | A (Excellent) | Low |
+| ≥ 651 | B (Good) | Low |
+| ≥ 551 | C (Average) | Medium |
+| ≥ 451 | D (Below Average) | Medium |
+| ≤ 450 | E (Poor) | High |
 
 Score ≥ 651 = Low Risk | 451-650 = Medium Risk | ≤ 450 = High Risk

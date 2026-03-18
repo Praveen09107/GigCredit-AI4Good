@@ -41,7 +41,7 @@ GigCredit is an India-focused, privacy-first, alternative-credit mobile system f
 
 ## 4) Non-Negotiable Architecture Decisions
 
-1. **Final score method**: logistic-regression meta-learner only (20 inputs), not weighted-sum final score.
+1. **Final score method**: logistic-regression meta-learner only (44 inputs), not weighted-sum final score.
 2. **On-device scoring**: all feature engineering and scoring are local in Flutter/Dart.
 3. **Model deployment**: m2cgen-generated Dart for ML pillars; no runtime model downloading.
 4. **Step model**: 8 user-visible steps + 1 internal automated EMI step.
@@ -77,13 +77,13 @@ GigCredit is an India-focused, privacy-first, alternative-credit mobile system f
   - P7: [78:88]
   - P8: [88:95]
 
-### 5.3 Meta-learner input (20)
+### 5.3 Meta-learner input (44)
 - 8 adjusted pillar scores
 - 4 work-type one-hot values
-- 8 interaction terms (pillar × work-type)
+- 32 interaction terms (all 8 pillars × 4 work types)
 
 ### 5.4 Final score formula
-- Probability: sigmoid(dot(input20, coefficients20) + intercept)
+- Probability: sigmoid(dot(input44, coefficients44) + intercept)
 - Score: round(300 + probability × 600)
 - Clamp: [300, 900]
 - Risk bands:

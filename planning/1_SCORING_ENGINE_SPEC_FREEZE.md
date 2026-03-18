@@ -2,7 +2,7 @@
 
 This document is the **single source of truth** for how GigCredit computes scores on-device, including **dynamic scoring** behavior.
 
-It intentionally resolves contradictions across older specs (weighted sum vs meta-learner, 5 vs 20 meta inputs, parallel isolates, etc.).
+It intentionally resolves contradictions across older specs (weighted sum vs meta-learner, prior 5/20/52 variants, parallel isolates, etc.).
 
 ## 1) Non-negotiable constraints
 - **On-device scoring only**: feature engineering + scoring + explainability run on device.
@@ -56,6 +56,7 @@ Scoring ML models are shipped as **pure Dart code** committed to the app source:
 Support artifacts:
 - `assets/constants/meta_coefficients.json` (LR coefficients + intercept)
 - `assets/constants/shap_lookup.json` (binned SHAP lookup tables)
+- `assets/constants/state_income_anchors.json` (state median income anchors)
 - `assets/constants/feature_means.json` (population means; optional if used in reporting)
 
 ### 5.2 m2cgen correctness constraints (MANDATORY)
@@ -73,13 +74,20 @@ For m2cgen safety and determinism:
 ### 6.1 Meta-learner (Logistic Regression) is the ONLY final-score method
 Weighted-sum final scoring is deprecated and MUST NOT be used.
 
-Meta-learner input vector (20 values):
-- 8 pillar scores: `[P1..P8]`
+Meta-learner input vector (44 values):
+- 8 adjusted pillar scores: `[P1..P8]`
 - 4 work-type one-hot: `[is_platform, is_vendor, is_tradesperson, is_freelancer]`
-- 8 interaction terms: `[P1*is_platform, P1*is_vendor, P1*is_trades, P1*is_freelancer, P2*is_platform, P2*is_vendor, P2*is_trades, P2*is_freelancer]`
+- 32 interaction terms: all pillar-work-type combinations `Pi * work_type_j` for 8 pillars × 4 work types
+
+Ordered layout (frozen):
+- `[0..7]`   = adjusted pillar scores `P1..P8`
+- `[8..11]`  = work-type one-hot `[platform, vendor, tradesperson, freelancer]`
+- `[12..43]` = interactions in nested order:
+  - for pillar in `P1..P8` (outer loop)
+  - for work type in `[platform, vendor, tradesperson, freelancer]` (inner loop)
 
 Computation:
-- `logit = dot(x, coefficients) + intercept`
+- `logit = dot(input44, coefficients44) + intercept`
 - `probability = sigmoid(logit)` in **[0,1]**
 - `gigcredit_score = round(300 + probability * 600)` in **[300,900]**
 
@@ -90,7 +98,10 @@ Risk band:
 
 ## 7) Confidence handling
 - Pillar confidence is computed from step completion + verification status.
-- If any pillar has confidence `< 0.30`, its display should be “Not enough data” and its meta-learner input uses **0.50** for that pillar.
+- Authoritative adjustment rule:
+  - if `confidence < 0.30`, set adjusted pillar input to **0.50** (hard override)
+  - else use `adjusted = raw * confidence + 0.50 * (1 - confidence)`
+- If any pillar has confidence `< 0.30`, its display should be “Not enough data”.
 - Any NaN/Inf or out-of-range scores are sanitized (clamp to [0,1], NaN → 0.50 with warning).
 
 ## 8) Explainability (AUTHORITATIVE)
