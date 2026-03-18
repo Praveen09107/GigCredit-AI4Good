@@ -1,0 +1,408 @@
+source_file,statement_period_start,statement_period_end,upi_app,txn_date,txn_time,direction,counterparty,amount,utr_or_ref,raw_details
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"01 Sep, 2025",05:45 PM,credit,Shanthi P,300,524472833235,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"01 Sep, 2025",05:50 PM,debit,ZOMATO LIMITED,273,524406919541,Paid to ZOMATO LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"02 Sep, 2025",12:36 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,20,524579187830,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Sep, 2025",10:22 AM,debit,Mr Gokul Pandi M,22,561280173316,Paid to Mr Gokul Pandi M | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Sep, 2025",05:07 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,20,524696114786,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Sep, 2025",05:42 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,20,524627611565,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Sep, 2025",10:41 AM,credit,Shanthi P,700,524857089166,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Sep, 2025",10:46 AM,debit,Kaja Mydin A,500,561481485188,Paid to Kaja Mydin A | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Sep, 2025",10:54 AM,debit,KPN FARM FRESH,106.45,561499869909,Paid to KPN FARM FRESH | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"07 Sep, 2025",09:28 AM,credit,Prabakaran S,136,561604435254,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"07 Sep, 2025",09:28 AM,debit,Swiggy,136,561633340823,Paid to Swiggy | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"07 Sep, 2025",07:43 PM,debit,Yogeshwaran,50,525070404021,Paid to Yogeshwaran | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Sep, 2025",07:36 AM,credit,Shanthi P,200,525141836178,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Sep, 2025",07:53 AM,debit,Ranganathan S,260,525199429546,Paid to Ranganathan S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Sep, 2025",04:45 PM,credit,S PRAVEEN,20,525147677658,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Sep, 2025",04:46 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,20,525121479491,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Sep, 2025",06:13 PM,credit,Shanthi P,1000,525173490857,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Sep, 2025",06:32 PM,credit,S PRAVEEN,20,110973668155,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Sep, 2025",06:33 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,10,525199697238,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",07:40 AM,debit,Praveen Hemanth,100,561877644536,Paid to Praveen Hemanth | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",07:41 AM,debit,Praveen Hemanth,900,561826042423,Paid to Praveen Hemanth | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",10:19 AM,credit,Shanthi P,200,525248039658,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",10:20 AM,debit,KANNAIRAM VEDIAPPAN,37,561841456525,Paid to KANNAIRAM VEDIAPPAN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",12:23 PM,credit,Prathish D,20,561835311956,Received from Prathish D | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",12:25 PM,credit,S PRAVEEN,18,111005275462,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",12:26 PM,debit,KANNAIRAM VEDIAPPAN,50,561855768242,Paid to KANNAIRAM VEDIAPPAN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",05:29 PM,credit,S PRAVEEN,20,111020013279,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",05:30 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,20,561811132023,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",06:48 PM,debit,Praveen Hemanth,110,525246602931,Paid to Praveen Hemanth | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",06:55 PM,credit,Shanthi P,100,525212907318,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",06:55 PM,debit,S PRAVEEN,60,525209516560,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",07:09 PM,credit,Prabakaran S,400,525264600738,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Sep, 2025",10:48 PM,debit,INOX,396.76,525211049364,Paid to INOX | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Sep, 2025",11:40 AM,credit,Shanthi P,458,525358659406,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Sep, 2025",11:41 AM,debit,KFC,458.01,525356964649,Paid to KFC | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Sep, 2025",06:32 PM,credit,Decentro,0.01,525300954840,Received from Decentro | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Sep, 2025",08:33 PM,credit,Praveen Hemanth,600,561943833311,Received from Praveen Hemanth | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Sep, 2025",08:35 PM,debit,Shanthi P,600,561947343782,Paid to Shanthi P | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Sep, 2025",09:13 PM,credit,Prabakaran S,200,561901544876,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Sep, 2025",09:14 PM,debit,Shanthi P,150,561942845905,Paid to Shanthi P | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Sep, 2025",11:48 AM,credit,Sriram M,210,525488354010,Received from Sriram M | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Sep, 2025",12:24 PM,credit,Krishna Kannan,20,525440908577,Received from Krishna Kannan | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Sep, 2025",12:25 PM,debit,Mr Gokul Pandi M,100,562078779172,Paid to Mr Gokul Pandi M | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Sep, 2025",04:56 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,28,525411401904,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Sep, 2025",06:33 PM,credit,Shanthi P,270,525437623134,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Sep, 2025",06:34 PM,debit,FB FOODS,260,525442310216,Paid to FB FOODS | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Sep, 2025",07:51 PM,credit,Prabakaran S,55,525429638907,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Sep, 2025",07:52 PM,debit,chandru v velu d,52,525445133760,Paid to chandru v velu d | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"12 Sep, 2025",12:02 PM,debit,Burger King,41.96,525544889220,Paid to Burger King | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"12 Sep, 2025",04:13 PM,debit,Sriram M,90,525598388966,Paid to Sriram M | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"12 Sep, 2025",07:23 PM,debit,Golden Vegetables And Fruits,45,562111311791,Paid to Golden Vegetables And Fruits | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Sep, 2025",02:45 PM,credit,Shanthi P,40,525781457356,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Sep, 2025",02:46 PM,debit,Praveen Hemanth,100,525746981801,Paid to Praveen Hemanth | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Sep, 2025",08:20 PM,credit,Shahul Hameed,450,525798693608,Received from Shahul Hameed | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Sep, 2025",09:23 PM,debit,Prabakaran S,450,562333528105,Paid to Prabakaran S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"15 Sep, 2025",03:18 PM,credit,Jaicool,200,111285814563,Received from Jaicool | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"15 Sep, 2025",03:35 PM,debit,Prabakaran S,200,562441183735,Paid to Prabakaran S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"16 Sep, 2025",12:31 PM,debit,Mr Gokul Pandi M,12,525944449161,Paid to Mr Gokul Pandi M | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Sep, 2025",12:32 PM,debit,KANNAIRAM VEDIAPPAN,12,562669845499,Paid to KANNAIRAM VEDIAPPAN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Sep, 2025",12:44 PM,credit,Prathish D,22,526040548223,Received from Prathish D | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Sep, 2025",12:45 PM,debit,KANNAIRAM VEDIAPPAN,20,562602146384,Paid to KANNAIRAM VEDIAPPAN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Sep, 2025",04:29 PM,credit,Shanthi P,200,562630262784,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Sep, 2025",04:30 PM,debit,KPN FARM FRESH,85,562689460549,Paid to KPN FARM FRESH | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Sep, 2025",04:36 PM,debit,PRASANTH S,70,562641259399,Paid to PRASANTH S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Sep, 2025",04:37 PM,debit,PRASANTH S,25,562629062721,Paid to PRASANTH S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Sep, 2025",12:28 PM,debit,S PRAVEEN,12,562856503400,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Sep, 2025",09:07 PM,debit,Srinath.K,10,562878347451,Paid to Srinath.K | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Sep, 2025",11:38 PM,credit,Shanthi P,230,526511797681,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Sep, 2025",11:50 PM,debit,ETERNAL LIMITED,228,526587111966,Paid to ETERNAL LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"24 Sep, 2025",05:04 PM,credit,Shanthi P,500,526709384317,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"24 Sep, 2025",05:07 PM,debit,MGL Enterprises,200,563380427229,Paid to MGL Enterprises | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"25 Sep, 2025",07:44 AM,debit,Sundar Baskaran,257,563482262350,Paid to Sundar Baskaran | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Sep, 2025",04:46 PM,debit,Google Play,89,784444902725,Paid to Google Play | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Sep, 2025",06:07 PM,credit,Krishna Kannan,2,527056195797,Received from Krishna Kannan | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"29 Sep, 2025",05:32 PM,credit,Shanthi P,200,527257329167,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"29 Sep, 2025",06:07 PM,debit,TASKEEN A,100,563890769765,Paid to TASKEEN A | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"30 Sep, 2025",04:17 PM,credit,K.Priyanka Priya,200,527334371515,Received from K.Priyanka Priya | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"30 Sep, 2025",07:28 PM,debit,PURUSHOTHAMAN K,36,527351976042,Paid to PURUSHOTHAMAN K | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"30 Sep, 2025",10:17 PM,debit,MUNISH BHARATH B,38,527313685018,Paid to MUNISH BHARATH B | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Oct, 2025",01:01 PM,credit,Prabakaran S,500,527777119384,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Oct, 2025",07:31 PM,credit,Prabakaran S,200,527788454850,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Oct, 2025",08:07 PM,debit,Manikandan Pazhanivel,352,527795660959,Paid to Manikandan Pazhanivel | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Oct, 2025",01:13 PM,credit,Shanthi P,500,528144481072,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Oct, 2025",01:13 PM,debit,Pragadesh S,200,528192987737,Paid to Pragadesh S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Oct, 2025",01:14 PM,debit,Prajin Krishna R,300,528176088613,Paid to Prajin Krishna R | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Oct, 2025",01:27 PM,credit,Preethish,500,528166994133,Received from Preethish | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Oct, 2025",06:05 AM,debit,Shanthi P,500,564831095106,Paid to Shanthi P | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Oct, 2025",07:30 AM,credit,Shanthi P,100,564884792361,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Oct, 2025",07:32 AM,debit,P Anitha,50,564823886643,Paid to P Anitha | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Oct, 2025",12:37 PM,debit,Shanthi P,80,528236322769,Paid to Shanthi P | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Oct, 2025",12:48 PM,credit,Prathish D,90,528274163284,Received from Prathish D | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Oct, 2025",02:56 PM,credit,Prathish D,105,528246088983,Received from Prathish D | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Oct, 2025",03:05 PM,credit,Prathish D,100,528258888396,Received from Prathish D | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Oct, 2025",04:09 PM,debit,Amazon India,194,528224852706,Paid to Amazon India | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Oct, 2025",10:06 AM,debit,P Anitha,100,564980234404,Paid to P Anitha | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Oct, 2025",12:26 PM,credit,Shanthi P,500,564919445423,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Oct, 2025",12:29 PM,debit,Praveen Hemanth,500,564957751869,Paid to Praveen Hemanth | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Oct, 2025",07:29 AM,credit,Shanthi P,200,528414154699,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Oct, 2025",07:30 AM,credit,Shanthi P,100,528410854781,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Oct, 2025",07:30 AM,debit,Sakthi Vel,282,528425957040,Paid to Sakthi Vel | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Oct, 2025",10:04 AM,debit,S PRAVEEN,3,528400661945,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Oct, 2025",10:11 AM,credit,Praveen Hemanth,30,528438756497,Received from Praveen Hemanth | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Oct, 2025",10:11 AM,debit,P Anitha,16,528486264085,Paid to P Anitha | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"13 Oct, 2025",04:19 PM,credit,Prabakaran S,100,565200755089,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"13 Oct, 2025",04:20 PM,debit,SOLAI PHARMACY,80,565295953266,Paid to SOLAI PHARMACY | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"13 Oct, 2025",04:35 PM,credit,Shanthi P,400,565257965236,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"13 Oct, 2025",04:46 PM,debit,ZOMATO LIMITED,438.95,565218752532,Paid to ZOMATO LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"15 Oct, 2025",12:08 PM,credit,Shanthi P,200,565450140901,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"15 Oct, 2025",12:19 PM,debit,KANNAIRAM VEDIAPPAN,40,565443644674,Paid to KANNAIRAM VEDIAPPAN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"16 Oct, 2025",11:33 AM,credit,Shanthi P,300,565524469119,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"16 Oct, 2025",11:33 AM,debit,ABISHEK SRIDHARAN,275,528959250817,Paid to ABISHEK SRIDHARAN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Oct, 2025",11:25 AM,credit,Shanthi P,300,565612159724,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Oct, 2025",11:55 AM,debit,P.Vignesh,280,565637158038,Paid to P.Vignesh | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"20 Oct, 2025",12:04 PM,credit,Prabakaran S,579,565958328223,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"20 Oct, 2025",12:05 PM,debit,AIRTEL PAYMENTS BANK LIMITED,579,565964714754,Paid to AIRTEL PAYMENTS BANK LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"23 Oct, 2025",07:47 AM,debit,Perumal Perumal,220,529660004915,Paid to Perumal Perumal | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Oct, 2025",04:46 PM,debit,Google Play,89,744902353025,Paid to Google Play | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Oct, 2025",12:17 PM,credit,Shanthi P,770,530174217248,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Oct, 2025",12:18 PM,debit,Zomato,770.85,530164957138,Paid to Zomato | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"29 Oct, 2025",09:59 AM,credit,Srinivasan Velu,110,566863831860,Received from Srinivasan Velu | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"29 Oct, 2025",10:54 AM,credit,Shanthi P,200,530213563126,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"29 Oct, 2025",11:03 AM,debit,D PRATHISH,210,566820934718,Paid to D PRATHISH | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Oct, 2025",12:10 PM,credit,Shanthi P,300,567020479575,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Oct, 2025",12:23 PM,debit,Sikhandar Sikhandar,36,567085828612,Paid to Sikhandar Sikhandar | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Oct, 2025",01:02 PM,credit,Shanthi P,400,567092828204,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Oct, 2025",01:02 PM,debit,Praveen Hemanth,628,567009947368,Paid to Praveen Hemanth | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Oct, 2025",01:35 PM,credit,Praveen Hemanth,200,567019326235,Received from Praveen Hemanth | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Oct, 2025",03:01 PM,debit,Muralidharan Jagadeesan,42,567001960958,Paid to Muralidharan Jagadeesan | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Oct, 2025",06:16 PM,debit,Praveen Hemanth,150,567097273797,Paid to Praveen Hemanth | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"01 Nov, 2025",11:49 AM,debit,R Murugan,7,530506237114,Paid to R Murugan | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"01 Nov, 2025",12:35 PM,debit,K n Bhaskar,35,530541643401,Paid to K n Bhaskar | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"01 Nov, 2025",06:13 PM,debit,ASHVIK FOODS,5,530521963160,Paid to ASHVIK FOODS | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"02 Nov, 2025",03:01 PM,credit,Shanthi P,101,567226581993,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"02 Nov, 2025",03:01 PM,debit,ZEPTO MARKETPLACE PRIVATE LIMITED,112,567241674337,Paid to ZEPTO MARKETPLACE PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Nov, 2025",07:17 PM,credit,Prabakaran S,2250,567312901094,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Nov, 2025",07:22 PM,debit,ROSHAN PRAKASH.S SIVAKUMAR,2250,567379501600,Paid to ROSHAN PRAKASH.S SIVAKUMAR | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Nov, 2025",04:05 PM,credit,Shanthi P,700,531288733792,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Nov, 2025",05:57 PM,debit,Amdox Learning,399,531269512904,Paid to Amdox Learning | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Nov, 2025",08:47 PM,debit,Google Play,2,668621463125,Paid to Google Play | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Nov, 2025",08:48 PM,credit,Google Play,2,668695403125,Received from Google Play | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Nov, 2025",01:51 PM,debit,Prabakaran S,5000,568094574755,Paid to Prabakaran S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Nov, 2025",03:00 PM,debit,A THARUNRAJ,30,531513683350,Paid to A THARUNRAJ | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Nov, 2025",03:33 PM,credit,Shanthi P,150,531528386710,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Nov, 2025",03:47 PM,debit,Thanigai raj,130,531552289900,Paid to Thanigai raj | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"12 Nov, 2025",01:48 PM,credit,S PRAVEEN,750,568286679753,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"12 Nov, 2025",01:50 PM,credit,Praveen,500,568215715734,Received from Praveen | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"12 Nov, 2025",03:54 PM,credit,Shanthi P,300,568241784462,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"12 Nov, 2025",04:10 PM,debit,P Dinesh kumar Jaya,110,568292190860,Paid to P Dinesh kumar Jaya | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"12 Nov, 2025",10:11 PM,credit,kumutha Seetharamadass,500,114069385122,Received from kumutha Seetharamadass | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"12 Nov, 2025",10:27 PM,debit,Google Play,1999,545280083165,Paid to Google Play | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Nov, 2025",07:19 PM,debit,Google Cloud,2,906401673185,Paid to Google Cloud | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"15 Nov, 2025",11:14 PM,credit,Shanthi P,100,531915620844,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"15 Nov, 2025",11:16 PM,debit,Muthu Kumar,84,568592333507,Paid to Muthu Kumar | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Nov, 2025",04:56 AM,debit,Google Cloud,2,422509593215,Paid to Google Cloud | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Nov, 2025",05:02 AM,debit,Google Cloud,2,422735933215,Paid to Google Cloud | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Nov, 2025",05:10 AM,debit,Google Cloud,2,422980543215,Paid to Google Cloud | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Nov, 2025",08:11 AM,debit,Google Cloud,2,609658243225,Paid to Google Cloud | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Nov, 2025",08:12 AM,debit,Google Cloud,2,609832253225,Paid to Google Cloud | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Nov, 2025",08:33 PM,debit,Google Cloud,2,729363223225,Paid to Google Cloud | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Nov, 2025",09:23 PM,debit,Google Cloud,2,735339093225,Paid to Google Cloud | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Nov, 2025",09:36 AM,credit,Shanthi P,100,532347116178,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Nov, 2025",09:43 AM,debit,SRI KRISHNA PHARMACY,50,532336121625,Paid to SRI KRISHNA PHARMACY | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Nov, 2025",09:49 PM,credit,S PRAVEEN,1,532326998880,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Nov, 2025",10:25 PM,debit,S PRAVEEN,2,568937404938,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"20 Nov, 2025",01:30 PM,credit,Prabakaran S,70,569001038178,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"20 Nov, 2025",01:31 PM,debit,MAYURAA CAFE,70,569013838243,Paid to MAYURAA CAFE | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"20 Nov, 2025",01:34 PM,debit,Vinayaga Hot Chips,40,569088041418,Paid to Vinayaga Hot Chips | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Nov, 2025",11:43 AM,credit,Shanthi P,590,532502918563,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Nov, 2025",12:05 PM,debit,samuel sammju,590,532513619620,Paid to samuel sammju | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Nov, 2025",07:19 PM,credit,Google Cloud,2,365184233255,Received from Google Cloud | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"24 Nov, 2025",04:56 AM,credit,Google Cloud,2,780205913285,Received from Google Cloud | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"24 Nov, 2025",05:02 AM,credit,Google Cloud,2,780388873285,Received from Google Cloud | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"24 Nov, 2025",05:11 AM,credit,Google Cloud,2,780630503285,Received from Google Cloud | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"25 Nov, 2025",08:11 AM,credit,Google Cloud,2,976759333295,Received from Google Cloud | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"25 Nov, 2025",08:13 AM,credit,Google Cloud,2,976941773295,Received from Google Cloud | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"25 Nov, 2025",08:33 PM,credit,Google Cloud,2,199023743295,Received from Google Cloud | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"25 Nov, 2025",09:23 PM,credit,Google Cloud,2,205501123295,Received from Google Cloud | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"26 Nov, 2025",12:40 PM,credit,Prabakaran S,650,569645637863,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Nov, 2025",02:05 PM,credit,Shanthi P,550,533144867893,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Nov, 2025",03:03 PM,debit,Pradeep V,522,533170333575,Paid to Pradeep V | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Nov, 2025",05:30 PM,credit,Shanthi P,350,533201037024,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Nov, 2025",05:33 PM,debit,Blue Dart Express Limited,341.76,569835841323,Paid to Blue Dart Express Limited | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Dec, 2025",11:18 AM,debit,S PRAVEEN,50,570403410259,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Dec, 2025",11:20 AM,debit,Prabakaran S,5000,533816098041,Paid to Prabakaran S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Dec, 2025",04:30 PM,credit,Shanthi P,100,570469831413,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Dec, 2025",04:58 PM,credit,Shanthi P,100,533841591586,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Dec, 2025",05:02 PM,debit,ANUP KUMAR,20,570409432000,Paid to ANUP KUMAR | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Dec, 2025",05:05 PM,debit,YESUDOSS R,75,570453320774,Paid to YESUDOSS R | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Dec, 2025",05:09 PM,debit,Vinayaga Hot Chips,75,570409548009,Paid to Vinayaga Hot Chips | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Dec, 2025",10:10 AM,credit,Shanthi P,200,533969467072,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Dec, 2025",10:10 AM,debit,DHAKSHINAMOORTHY R,50,570588492751,Paid to DHAKSHINAMOORTHY R | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Dec, 2025",06:50 PM,credit,Shanthi P,500,570813234453,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Dec, 2025",06:51 PM,debit,Prabakaran S,477,570886925425,Paid to Prabakaran S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Dec, 2025",11:25 AM,debit,S PRAVEEN,20,534457586437,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Dec, 2025",01:11 PM,credit,Prabakaran S,200,534857665200,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Dec, 2025",01:44 PM,debit,Raja Deva,150,534834977065,Paid to Raja Deva | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Dec, 2025",02:45 PM,credit,Shanthi P,300,534809087162,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Dec, 2025",02:45 PM,debit,Shanthi P,300,534876779600,Paid to Shanthi P | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Dec, 2025",07:31 PM,credit,S PRAVEEN,100,571466916302,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Dec, 2025",07:31 PM,credit,S PRAVEEN,50,571492318686,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Dec, 2025",07:34 PM,debit,VARIETY CENTRE,195,571449216466,Paid to VARIETY CENTRE | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"15 Dec, 2025",12:20 AM,credit,Shanthi P,45,534936585534,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"15 Dec, 2025",12:23 AM,debit,Socratic AI,50,571570321236,Paid to Socratic AI | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"16 Dec, 2025",11:39 AM,credit,Shanthi P,200,535040541706,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"16 Dec, 2025",11:39 AM,debit,R MOHANAPRIYA,130,535092243892,Paid to R MOHANAPRIYA | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Dec, 2025",11:33 AM,credit,S PRAVEEN,18,535279544183,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Dec, 2025",11:37 AM,credit,S PRAVEEN,12,535206544720,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Dec, 2025",11:37 AM,credit,Shanthi P,60,535270225820,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Dec, 2025",11:38 AM,debit,S PRAVEEN,70,535295847698,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Dec, 2025",11:38 AM,debit,S PRAVEEN,12,535269744318,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Dec, 2025",04:34 PM,credit,S PRAVEEN,20,535217479221,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Dec, 2025",04:35 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,28,535210079538,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Dec, 2025",04:37 PM,credit,S PRAVEEN,2,115823652167,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"26 Dec, 2025",03:32 PM,debit,Prabakaran S,2826.69,572651579874,Paid to Prabakaran S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Dec, 2025",08:33 PM,credit,Prabakaran S,329,536201500625,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Dec, 2025",08:33 PM,debit,S PRAVEEN,329,572876696856,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"30 Dec, 2025",07:20 AM,credit,Shanthi P,200,536488268551,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"30 Dec, 2025",07:29 AM,debit,MONISh ram,142,573067018266,Paid to MONISh ram | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"30 Dec, 2025",07:44 AM,debit,SANKAR M,30,573087614700,Paid to SANKAR M | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"30 Dec, 2025",11:48 AM,credit,S PRAVEEN,20,116390078883,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"30 Dec, 2025",11:48 AM,credit,Prathish D,20,573092245825,Received from Prathish D | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"30 Dec, 2025",11:48 AM,credit,S PRAVEEN,5,573069039259,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"30 Dec, 2025",11:50 AM,debit,Santhosh,50,573016623826,Paid to Santhosh | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Dec, 2025",05:12 PM,credit,Shanthi P,250,536566487877,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Dec, 2025",05:12 PM,debit,ZOMATO LIMITED,250,536550150904,Paid to ZOMATO LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Dec, 2025",06:19 PM,credit,Shanthi P,250,536570147253,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"01 Jan, 2026",04:44 PM,credit,Shanthi P,200,600112827130,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"01 Jan, 2026",04:48 PM,debit,Zomato,188,636794957353,Paid to Zomato | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"01 Jan, 2026",05:05 PM,debit,ZOMATO LIMITED,250,636738650303,Paid to ZOMATO LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"02 Jan, 2026",07:53 PM,credit,Shanthi P,200,600292873889,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"02 Jan, 2026",08:00 PM,debit,MSK PROTEIN,112,600257283868,Paid to MSK PROTEIN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Jan, 2026",10:21 PM,credit,Prathish D,300,636968926392,Received from Prathish D | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Jan, 2026",10:46 PM,credit,Praveen Hemanth,550,636955841072,Received from Praveen Hemanth | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Jan, 2026",11:13 PM,credit,Prathish D,160,636965515024,Received from Prathish D | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Jan, 2026",11:14 PM,credit,Srinath.K,300,600304924006,Received from Srinath.K | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Jan, 2026",12:13 AM,credit,Yogeshwaran,1000,637004125985,Received from Yogeshwaran | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Jan, 2026",03:19 AM,debit,CHAKRAVARTHI G,61,600498418952,Paid to CHAKRAVARTHI G | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"04 Jan, 2026",11:14 AM,debit,Yogeshwaran,1000,600465823569,Paid to Yogeshwaran | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Jan, 2026",03:44 AM,credit,Shanthi P,400,637189408195,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Jan, 2026",05:52 PM,debit,KPN FARM FRESH,85,637164375371,Paid to KPN FARM FRESH | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Jan, 2026",10:06 PM,credit,Krishna Kannan,200,600509580109,Received from Krishna Kannan | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"06 Jan, 2026",06:42 AM,debit,Shanthi P,200,600606507531,Paid to Shanthi P | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Jan, 2026",12:28 PM,debit,NARAYANASAMY KARUNANIDHI,230,600889114016,Paid to NARAYANASAMY KARUNANIDHI | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Jan, 2026",03:11 PM,debit,Krishna Kannan,200,600838420677,Paid to Krishna Kannan | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Jan, 2026",03:12 PM,debit,Srinath.K,300,600810837486,Paid to Srinath.K | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Jan, 2026",03:12 PM,debit,Praveen Hemanth,550,600816024666,Paid to Praveen Hemanth | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Jan, 2026",03:38 PM,debit,D PRATHISH,300,600852843183,Paid to D PRATHISH | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Jan, 2026",03:57 PM,credit,Krishna Kannan,30,600813684104,Received from Krishna Kannan | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Jan, 2026",03:57 PM,credit,Syed Ibrahim.S,13,600861638278,Received from Syed Ibrahim.S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Jan, 2026",03:57 PM,debit,GK KITCHEN,125,600892544193,Paid to GK KITCHEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Jan, 2026",09:18 AM,credit,Shanthi P,200,600954608780,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Jan, 2026",10:03 AM,debit,MURUGAN C,151,637533808857,Paid to MURUGAN C | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Jan, 2026",10:39 AM,debit,Ponnu Rangam,30,600944599605,Paid to Ponnu Rangam | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Jan, 2026",02:05 PM,credit,Prathish D,40,637593529245,Received from Prathish D | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Jan, 2026",02:45 PM,debit,Pks catering services,25,637564918178,Paid to Pks catering services | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"16 Jan, 2026",11:10 AM,debit,Prabakaran S,10000,638276754864,Paid to Prabakaran S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Jan, 2026",06:16 AM,credit,Shanthi P,200,601782186551,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Jan, 2026",06:49 AM,debit,Julien Paul,200,601728427396,Paid to Julien Paul | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Jan, 2026",08:41 AM,credit,Shanthi P,500,601785524320,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Jan, 2026",04:29 PM,debit,Tarun Murugan,392,601731455964,Paid to Tarun Murugan | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Jan, 2026",05:31 AM,credit,Prabakaran S,67,638439630423,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Jan, 2026",05:33 AM,debit,R Nirmal,177,638436016704,Paid to R Nirmal | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Jan, 2026",07:41 AM,credit,Prathish D,500,601919417091,Received from Prathish D | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Jan, 2026",07:48 AM,debit,ANAND KUMAR P,400,601901506849,Paid to ANAND KUMAR P | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Jan, 2026",12:27 PM,debit,S PRAVEEN,30,601954823179,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"20 Jan, 2026",10:31 AM,debit,P Anitha,10,638664505952,Paid to P Anitha | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"20 Jan, 2026",04:44 PM,debit,S PRAVEEN,60,638620638980,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Jan, 2026",06:32 PM,credit,Shanthi P,320,602274822669,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Jan, 2026",06:33 PM,debit,Zomato,210.45,638838250661,Paid to Zomato | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Jan, 2026",06:34 PM,debit,Zomato,107,638846537114,Paid to Zomato | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"23 Jan, 2026",03:56 PM,credit,Shanthi P,50,602306746105,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"23 Jan, 2026",03:57 PM,debit,P Anitha,40,602376025644,Paid to P Anitha | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"23 Jan, 2026",04:55 PM,credit,S PRAVEEN,27,602372035533,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"23 Jan, 2026",04:56 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,28,602351732134,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"23 Jan, 2026",10:40 PM,credit,Prabakaran S,1900,602343579520,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"24 Jan, 2026",12:21 AM,debit,Prabakaran S,1900,639093800594,Paid to Prabakaran S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"24 Jan, 2026",10:47 PM,credit,Prabakaran S,570,639091971756,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"24 Jan, 2026",10:48 PM,debit,TICKET9 EVENT TECH PRIVATE LIMITED,569.48,639091971793,Paid to TICKET9 EVENT TECH PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"25 Jan, 2026",09:47 PM,credit,Nivetha,340,117695409058,Received from Nivetha | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"25 Jan, 2026",09:53 PM,credit,S PRAVEEN,350,602579848227,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"25 Jan, 2026",10:17 PM,credit,Prabakaran S,350,602512357014,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"26 Jan, 2026",01:23 AM,debit,Nivetha,750,602670455126,Paid to Nivetha | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Jan, 2026",12:37 PM,debit,BHUVANESWARI Y,6,639326047293,Paid to BHUVANESWARI Y | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Jan, 2026",03:30 PM,debit,BHUVANESWARI Y,16,602827954282,Paid to BHUVANESWARI Y | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Jan, 2026",03:59 PM,debit,AMUTHA S,12,602851661047,Paid to AMUTHA S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Jan, 2026",03:59 PM,debit,AMUTHA S,8,602802751033,Paid to AMUTHA S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Jan, 2026",10:51 PM,credit,Nivetha,410,117829629846,Received from Nivetha | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Jan, 2026",10:58 PM,credit,Nivetha,205,602803889540,Received from Nivetha | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Jan, 2026",10:59 PM,debit,[Logicserve] redRail,857.7,639491602990,Paid to [Logicserve] redRail | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"28 Jan, 2026",11:10 PM,credit,Prathika S,205,602812594843,Received from Prathika S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"29 Jan, 2026",12:51 AM,debit,IRCTC Web UPI,833.6,602943096755,Paid to IRCTC Web UPI | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"29 Jan, 2026",10:24 AM,debit,PREMKUMAR M,20,639514806011,Paid to PREMKUMAR M | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Jan, 2026",06:44 AM,credit,Prabakaran S,400,603150563748,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Jan, 2026",06:49 AM,credit,Nivetha,325,603136676813,Received from Nivetha | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Jan, 2026",06:50 AM,credit,S PRAVEEN,325,117927922979,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Jan, 2026",06:51 AM,credit,Prathika S,325,603139068225,Received from Prathika S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Jan, 2026",06:59 AM,debit,Asmit Sahoo,1300,603150563968,Paid to Asmit Sahoo | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Jan, 2026",02:06 PM,debit,S PRAVEEN,70,639798603773,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Jan, 2026",07:31 PM,debit,S PRAVEEN,80,639765244802,Paid to S PRAVEEN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"31 Jan, 2026",08:44 PM,debit,METROPOLITAN TRANSPORT CORPORATION CHENNAI,34,639719834947,Paid to METROPOLITAN TRANSPORT CORPORATION CHENNAI | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"02 Feb, 2026",07:24 AM,debit,Servent of God,138,603387653274,Paid to Servent of God | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"02 Feb, 2026",04:53 PM,debit,Krishna Kannan,20,603355876349,Paid to Krishna Kannan | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"02 Feb, 2026",04:53 PM,debit,Krishna Kannan,30,603341392909,Paid to Krishna Kannan | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"02 Feb, 2026",06:37 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,1,639917006412,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"02 Feb, 2026",08:42 PM,credit,Nivetha,150,118073653836,Received from Nivetha | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"02 Feb, 2026",10:27 PM,debit,Prathika S,275,639980230674,Paid to Prathika S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Feb, 2026",05:42 AM,debit,MR RAJ KUMAR,40,640000733664,Paid to MR RAJ KUMAR | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Feb, 2026",07:17 AM,debit,Swiggy,288,640029441358,Paid to Swiggy | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Feb, 2026",07:19 AM,credit,S PRAVEEN,500,640081927472,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Feb, 2026",07:19 AM,credit,Nivetha,500,118082518091,Received from Nivetha | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Feb, 2026",12:02 PM,debit,SWIGGY,452,640020351081,Paid to SWIGGY | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Feb, 2026",02:14 PM,debit,Hyderali A,150,640048553743,Paid to Hyderali A | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Feb, 2026",02:58 PM,credit,Prathika S,500,603485722211,Received from Prathika S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Feb, 2026",09:25 PM,debit,SREE SUBBUS GANDHIPU,741,603425514524,Paid to SREE SUBBUS GANDHIPU | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"03 Feb, 2026",11:01 PM,debit,Ananth Arusamy,150,603401516079,Paid to Ananth Arusamy | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Feb, 2026",03:19 PM,credit,S PRAVEEN,480,118203578529,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Feb, 2026",03:46 PM,credit,Prathika S,480,603638831829,Received from Prathika S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Feb, 2026",03:47 PM,credit,Prabakaran S,500,640292232627,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Feb, 2026",03:56 PM,debit,REDBUS INDIA PRIVATE LIMITED,1414,640251227250,Paid to REDBUS INDIA PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Feb, 2026",04:54 PM,debit,PARISU FARMS,20,640243044361,Paid to PARISU FARMS | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Feb, 2026",08:38 PM,debit,SREE SUBBUS GANDHIPU,404,640285757283,Paid to SREE SUBBUS GANDHIPU | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Feb, 2026",08:38 PM,credit,S PRAVEEN,300,118223359952,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"05 Feb, 2026",08:39 PM,debit,SREE SUBBUS GANDHIPU,20,640275186716,Paid to SREE SUBBUS GANDHIPU | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"06 Feb, 2026",01:46 PM,credit,Prabakaran S,1000,603759718154,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"06 Feb, 2026",02:11 PM,debit,IIT Madras,1003.54,603719118283,Paid to IIT Madras | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"08 Feb, 2026",11:21 PM,debit,Mr Gowtham S,9,603978774404,Paid to Mr Gowtham S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Feb, 2026",11:26 AM,credit,Prabakaran S,100,640604602761,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Feb, 2026",11:32 AM,credit,Vikram,130,640632107692,Received from Vikram | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Feb, 2026",11:32 AM,credit,Jaicool,130,604065099591,Received from Jaicool | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Feb, 2026",11:32 AM,credit,S PRAVEEN,130,118399395194,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Feb, 2026",11:33 AM,credit,Praveen Hemanth,130,640669407396,Received from Praveen Hemanth | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Feb, 2026",11:36 AM,credit,Preethish,130,640658511559,Received from Preethish | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Feb, 2026",11:38 AM,credit,Srinath.K,100,640620611471,Received from Srinath.K | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Feb, 2026",11:40 AM,credit,Syed Ibrahim.S,100,640640107623,Received from Syed Ibrahim.S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"09 Feb, 2026",11:42 AM,debit,Pks catering services,900,640699201357,Paid to Pks catering services | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Feb, 2026",04:24 PM,credit,Prabakaran S,100,604198344158,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Feb, 2026",05:00 PM,credit,Prabakaran S,50,604143251356,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"10 Feb, 2026",05:08 PM,debit,Zomato,252.85,604159256296,Paid to Zomato | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Feb, 2026",07:17 PM,credit,Praveen Hemanth,480,604231102668,Received from Praveen Hemanth | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"11 Feb, 2026",07:34 PM,debit,Zepto Marketplace Private Limited,479,640812195673,Paid to Zepto Marketplace Private Limited | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"13 Feb, 2026",03:55 PM,debit,BHUVANESWARI Y,2,641004779806,Paid to BHUVANESWARI Y | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"13 Feb, 2026",05:30 PM,credit,S PRAVEEN,8,641014293291,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"13 Feb, 2026",05:31 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,28,641065578587,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Feb, 2026",04:00 PM,credit,Shanthi P,50,604588110736,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"14 Feb, 2026",04:01 PM,debit,Kural Saravanan,12,641148103091,Paid to Kural Saravanan | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"16 Feb, 2026",01:47 PM,credit,Prabakaran S,750,604779783671,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"16 Feb, 2026",01:54 PM,debit,Anand Kumar,750,604703179914,Paid to Anand Kumar | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Feb, 2026",07:13 AM,credit,Shanthi P,150,604814891397,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"17 Feb, 2026",07:25 AM,debit,Prasath Karuppusamy,138,641426664739,Paid to Prasath Karuppusamy | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"18 Feb, 2026",03:35 PM,debit,KANNAIRAM VEDIAPPAN,40,641536405043,Paid to KANNAIRAM VEDIAPPAN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Feb, 2026",06:17 PM,credit,Shanthi P,100,605040279097,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Feb, 2026",06:18 PM,debit,Swiggy Diners,100,605072832905,Paid to Swiggy Diners | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Feb, 2026",08:53 PM,credit,Prabakaran S,2085,605090558469,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"19 Feb, 2026",08:53 PM,debit,Swiggy Diners,2085,605021943155,Paid to Swiggy Diners | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",06:44 AM,credit,Prabakaran S,500,641832983831,Received from Prabakaran S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",07:17 AM,debit,C NANDAKUMAR,157,641837685797,Paid to C NANDAKUMAR | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",11:14 AM,debit,SmartQ,123,641811488028,Paid to SmartQ | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",03:12 PM,credit,Praveen Hemanth,1165,605254230903,Received from Praveen Hemanth | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",03:13 PM,credit,Prathish D,1165,605247411954,Received from Prathish D | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",03:14 PM,credit,Krishna Kannan,1165,605201723943,Received from Krishna Kannan | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",03:14 PM,credit,Syed Ibrahim.S,1165,605219438750,Received from Syed Ibrahim.S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",03:24 PM,credit,Srinath.K,1165,605220131336,Received from Srinath.K | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",06:30 PM,credit,Preethish,1065,605262821967,Received from Preethish | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",07:15 PM,credit,Preethish,100,605241653285,Received from Preethish | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",09:34 PM,credit,Nivetha,160,118976342568,Received from Nivetha | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",09:35 PM,debit,Munna,320,605252366447,Paid to Munna | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",09:55 PM,debit,Mr N ANANDAN,100,605209878613,Paid to Mr N ANANDAN | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",10:14 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,21,605236375166,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",10:16 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,28,605292384738,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",11:21 PM,debit,Jagan B,52,605275584168,Paid to Jagan B | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"21 Feb, 2026",11:57 PM,credit,S PRAVEEN,1100,118980817823,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",12:07 AM,credit,Shanthi P,1500,605354572964,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",12:09 AM,debit,WONDERLA HOLIDAYS LIMITED,9298,605339080933,Paid to WONDERLA HOLIDAYS LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",07:29 AM,debit,METROPOLITAN TRANSPORT CORPORATION CHENNAI,35,605383180269,Paid to METROPOLITAN TRANSPORT CORPORATION CHENNAI | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",10:56 AM,credit,Krishna Kannan,200,605321080569,Received from Krishna Kannan | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",10:56 AM,credit,Preethish,200,641987512016,Received from Preethish | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",10:56 AM,credit,Praveen Hemanth,200,605375673471,Received from Praveen Hemanth | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",10:57 AM,debit,Wonderla LKCTR1 1,400,641942511859,Paid to Wonderla LKCTR1 1 | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",10:58 AM,credit,Syed Ibrahim.S,100,641917617616,Received from Syed Ibrahim.S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",11:07 AM,credit,S PRAVEEN,150,118991055901,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",04:40 PM,debit,Wonderla Retail Cart1 1,100,641903140798,Paid to Wonderla Retail Cart1 1 | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",04:42 PM,debit,Wonderla Retail Cart1 1,26,641965532168,Paid to Wonderla Retail Cart1 1 | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",07:49 PM,debit,Mr BALAMURUGAN V,20,641986782176,Paid to Mr BALAMURUGAN V | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",07:51 PM,debit,Mr BALAMURUGAN V,10,641930785973,Paid to Mr BALAMURUGAN V | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",09:44 PM,debit,METROPOLITAN TRANSPORT CORPORATION CHENNAI,35,641991196013,Paid to METROPOLITAN TRANSPORT CORPORATION CHENNAI | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",09:44 PM,debit,METROPOLITAN TRANSPORT CORPORATION CHENNAI,35,641972092746,Paid to METROPOLITAN TRANSPORT CORPORATION CHENNAI | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",10:40 PM,debit,Zomato,145.48,641921982658,Paid to Zomato | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"22 Feb, 2026",10:41 PM,debit,Zomato,183.76,605390618133,Paid to Zomato | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"24 Feb, 2026",02:07 AM,credit,S PRAVEEN,150,641922600889,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"24 Feb, 2026",08:09 PM,debit,Syed Ibrahim S,10,642102373843,Paid to Syed Ibrahim S | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"25 Feb, 2026",06:30 PM,credit,S PRAVEEN,6,605651040988,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"25 Feb, 2026",06:31 PM,debit,UBER INDIA SYSTEMS PRIVATE LIMITED,28,605620036202,Paid to UBER INDIA SYSTEMS PRIVATE LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"25 Feb, 2026",06:40 PM,debit,ASHVIK FOODS,38,605695138775,Paid to ASHVIK FOODS | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"26 Feb, 2026",01:31 PM,credit,Shanthi P,700,605771497425,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"26 Feb, 2026",01:54 PM,debit,Vigneshwaran Gopinath,675,642306902874,Paid to Vigneshwaran Gopinath | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",01:28 PM,credit,Shanthi P,200,605805173315,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",01:28 PM,debit,The Cake Farmers,300,605843906322,Paid to The Cake Farmers | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",01:28 PM,credit,S PRAVEEN,50,642409296461,Received from S PRAVEEN | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",01:28 PM,credit,Preethish,50,642411394021,Received from Preethish | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",01:28 PM,credit,Syed Ibrahim S,110,000921821716,Received from Syed Ibrahim S | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",01:29 PM,credit,Praveen Hemanth,60,605899544763,Received from Praveen Hemanth | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",01:34 PM,credit,PREMKUMAR M,40,605853246083,Received from PREMKUMAR M | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",02:11 PM,debit,vivek Vv,250,605826611285,Paid to vivek Vv | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",06:00 PM,debit,Santhosh,40,605818624030,Paid to Santhosh | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",11:24 PM,debit,ETERNAL LIMITED,1,605808559886,Paid to ETERNAL LIMITED | Paid by Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",11:26 PM,credit,Shanthi P,200,605840964676,Received from Shanthi P | Paid to Axis Bank 3901
+UPI_gpay_statement.pdf,01 September 2025,28 February 2026,GPay,"27 Feb, 2026",11:39 PM,debit,Zomato,193.7,605894355295,Paid to Zomato | Paid by Axis Bank 3901

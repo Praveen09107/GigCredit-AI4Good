@@ -14,19 +14,42 @@
 - bank_transaction_rows_estimated: 123
 
 ## Parsed UPI Statement Fields (best-effort)
-- upi_first_date: 
-- upi_last_date: 
-- upi_txn_rows_estimated: 454
+- upi_statement_period: 01 September 2025 - 28 February 2026
+- upi_reported_sent_total: 79,905.99
+- upi_reported_received_total: 57,197.01
+- upi_txn_rows_parsed_structured: 407
 
-## Pending Manual Image Extraction
-- aadhaar front.jpeg
-- aadhaar back.jpeg
-- pan front.jpeg
-- pan back.jpeg
+## Bulk Pending-Set Extraction (Completed This Pass)
+
+- Source set processed: all `pending` rows from tracker (34 files)
+- New outputs:
+	- `sample inputs/remaining_docs_extracted_fields.csv`
+	- `sample inputs/remaining_docs_ocr_summary.json`
+- Total extracted candidate rows: 105
+- Tracker status after run:
+	- `extracted_with_review`: 34
+	- `partial_extracted`: 6
+	- `pending`: 0
+
+## Deep Pass Completion (Bank/UPI + Residual Partials)
+
+- New normalized outputs:
+	- `sample inputs/bank_statement_structured.csv` (123 rows)
+	- `sample inputs/upi_statement_structured.csv` (407 rows)
+	- `sample inputs/upi_statement_summary.csv` (statement totals + parsed row count)
+- UPI parse quality fix applied:
+	- removed phone-number bleed into `amount` field (e.g., `7010049092`)
+	- corrected debit/credit split using `Paid to` vs `Received from` transaction details
+- Residual manual-field output:
+	- `sample inputs/partial_docs_manual_extracted_fields.csv`
+- Tracker status after deep pass:
+	- `extracted_with_review`: 39
+	- `needs_user`: 1
+	- `partial_extracted`: 0
 
 ## Notes
 - Parsed values are best-effort and need validation against source documents.
-- Field-level normalization/mapping to final schema is still pending.
+- Remaining blocker from user side: `pm sym template card no values.jpeg` appears to be a blank template and needs a filled version.
 
 ## KYC Image Extraction (Completed This Pass)
 
