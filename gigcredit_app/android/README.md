@@ -13,5 +13,7 @@ This scaffold wires Flutter `MethodChannel` calls for `gigcredit/ai_native` in A
 
 ## Notes
 - Handlers run on a background executor, and responses are posted back to the main thread.
-- Current implementations are deterministic prototype stubs (no external ML runtime yet).
+- Runtime layer includes per-call timeout handling (`timeout`) and model lifecycle gating (`model_load_failed`).
+- Set env var `GIGCREDIT_FORCE_MODEL_LOAD_FAIL=1` to simulate model load failure for testing.
+- Current inference implementations are deterministic placeholders ready to be replaced with production ML runtime.
 - No raw image bytes or full OCR text are logged.

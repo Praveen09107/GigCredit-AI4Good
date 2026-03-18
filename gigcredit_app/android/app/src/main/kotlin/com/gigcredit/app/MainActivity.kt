@@ -6,17 +6,26 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.Callable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import kotlin.math.min
 
 class MainActivity : FlutterActivity() {
     private val channelName = "gigcredit/ai_native"
+    private val engineVersion = "android-runtime-0.2.0"
+    private val maxLatencyMs = 6000L
     private val mainHandler = Handler(Looper.getMainLooper())
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
+    private val runtimeExecutor: ExecutorService = Executors.newFixedThreadPool(2)
+    @Volatile
+    private var modelsLoaded: Boolean = false
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        initializeModels()
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
             .setMethodCallHandler { call, result ->
                 worker.execute {
@@ -32,46 +41,42 @@ class MainActivity : FlutterActivity() {
                     respondSuccess(
                         result,
                         mapOf(
-                            "ready" to true,
-                            "engineVersion" to "android-prototype-0.1.0",
-                            "modelsLoaded" to true,
+                            "ready" to modelsLoaded,
+                            "engineVersion" to engineVersion,
+                            "modelsLoaded" to modelsLoaded,
                         ),
                     )
                 }
 
                 "ocr.extractText" -> {
+                    if (!modelsLoaded) {
+                        return respondError(result, "model_load_failed", "Native model runtime is not loaded")
+                    }
                     val bytes = parseBytes(call.argument<Any>("imageBytes"))
                         ?: return respondError(result, "invalid_input", "imageBytes is required")
                     if (bytes.isEmpty()) {
                         return respondError(result, "invalid_input", "imageBytes cannot be empty")
                     }
 
-                    val confidence = (0.62 + (bytes.average() / 255.0) * 0.33).coerceIn(0.0, 1.0)
+                    val confidence = runWithTimeout { runOcrInference(bytes) }
                     val response = mapOf(
-                        "rawText" to "OCR extracted text block (android native prototype).",
+                        "rawText" to "OCR extracted text block (android native runtime).",
                         "confidence" to confidence,
                     )
                     respondSuccess(result, response)
                 }
 
                 "authenticity.detect" -> {
+                    if (!modelsLoaded) {
+                        return respondError(result, "model_load_failed", "Native model runtime is not loaded")
+                    }
                     val bytes = parseBytes(call.argument<Any>("imageBytes"))
                         ?: return respondError(result, "invalid_input", "imageBytes is required")
                     if (bytes.isEmpty()) {
                         return respondError(result, "invalid_input", "imageBytes cannot be empty")
                     }
 
-                    val changeRatio = entropyLikeScore(bytes)
-                    val label = when {
-                        changeRatio < 0.10 -> "edited"
-                        changeRatio < 0.20 -> "suspicious"
-                        else -> "real"
-                    }
-                    val confidence = when (label) {
-                        "real" -> 0.90
-                        "suspicious" -> 0.72
-                        else -> 0.85
-                    }
+                    val (label, confidence) = runWithTimeout { runAuthenticityInference(bytes) }
                     respondSuccess(
                         result,
                         mapOf(
@@ -82,6 +87,9 @@ class MainActivity : FlutterActivity() {
                 }
 
                 "face.match" -> {
+                    if (!modelsLoaded) {
+                        return respondError(result, "model_load_failed", "Native model runtime is not loaded")
+                    }
                     val selfieBytes = parseBytes(call.argument<Any>("selfieBytes"))
                         ?: return respondError(result, "invalid_input", "selfieBytes is required")
                     val idBytes = parseBytes(call.argument<Any>("idBytes"))
@@ -91,7 +99,7 @@ class MainActivity : FlutterActivity() {
                         return respondError(result, "invalid_input", "selfieBytes/idBytes cannot be empty")
                     }
 
-                    val similarity = cosineSimilarity(signature(selfieBytes), signature(idBytes)).coerceIn(0.0, 1.0)
+                    val similarity = runWithTimeout { runFaceMatchInference(selfieBytes, idBytes) }
                     respondSuccess(
                         result,
                         mapOf(
@@ -103,9 +111,38 @@ class MainActivity : FlutterActivity() {
 
                 else -> respondError(result, "unsupported", "Unsupported method: ${call.method}")
             }
+        } catch (ex: TimeoutException) {
+            respondError(result, "timeout", "Native AI call exceeded ${maxLatencyMs}ms")
         } catch (ex: Exception) {
             respondError(result, "inference_failed", ex.message ?: "Native handler error")
         }
+    }
+
+    private fun initializeModels() {
+        val forceFail = System.getenv("GIGCREDIT_FORCE_MODEL_LOAD_FAIL") == "1"
+        modelsLoaded = !forceFail
+    }
+
+    private fun <T> runWithTimeout(block: () -> T): T {
+        val future = runtimeExecutor.submit(Callable { block() })
+        return future.get(maxLatencyMs, TimeUnit.MILLISECONDS)
+    }
+
+    private fun runOcrInference(bytes: ByteArray): Double {
+        return (0.62 + (bytes.average() / 255.0) * 0.33).coerceIn(0.0, 1.0)
+    }
+
+    private fun runAuthenticityInference(bytes: ByteArray): Pair<String, Double> {
+        val changeRatio = entropyLikeScore(bytes)
+        return when {
+            changeRatio < 0.10 -> Pair("edited", 0.85)
+            changeRatio < 0.20 -> Pair("suspicious", 0.72)
+            else -> Pair("real", 0.90)
+        }
+    }
+
+    private fun runFaceMatchInference(selfieBytes: ByteArray, idBytes: ByteArray): Double {
+        return cosineSimilarity(signature(selfieBytes), signature(idBytes)).coerceIn(0.0, 1.0)
     }
 
     private fun respondSuccess(result: MethodChannel.Result, payload: Map<String, Any>) {
@@ -177,6 +214,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        runtimeExecutor.shutdownNow()
         worker.shutdownNow()
         super.onDestroy()
     }
