@@ -1,7 +1,11 @@
 package com.gigcredit.app
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.PointF
 import android.os.Handler
 import android.os.Looper
+import android.media.FaceDetector
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
@@ -62,9 +66,9 @@ class MainActivity : FlutterActivity() {
                         return respondError(result, "invalid_input", "imageBytes exceeds size limit")
                     }
 
-                    val confidence = runWithTimeout { runOcrInference(bytes) }
+                    val (rawText, confidence) = runWithTimeout { runOcrInference(bytes) }
                     val response = mapOf(
-                        "rawText" to "OCR extracted text block (android native runtime).",
+                        "rawText" to rawText,
                         "confidence" to confidence,
                     )
                     respondSuccess(result, response)
@@ -83,7 +87,9 @@ class MainActivity : FlutterActivity() {
                         return respondError(result, "invalid_input", "imageBytes exceeds size limit")
                     }
 
-                    val (label, confidence) = runWithTimeout { runAuthenticityInference(bytes) }
+                    val bitmap = decodeBitmap(bytes)
+                        ?: return respondError(result, "invalid_input", "imageBytes could not be decoded")
+                    val (label, confidence) = runWithTimeout { runAuthenticityInference(bitmap) }
                     respondSuccess(
                         result,
                         mapOf(
@@ -109,7 +115,12 @@ class MainActivity : FlutterActivity() {
                         return respondError(result, "invalid_input", "selfieBytes/idBytes exceed size limit")
                     }
 
-                    val similarity = runWithTimeout { runFaceMatchInference(selfieBytes, idBytes) }
+                    val selfieBitmap = decodeBitmap(selfieBytes)
+                        ?: return respondError(result, "invalid_input", "selfieBytes could not be decoded")
+                    val idBitmap = decodeBitmap(idBytes)
+                        ?: return respondError(result, "invalid_input", "idBytes could not be decoded")
+
+                    val similarity = runWithTimeout { runFaceMatchInference(selfieBitmap, idBitmap) }
                     respondSuccess(
                         result,
                         mapOf(
@@ -121,6 +132,10 @@ class MainActivity : FlutterActivity() {
 
                 else -> respondError(result, "unsupported", "Unsupported method: ${call.method}")
             }
+        } catch (ex: UnsupportedOperationException) {
+            respondError(result, "unsupported", ex.message ?: "Unsupported runtime feature")
+        } catch (ex: IllegalArgumentException) {
+            respondError(result, "invalid_input", ex.message ?: "Invalid input")
         } catch (ex: TimeoutException) {
             respondError(result, "timeout", "Native AI call exceeded ${maxLatencyMs}ms")
         } catch (ex: Exception) {
@@ -138,21 +153,31 @@ class MainActivity : FlutterActivity() {
         return future.get(maxLatencyMs, TimeUnit.MILLISECONDS)
     }
 
-    private fun runOcrInference(bytes: ByteArray): Double {
-        return (0.62 + (bytes.average() / 255.0) * 0.33).coerceIn(0.0, 1.0)
+    private fun runOcrInference(bytes: ByteArray): Pair<String, Double> {
+        val bitmap = decodeBitmap(bytes)
+            ?: throw IllegalArgumentException("imageBytes could not be decoded")
+        if (bitmap.width < 16 || bitmap.height < 16) {
+            throw IllegalArgumentException("imageBytes resolution too small for OCR")
+        }
+        throw UnsupportedOperationException("Android OCR runtime not linked; enable Dart fallback or integrate ML Kit OCR")
     }
 
-    private fun runAuthenticityInference(bytes: ByteArray): Pair<String, Double> {
-        val changeRatio = entropyLikeScore(bytes)
+    private fun runAuthenticityInference(bitmap: Bitmap): Pair<String, Double> {
+        val signature = imageSignature(bitmap)
+        val entropy = signature.entropyLike
+        val edge = signature.edgeIntensity
+
         return when {
-            changeRatio < 0.10 -> Pair("edited", 0.85)
-            changeRatio < 0.20 -> Pair("suspicious", 0.72)
+            entropy < 0.10 || edge < 8.0 -> Pair("edited", 0.84)
+            entropy < 0.18 || edge < 14.0 -> Pair("suspicious", 0.74)
             else -> Pair("real", 0.90)
         }
     }
 
-    private fun runFaceMatchInference(selfieBytes: ByteArray, idBytes: ByteArray): Double {
-        return cosineSimilarity(signature(selfieBytes), signature(idBytes)).coerceIn(0.0, 1.0)
+    private fun runFaceMatchInference(selfieBitmap: Bitmap, idBitmap: Bitmap): Double {
+        val selfieFace = extractPrimaryFacePatch(selfieBitmap)
+        val idFace = extractPrimaryFacePatch(idBitmap)
+        return cosineSimilarity(signature(selfieFace), signature(idFace)).coerceIn(0.0, 1.0)
     }
 
     private fun respondSuccess(result: MethodChannel.Result, payload: Map<String, Any>) {
@@ -175,15 +200,89 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun entropyLikeScore(bytes: ByteArray): Double {
-        if (bytes.size < 2) return 0.0
-        var changes = 0
-        for (i in 1 until bytes.size) {
-            if (bytes[i] != bytes[i - 1]) {
-                changes += 1
-            }
+    private fun decodeBitmap(bytes: ByteArray): Bitmap? {
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    }
+
+    private fun toFaceBitmap(source: Bitmap): Bitmap {
+        if (source.config == Bitmap.Config.RGB_565) {
+            return source
         }
-        return changes.toDouble() / (bytes.size - 1)
+        return source.copy(Bitmap.Config.RGB_565, true)
+    }
+
+    private fun extractPrimaryFacePatch(bitmap: Bitmap): ByteArray {
+        val faceBitmap = toFaceBitmap(bitmap)
+        if (faceBitmap.width < 32 || faceBitmap.height < 32) {
+            throw IllegalArgumentException("Image too small for face detection")
+        }
+
+        val faces = arrayOfNulls<FaceDetector.Face>(1)
+        val found = FaceDetector(faceBitmap.width, faceBitmap.height, 1).findFaces(faceBitmap, faces)
+        if (found < 1 || faces[0] == null) {
+            throw IllegalArgumentException("No face detected")
+        }
+
+        val face = faces[0]!!
+        val mid = PointF()
+        face.getMidPoint(mid)
+        val radius = (face.eyesDistance() * 1.7f).coerceAtLeast(12f)
+
+        val left = (mid.x - radius).toInt().coerceIn(0, faceBitmap.width - 1)
+        val top = (mid.y - radius).toInt().coerceIn(0, faceBitmap.height - 1)
+        val right = (mid.x + radius).toInt().coerceIn(left + 1, faceBitmap.width)
+        val bottom = (mid.y + radius).toInt().coerceIn(top + 1, faceBitmap.height)
+
+        val patchWidth = (right - left).coerceAtLeast(1)
+        val patchHeight = (bottom - top).coerceAtLeast(1)
+        val patch = Bitmap.createBitmap(faceBitmap, left, top, patchWidth, patchHeight)
+
+        val pixels = IntArray(patch.width * patch.height)
+        patch.getPixels(pixels, 0, patch.width, 0, 0, patch.width, patch.height)
+        return ByteArray(pixels.size) { idx ->
+            val p = pixels[idx]
+            val r = (p shr 16) and 0xFF
+            val g = (p shr 8) and 0xFF
+            val b = p and 0xFF
+            (((r + g + b) / 3) and 0xFF).toByte()
+        }
+    }
+
+    private data class ImageSignature(
+        val entropyLike: Double,
+        val edgeIntensity: Double,
+    )
+
+    private fun imageSignature(bitmap: Bitmap): ImageSignature {
+        val pixels = IntArray(bitmap.width * bitmap.height)
+        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        if (pixels.size < 2) {
+            return ImageSignature(entropyLike = 0.0, edgeIntensity = 0.0)
+        }
+
+        var changes = 0
+        var edgeAccum = 0.0
+        var prevGray = 0
+
+        for (idx in pixels.indices) {
+            val p = pixels[idx]
+            val r = (p shr 16) and 0xFF
+            val g = (p shr 8) and 0xFF
+            val b = p and 0xFF
+            val gray = (r + g + b) / 3
+
+            if (idx > 0) {
+                if (gray != prevGray) {
+                    changes += 1
+                }
+                edgeAccum += kotlin.math.abs(gray - prevGray).toDouble()
+            }
+            prevGray = gray
+        }
+
+        val entropyLike = changes.toDouble() / (pixels.size - 1)
+        val edgeIntensity = edgeAccum / (pixels.size - 1)
+        return ImageSignature(entropyLike = entropyLike, edgeIntensity = edgeIntensity)
     }
 
     private fun signature(bytes: ByteArray): DoubleArray {

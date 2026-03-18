@@ -16,5 +16,7 @@ This scaffold wires Flutter `MethodChannel` calls for `gigcredit/ai_native` in i
 - Runtime layer includes per-call timeout handling (`timeout`) and model lifecycle gating (`model_load_failed`).
 - Set env var `GIGCREDIT_FORCE_MODEL_LOAD_FAIL=1` to simulate model load failure for testing.
 - Native handlers enforce a 5MB input limit per image payload (`invalid_input` when exceeded).
-- Current inference logic is deterministic placeholder behavior, ready for replacement with production ML runtime.
+- iOS OCR now runs through Vision text recognition and returns native OCR text + confidence.
+- iOS face matching now uses Vision face detection with face-region signature comparison.
+- Authenticity classification currently uses native image-statistics heuristics and remains replaceable with a dedicated model.
 - No raw image bytes or full OCR text are logged.

@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import Vision
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -64,12 +65,12 @@ import UIKit
           return respondError(result, code: "invalid_input", message: "imageBytes exceeds size limit")
         }
 
-        let confidence = try runWithTimeout {
-          self.runOcrInference(imageBytes)
+        let (rawText, confidence) = try runWithTimeout {
+          try self.runOcrInference(imageBytes)
         }
 
         respond(result, payload: [
-          "rawText": "OCR extracted text block (ios native runtime).",
+          "rawText": rawText,
           "confidence": confidence
         ])
 
@@ -89,7 +90,7 @@ import UIKit
         }
 
         let (label, confidence) = try runWithTimeout {
-          self.runAuthenticityInference(imageBytes)
+          try self.runAuthenticityInference(imageBytes)
         }
 
         respond(result, payload: [
@@ -115,7 +116,7 @@ import UIKit
         }
 
         let similarity = try runWithTimeout {
-          self.runFaceMatchInference(selfieBytes, idBytes)
+          try self.runFaceMatchInference(selfieBytes, idBytes)
         }
         respond(result, payload: [
           "similarity": similarity,
@@ -127,6 +128,12 @@ import UIKit
       }
     } catch MethodTimeoutError.timedOut {
       respondError(result, code: "timeout", message: "Native AI call exceeded \(Int(maxLatencySeconds))s")
+    } catch NativeRuntimeError.modelNotLoaded {
+      respondError(result, code: "model_load_failed", message: "Native model runtime is not loaded")
+    } catch NativeRuntimeError.invalidInput(let msg) {
+      respondError(result, code: "invalid_input", message: msg)
+    } catch NativeRuntimeError.unsupported(let msg) {
+      respondError(result, code: "unsupported", message: msg)
     } catch {
       respondError(result, code: "inference_failed", message: error.localizedDescription)
     }
@@ -137,38 +144,100 @@ import UIKit
     modelsLoaded = env["GIGCREDIT_FORCE_MODEL_LOAD_FAIL"] != "1"
   }
 
-  private func runWithTimeout<T>(_ block: @escaping () -> T) throws -> T {
+  private func runWithTimeout<T>(_ block: @escaping () throws -> T) throws -> T {
     let semaphore = DispatchSemaphore(value: 0)
     var output: T?
+    var thrownError: Error?
     inferenceQueue.async {
-      output = block()
+      do {
+        output = try block()
+      } catch {
+        thrownError = error
+      }
       semaphore.signal()
     }
     let waited = semaphore.wait(timeout: .now() + maxLatencySeconds)
     if waited == .timedOut {
       throw MethodTimeoutError.timedOut
     }
-    return output!
-  }
-
-  private func runOcrInference(_ imageBytes: [UInt8]) -> Double {
-    let mean = imageBytes.map(Double.init).reduce(0.0, +) / Double(imageBytes.count)
-    return min(max(0.62 + (mean / 255.0) * 0.33, 0.0), 1.0)
-  }
-
-  private func runAuthenticityInference(_ imageBytes: [UInt8]) -> (String, Double) {
-    let changeRatio = entropyLikeScore(imageBytes)
-    if changeRatio < 0.10 {
-      return ("edited", 0.85)
+    if let thrownError {
+      throw thrownError
     }
-    if changeRatio < 0.20 {
-      return ("suspicious", 0.72)
+    guard let output else {
+      throw NativeRuntimeError.unsupported("Native inference returned no result")
+    }
+    return output
+  }
+
+  private func runOcrInference(_ imageBytes: [UInt8]) throws -> (String, Double) {
+    guard let cgImage = try decodeCGImage(imageBytes) else {
+      throw NativeRuntimeError.invalidInput("imageBytes could not be decoded")
+    }
+
+    let request = VNRecognizeTextRequest()
+    request.recognitionLevel = .accurate
+    request.usesLanguageCorrection = true
+
+    let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+    try handler.perform([request])
+
+    let observations = request.results ?? []
+    if observations.isEmpty {
+      return ("", 0.0)
+    }
+
+    var lines: [String] = []
+    var confidenceSum = 0.0
+    var confidenceCount = 0
+
+    for observation in observations {
+      guard let candidate = observation.topCandidates(1).first else {
+        continue
+      }
+      let text = candidate.string.trimmingCharacters(in: .whitespacesAndNewlines)
+      if !text.isEmpty {
+        lines.append(text)
+      }
+      confidenceSum += Double(candidate.confidence)
+      confidenceCount += 1
+    }
+
+    let rawText = lines.joined(separator: "\n")
+    let confidence = confidenceCount > 0 ? confidenceSum / Double(confidenceCount) : 0.0
+    return (rawText, min(max(confidence, 0.0), 1.0))
+  }
+
+  private func runAuthenticityInference(_ imageBytes: [UInt8]) throws -> (String, Double) {
+    guard let cgImage = try decodeCGImage(imageBytes) else {
+      throw NativeRuntimeError.invalidInput("imageBytes could not be decoded")
+    }
+
+    let stats = imageSignature(cgImage)
+    if stats.entropyLike < 0.10 || stats.edgeIntensity < 8.0 {
+      return ("edited", 0.84)
+    }
+    if stats.entropyLike < 0.18 || stats.edgeIntensity < 14.0 {
+      return ("suspicious", 0.74)
     }
     return ("real", 0.90)
   }
 
-  private func runFaceMatchInference(_ selfieBytes: [UInt8], _ idBytes: [UInt8]) -> Double {
-    return min(max(cosineSimilarity(signature(selfieBytes), signature(idBytes)), 0.0), 1.0)
+  private func runFaceMatchInference(_ selfieBytes: [UInt8], _ idBytes: [UInt8]) throws -> Double {
+    guard let selfie = try decodeCGImage(selfieBytes) else {
+      throw NativeRuntimeError.invalidInput("selfieBytes could not be decoded")
+    }
+    guard let id = try decodeCGImage(idBytes) else {
+      throw NativeRuntimeError.invalidInput("idBytes could not be decoded")
+    }
+
+    guard let selfiePatch = try extractPrimaryFacePatch(selfie) else {
+      throw NativeRuntimeError.invalidInput("No face detected in selfieBytes")
+    }
+    guard let idPatch = try extractPrimaryFacePatch(id) else {
+      throw NativeRuntimeError.invalidInput("No face detected in idBytes")
+    }
+
+    return min(max(cosineSimilarity(signature(selfiePatch), signature(idPatch)), 0.0), 1.0)
   }
 
   private func respond(_ result: @escaping FlutterResult, payload: [String: Any]) {
@@ -193,17 +262,132 @@ import UIKit
     return nil
   }
 
-  private func entropyLikeScore(_ bytes: [UInt8]) -> Double {
-    if bytes.count < 2 {
-      return 0.0
+  private func decodeCGImage(_ bytes: [UInt8]) throws -> CGImage? {
+    let data = Data(bytes)
+    guard let image = UIImage(data: data)?.cgImage else {
+      return nil
     }
+    return image
+  }
+
+  private struct ImageSignature {
+    let entropyLike: Double
+    let edgeIntensity: Double
+  }
+
+  private func imageSignature(_ cgImage: CGImage) -> ImageSignature {
+    let width = cgImage.width
+    let height = cgImage.height
+    if width == 0 || height == 0 {
+      return ImageSignature(entropyLike: 0.0, edgeIntensity: 0.0)
+    }
+
+    let bytesPerPixel = 4
+    let bytesPerRow = bytesPerPixel * width
+    var raw = [UInt8](repeating: 0, count: height * bytesPerRow)
+    guard let context = CGContext(
+      data: &raw,
+      width: width,
+      height: height,
+      bitsPerComponent: 8,
+      bytesPerRow: bytesPerRow,
+      space: CGColorSpaceCreateDeviceRGB(),
+      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+    ) else {
+      return ImageSignature(entropyLike: 0.0, edgeIntensity: 0.0)
+    }
+    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
     var changes = 0
-    for idx in 1..<bytes.count {
-      if bytes[idx] != bytes[idx - 1] {
-        changes += 1
+    var edgeAccum = 0.0
+    var prevGray = 0
+    let count = width * height
+
+    for idx in 0..<count {
+      let offset = idx * 4
+      let r = Int(raw[offset])
+      let g = Int(raw[offset + 1])
+      let b = Int(raw[offset + 2])
+      let gray = (r + g + b) / 3
+
+      if idx > 0 {
+        if gray != prevGray {
+          changes += 1
+        }
+        edgeAccum += Double(abs(gray - prevGray))
       }
+      prevGray = gray
     }
-    return Double(changes) / Double(bytes.count - 1)
+
+    if count < 2 {
+      return ImageSignature(entropyLike: 0.0, edgeIntensity: 0.0)
+    }
+
+    return ImageSignature(
+      entropyLike: Double(changes) / Double(count - 1),
+      edgeIntensity: edgeAccum / Double(count - 1)
+    )
+  }
+
+  private func extractPrimaryFacePatch(_ cgImage: CGImage) throws -> [UInt8]? {
+    let request = VNDetectFaceRectanglesRequest()
+    let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+    try handler.perform([request])
+
+    guard
+      let results = request.results,
+      !results.isEmpty
+    else {
+      return nil
+    }
+
+    let best = results.max {
+      ($0.boundingBox.width * $0.boundingBox.height) < ($1.boundingBox.width * $1.boundingBox.height)
+    }
+
+    guard let best else {
+      return nil
+    }
+
+    let width = CGFloat(cgImage.width)
+    let height = CGFloat(cgImage.height)
+    let box = best.boundingBox
+    let rect = CGRect(
+      x: box.origin.x * width,
+      y: (1.0 - box.origin.y - box.height) * height,
+      width: box.width * width,
+      height: box.height * height
+    ).integral
+
+    guard let cropped = cgImage.cropping(to: rect) else {
+      return nil
+    }
+
+    let bytesPerPixel = 4
+    let bytesPerRow = bytesPerPixel * cropped.width
+    var raw = [UInt8](repeating: 0, count: cropped.height * bytesPerRow)
+    guard let context = CGContext(
+      data: &raw,
+      width: cropped.width,
+      height: cropped.height,
+      bitsPerComponent: 8,
+      bytesPerRow: bytesPerRow,
+      space: CGColorSpaceCreateDeviceRGB(),
+      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+    ) else {
+      return nil
+    }
+    context.draw(cropped, in: CGRect(x: 0, y: 0, width: cropped.width, height: cropped.height))
+
+    var gray = [UInt8](repeating: 0, count: cropped.width * cropped.height)
+    for idx in 0..<gray.count {
+      let offset = idx * 4
+      let r = Int(raw[offset])
+      let g = Int(raw[offset + 1])
+      let b = Int(raw[offset + 2])
+      gray[idx] = UInt8((r + g + b) / 3)
+    }
+    return gray
   }
 
   private func signature(_ bytes: [UInt8]) -> [Double] {
@@ -250,4 +434,10 @@ import UIKit
 
 private enum MethodTimeoutError: Error {
   case timedOut
+}
+
+private enum NativeRuntimeError: Error {
+  case modelNotLoaded
+  case invalidInput(String)
+  case unsupported(String)
 }
