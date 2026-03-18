@@ -1,0 +1,893 @@
+================================================================================
+  GIGCREDIT — COMPREHENSIVE FIXES AND ADDITIONS
+  Version 1.0
+  THIS DOCUMENT SUPPLEMENTS ALL EXISTING SPECIFICATION FILES
+  Apply these fixes across the corresponding original spec files
+================================================================================
+
+
+================================================================================
+DOCUMENT PURPOSE
+================================================================================
+
+This document lists ALL identified issues, gaps, contradictions, and
+missing specifications across the 18 GigCredit specification files,
+along with their fixes. It is organized by category.
+
+CATEGORIES:
+  FIX-A : Contradictions and Logical Errors (resolved)
+  FIX-B : Missing Specifications (added)
+  FIX-C : Implementation Gaps (filled)
+  FIX-D : UI/UX Corrections
+  FIX-E : Backend Additions
+  FIX-F : Security and Error Handling Updates
+
+
+================================================================================
+FIX-A : CONTRADICTIONS AND LOGICAL ERRORS
+================================================================================
+
+-------------------------
+FIX-A1: Score Computation — Two Conflicting Methods
+AFFECTED FILES: ML workflow, Report Pipeline
+STATUS: RESOLVED in Revised Scoring Engine spec
+-------------------------
+
+  CONFLICT:
+    ML Workflow defined: Logistic Regression meta-learner
+    Report Pipeline defined: Simple weighted sum (pillar_weight x score)
+
+  RESOLUTION:
+    Logistic Regression meta-learner is the ONLY method.
+    Weighted sum is DELETED from the Report Pipeline spec.
+    See: REVISED SCORING ENGINE ARCHITECTURE, Part 6.
+
+-------------------------
+FIX-A2: Sequential vs Parallel Execution
+AFFECTED FILES: Phase-3 Section-21, ML Workflow
+STATUS: RESOLVED in Revised Scoring Engine spec
+-------------------------
+
+  CONFLICT:
+    Phase-3: "run models sequentially, avoid parallel heavy tasks"
+    ML Workflow: "use parallel Dart Isolates for model execution"
+
+  RESOLUTION:
+    Sequential execution. No Isolates needed.
+    With m2cgen pure Dart, each model runs in ~2-5ms.
+    Total scoring: ~15-20ms. No parallelization benefit.
+
+-------------------------
+FIX-A3: Meta-Learner Input Dimension
+AFFECTED FILES: Phase-2, ML Workflow
+STATUS: RESOLVED in Revised Scoring Engine spec
+-------------------------
+
+  CONFLICT:
+    Phase-2: meta-learner input = [P1, P2, P3, P4, P6] — 5 values
+    ML Workflow: meta-learner input = 8 pillars + 8 confidences = 20 values
+
+  RESOLUTION:
+    Single LR meta-learner with 20 inputs:
+      8 pillar scores + 4 work-type one-hot + 8 interaction terms
+    See: REVISED SCORING ENGINE ARCHITECTURE, Part 6.
+
+-------------------------
+FIX-A4: Step Count — 8 vs 9
+AFFECTED FILES: Multiple (Phase-5, Validation Architecture, etc.)
+STATUS: RESOLVED
+-------------------------
+
+  CONFLICT:
+    Some specs say "8-step verification"
+    Validation Architecture defines 9 steps (Step-9 = EMI detection)
+
+  RESOLUTION:
+    8 user-facing steps (shown in progress bar): Steps 1-8
+    1 auto-computed step (no UI, runs after Step-3): EMI Detection
+
+    Progress bar shows: 8 steps
+    Step-9 runs silently when bank transaction CSV is generated
+    Internal name: EMI_AUTO_ANALYSIS (not a user step)
+
+    All specs should reference "8-step onboarding with automated EMI analysis"
+
+-------------------------
+FIX-A5: Pillar Count in UI — 7 vs 8
+AFFECTED FILES: Master UI/UX Design Prompt
+STATUS: RESOLVED (see FIX-D1 below)
+-------------------------
+
+  Report screen must show 8 pillar progress bars, not 7.
+
+-------------------------
+FIX-A6: Face Verification "Review" State Undefined
+AFFECTED FILES: Phase-3 Section-7
+STATUS: RESOLVED
+-------------------------
+
+  CONFLICT:
+    Spec defines three outcomes: >= 0.75 verified, 0.60-0.75 review, < 0.60 reject
+    "Review" has no operational definition — no one reviews it.
+
+  RESOLUTION:
+    >= 0.75         : PASS (verified)
+    0.60 - 0.75     : AUTO-RETRY with guidance
+      -> Show: "Face match unclear. Please retake selfie with better lighting."
+      -> On-screen guidance: face camera directly, good lighting, remove accessories
+      -> Maximum 2 retries
+      -> If all retries score 0.60-0.75: ACCEPT with reduced confidence
+         face_match_confidence = 0.65
+         face_match_quality = "LOW"
+         This reduces P5 pillar confidence
+    < 0.60          : REJECT
+      -> "Face verification failed. Identity could not be confirmed."
+      -> Block Step-2 completion
+      -> User must re-upload documents
+
+-------------------------
+FIX-A7: Confidence Engine Collapse at Zero Data
+AFFECTED FILES: ML Workflow, Confidence Engine
+STATUS: RESOLVED
+-------------------------
+
+  PROBLEM:
+    Formula: adjusted = raw * confidence + 0.50 * (1 - confidence)
+    If confidence = 0.0, ALL pillar scores become 0.50
+    User with zero data gets a "neutral" score instead of rejection
+
+  RESOLUTION:
+    MINIMUM DATA REQUIREMENTS (must have ALL):
+      - Step-1 completed (basic profile)
+      - Step-2 completed (identity verified)
+      - Step-3 completed (at least 1 bank statement with >= 30 transactions)
+
+    IF MINIMUM NOT MET:
+      -> Do NOT compute score
+      -> Show: "Insufficient data for credit assessment. Please complete Steps 1-3."
+
+    CONFIDENCE FLOOR:
+      If confidence < 0.30 for any pillar:
+        -> Set pillar score to 0.50 (neutral, excluded from meaningful scoring)
+        -> Report shows "Not enough data" for that pillar
+        -> Meta-learner still receives 0.50 for this pillar
+
+
+================================================================================
+FIX-B : MISSING SPECIFICATIONS (ADDED)
+================================================================================
+
+-------------------------
+FIX-B1: PDF Report Generation
+AFFECTED FILES: Master UI/UX (mentions "Download PDF" button, no spec)
+-------------------------
+
+  SPECIFICATION:
+
+  Library: pdf (Dart package — pub.dev/packages/pdf)
+  Location: On-device (no backend needed)
+  Share: share_plus package for system share sheet
+
+  PDF STRUCTURE:
+    Page 1:
+      - Header: GigCredit logo + generation date
+      - Score gauge: large circular gauge showing score (300-900)
+      - Grade badge: S/A/B/C/D/E with color
+      - Risk band: Low/Medium/High
+
+    Page 2:
+      - 8 Pillar breakdown: horizontal bar chart
+      - Each bar shows: pillar name, score (0-100%), color coding
+        Green: >= 70%  |  Amber: 40-69%  |  Red: < 40%
+      - Top 3 positive factors (strengths)
+      - Top 3 negative factors (areas for improvement)
+
+    Page 3:
+      - LLM-generated explanation text (from Gemini)
+      - Personalized suggestions (from Gemini)
+
+    Footer (all pages):
+      "Generated on [date] | GigCredit v1.0 | Score valid for 90 days"
+      "This is an indicative score for financial assessment purposes."
+
+  DART IMPLEMENTATION:
+    import 'package:pdf/pdf.dart';
+    import 'package:pdf/widgets.dart' as pw;
+    import 'package:share_plus/share_plus.dart';
+
+    Future<File> generatePDF(ScoreReport report) async {
+      final pdf = pw.Document();
+      // ... build pages using pw.Page, pw.Container, etc.
+      final bytes = await pdf.save();
+      final file = File('${appDocDir.path}/gigcredit_report.pdf');
+      await file.writeAsBytes(bytes);
+      return file;
+    }
+
+  WHY ON-DEVICE:
+    Consistent with privacy-first architecture.
+    No score data sent to backend for PDF rendering.
+    pdf package is lightweight (~200KB), no native dependencies.
+
+-------------------------
+FIX-B2: Offline Mode Strategy
+AFFECTED FILES: All phase specs
+-------------------------
+
+  SPECIFICATION:
+
+  TIER 1 — Always works offline (no API needed):
+    - Step-1: Basic Profile (regex validation only)
+    - Step-4: Utility Bills (OCR + bank transaction matching)
+    - Step-9: EMI Detection (bank transaction analysis)
+    - All ML model inference
+    - Feature engineering
+    - SHAP computation
+    - Score calculation
+    - PDF report generation
+
+  TIER 2 — Requires API, can defer:
+    - Step-2: Aadhaar/PAN verification
+    - Step-3: Penny drop bank verification
+    - Step-5: Vehicle RC / eShram verification
+    - Step-6: Government scheme verification
+    - Step-7: Insurance verification
+    - Step-8: ITR verification
+
+  OFFLINE BEHAVIOR FOR TIER 2 STEPS:
+    1. Allow document upload + OCR extraction to proceed offline
+    2. Store extracted data locally with status = "PENDING_VERIFICATION"
+    3. Show user: "Verification pending — connect to internet to complete"
+    4. When connectivity returns, auto-trigger pending API verifications
+    5. Set confidence for unverified fields to 0.50 (reduced trust)
+    6. User CAN get a provisional score with reduced confidence
+    7. Final verified score generated after all APIs confirm
+
+  STEP STATE MACHINE (UPDATED):
+    NOT_STARTED -> IN_PROGRESS -> OCR_COMPLETE -> PENDING_VERIFICATION -> VERIFIED
+                                                                       -> REJECTED
+
+  CONNECTIVITY CHECK:
+    Before any API call: check internet availability
+    If offline: proceed with OCR, skip API verification, set PENDING_VERIFICATION
+    Background service: retry pending verifications when connectivity returns
+
+-------------------------
+FIX-B3: Session Recovery / Crash Handling
+AFFECTED FILES: Phase-1, Phase-3
+-------------------------
+
+  SPECIFICATION:
+
+  PERSISTENCE STRATEGY:
+    After each successful step completion:
+      1. Save verified_profile to local storage (encrypted)
+      2. Save step_progress = { current_step: N, status: "VERIFIED" }
+      3. Save any generated CSVs / extracted data
+
+  ON APP RESTART:
+      1. Check for existing session data
+      2. Load step_progress
+      3. Load verified_profile (decrypt from Keystore)
+      4. Resume from last incomplete step
+      5. Show: "Welcome back! Continuing from Step {N}"
+
+  STORAGE LOCATION:
+    /app_data/session/
+      verified_profile.enc      (AES encrypted via Keystore)
+      step_progress.json        (plaintext — no sensitive data)
+      bank_transactions.csv     (if Step-3 completed)
+      utility_records.json      (if Step-4 completed)
+
+  SESSION EXPIRY:
+    Session data valid for 24 hours.
+    After 24 hours: delete session data, restart from Step-1.
+    Rationale: prevents stale financial data from being scored.
+
+  ENCRYPTION:
+    Same AES key from Android Keystore used for session data.
+    This key is NOT used for model encryption (models are now Dart code).
+    Keystore key management remains for user data protection only.
+
+-------------------------
+FIX-B4: API Authentication
+AFFECTED FILES: Master Backend Specification
+-------------------------
+
+  SPECIFICATION:
+
+  FOR HACKATHON PROTOTYPE: API Key + Device Fingerprint
+
+  FLOW:
+    1. App ships with embedded API key (hardcoded constant, obfuscated)
+    2. On first launch, generate device_id (UUID v4, stored in Keystore)
+    3. Every API request includes:
+       Headers:
+         X-API-Key: <api_key>
+         X-Device-ID: <device_uuid>
+         X-Timestamp: <unix_ms>
+         X-Signature: HMAC-SHA256(api_key, device_id + timestamp + body_hash)
+    4. Backend validates:
+       - API key is valid
+       - Signature matches
+       - Timestamp within 5-minute window (replay prevention)
+
+  RATE LIMITING:
+    Per device: 60 requests/minute
+    Per endpoint: 10 requests/minute
+    Burst: 5 requests/second
+    Exceeded: return HTTP 429 with Retry-After header
+
+  WHY NOT JWT:
+    - App has no user accounts in current spec
+    - JWT requires registration, token refresh, logout handling
+    - API key + HMAC is simpler, stateless, sufficient for prototype
+    - If user accounts added later, upgrade to JWT
+
+  BACKEND IMPLEMENTATION:
+    FastAPI middleware validates X-API-Key and X-Signature on every request.
+
+-------------------------
+FIX-B5: User Authentication / Login Flow
+AFFECTED FILES: Master UI/UX, Phase-1
+-------------------------
+
+  SPECIFICATION:
+
+  FOR HACKATHON PROTOTYPE: Phone OTP Login
+
+  FLOW:
+    1. App opens -> Language selection screen
+    2. Enter mobile number (10-digit Indian number, regex: ^[6-9]\d{9}$)
+    3. Send OTP via Firebase Authentication
+    4. User enters 6-digit OTP
+    5. Verification successful -> create session
+    6. Session token stored in Android Keystore
+    7. Navigate to Home screen
+
+  IMPLEMENTATION:
+    Firebase Authentication (free tier: 10K verifications/month)
+    Package: firebase_auth (Flutter)
+    Phone number becomes the user identifier (hashed for backend)
+
+  WHY PHONE OTP:
+    99%+ of Indian gig workers have a phone number
+    No email required
+    Matches mobile-first UX
+    Firebase handles carrier-level OTP delivery in India
+
+  SESSION MANAGEMENT:
+    Session valid for 30 days
+    Auto-refresh on app open
+    Manual logout: clear session + clear all local data
+
+-------------------------
+FIX-B6: Camera Capture vs Gallery Upload
+AFFECTED FILES: Phase-3 Section-3
+-------------------------
+
+  SPECIFICATION:
+
+  UPLOAD OPTIONS (show both as buttons):
+    1. "Take Photo" -> opens camera with document frame guide overlay
+    2. "Upload from Gallery" -> opens file picker (images + PDF)
+
+  CAMERA OVERLAY:
+    - Rectangle frame showing where to position document
+    - Text hint: "Align document within the frame"
+    - Flash toggle button
+    - Auto-capture when document fills > 80% of frame (optional for hackathon)
+
+  IMAGE PROCESSING AFTER CAPTURE/SELECTION:
+    1. Crop to document edges (auto-detect or manual)
+    2. Perspective correction (deskew) if possible
+    3. Resize to max 2048px on longest edge
+    4. Compress to JPEG quality 85%
+    5. Convert to grayscale for OCR (keep color copy for face detection)
+    6. If PDF: extract pages as images (300 DPI) or extract text directly
+
+  LIBRARIES:
+    Camera: camera package (Flutter)
+    Gallery: image_picker package (Flutter)
+    Image processing: image package (Dart)
+
+-------------------------
+FIX-B7: Bank Statement PDF Handling
+AFFECTED FILES: Phase-3 Section-10
+-------------------------
+
+  SPECIFICATION:
+
+  FLOW:
+    User uploads PDF
+    |
+    Check if password-protected
+    |
+    IF YES -> prompt user for password -> decrypt PDF in memory
+    IF NO -> proceed
+    |
+    Try direct text extraction first (digital PDF)
+    |
+    IF text_length > 100 chars -> use direct text (digital PDF, faster)
+    IF text_length < 100 chars -> it's a scanned PDF -> convert pages to images -> OCR
+    |
+    Parse transaction table
+    |
+    Generate bank_transactions.csv
+
+  PASSWORD HANDLING:
+    Show password input dialog with hints:
+      - "Password is often your date of birth (DDMMYYYY)"
+      - "Or your PAN number"
+      - "Or your registered phone number"
+    Max 3 attempts, then allow re-upload with different file
+
+  LIBRARIES:
+    PDF text extraction: syncfusion_flutter_pdf (community license, free)
+    PDF to image: pdf_render package
+    Fallback: PaddleOCR on page images
+
+  MULTI-PAGE STITCHING:
+    Process each page sequentially
+    Concatenate extracted transactions in page order
+    Deduplicate by: date + amount + description (exact match)
+
+-------------------------
+FIX-B8: Multi-Language OCR
+AFFECTED FILES: Phase-3 Section-6
+-------------------------
+
+  SPECIFICATION:
+
+  STRATEGY:
+    1. Run English OCR first (all Indian documents have English text)
+    2. If confidence < 0.7 on key fields, run with regional language model
+    3. Merge results — prefer higher confidence extraction
+
+  PRIORITY BY DOCUMENT TYPE:
+    Aadhaar, PAN, ITR: Always in English -> English OCR only
+    Bank statements: Always in English -> English OCR only
+    Utility bills: May be in regional language -> bilingual extraction
+    Platform screenshots: Usually English -> English OCR only
+
+  PRACTICAL APPROACH FOR HACKATHON:
+    Ship with English PaddleOCR model only (~10MB)
+    Regional language OCR is a stretch goal
+    Rationale: 95%+ of required fields are in English/numeric
+
+  FIELD EXTRACTION PRIORITY:
+    Numbers (PAN, Aadhaar, amounts) -> always English/numeric OCR
+    Names -> may be in regional script -> best-effort extraction
+    Addresses -> lowest priority, used only for P5 features
+
+-------------------------
+FIX-B9: Score History / Repeat Scoring
+AFFECTED FILES: Master UI/UX
+-------------------------
+
+  SPECIFICATION:
+
+  LOCAL STORAGE:
+    /app_data/score_history/
+      2026-03-17_score.json
+      2026-04-17_score.json
+
+  RECORD FORMAT:
+    {
+      "date": "2026-03-17",
+      "score": 682,
+      "grade": "B",
+      "risk_band": "Low",
+      "pillar_scores": [0.72, 0.68, 0.55, 0.61, 0.78, 0.45, 0.60, 0.50],
+      "confidence_avg": 0.78
+    }
+
+  UI DISPLAY:
+    Home screen: show last score + trend arrow (up/down/stable)
+    Score history screen: line chart of last 3-6 assessments
+
+  COOLDOWN:
+    Minimum 30 days between assessments
+    Gig income patterns need at least 1 month to change meaningfully
+    If user tries before cooldown: "Next assessment available on [date]"
+
+-------------------------
+FIX-B10: Testing Strategy
+AFFECTED FILES: None (new spec)
+-------------------------
+
+  SPECIFICATION:
+
+  UNIT TESTS (Dart):
+    - Feature normalization: known input -> expected [0,1] output
+    - Transaction tagging: sample descriptions -> expected tags
+    - Regex validators: PAN, Aadhaar, IFSC format tests
+    - Scorecard P5/P7/P8: known features -> expected pillar score
+    - Meta-learner: known pillar scores -> expected final score
+    - NaN sanitization: NaN input -> 0.50 output
+
+  INTEGRATION TESTS:
+    - Full pipeline: sample profile + sample CSV -> score output
+    - API mocking: mock backend responses -> verify validation logic
+    - m2cgen validation: same inputs -> same outputs as Python
+
+  GOLDEN TEST:
+    - One complete golden profile with ALL 95 features predefined
+    - Must produce EXACT same score every time
+    - Run on every build to catch regression
+    - Golden profile stored in test/fixtures/golden_profile.json
+
+  TARGET: ~50 tests minimum
+  FRAMEWORK: flutter_test (built-in)
+
+-------------------------
+FIX-B11: App Size Optimization
+AFFECTED FILES: Phase-3
+-------------------------
+
+  ESTIMATED APP SIZE:
+
+  Flutter base:                    ~15MB
+  EfficientNet-Lite0 (quantized):  ~5MB
+  PaddleOCR Lite (English):        ~10MB
+  MobileFaceNet:                   ~5MB
+  MediaPipe Face Detector:         ~3MB
+  m2cgen scoring code (compiled):  ~0.5MB
+  JSON constants:                  ~0.02MB
+  UI assets + fonts:               ~3MB
+  Firebase SDK:                    ~2MB
+  --------------------------------
+  TOTAL:                           ~44MB
+
+  OPTIMIZATIONS:
+    1. Use PaddleOCR "mobile" variant, not "server"
+    2. Ship only English OCR model (defer regional to on-demand download)
+    3. Android App Bundle (.aab) for per-device optimization
+    4. ProGuard/R8 for Java/Kotlin dependency shrinking
+    5. Tree-shaking for unused Dart code
+    6. Asset compression in APK
+
+  TARGET: < 50MB final APK
+
+
+================================================================================
+FIX-C : IMPLEMENTATION GAPS (FILLED)
+================================================================================
+
+-------------------------
+FIX-C1: Transaction Tagging Engine (Enhanced)
+AFFECTED FILES: Phase-3 Section-12, Feature Engineering
+-------------------------
+
+  CURRENT PROBLEM:
+    Transaction tagging uses simple keyword matching.
+    Indian bank statements have wildly inconsistent formats
+    (UPI/NEFT/IMPS/RTGS all look different).
+
+  ENHANCED TAGGING ENGINE (4 layers):
+
+  LAYER 1 — REGEX KEYWORD MATCHING (baseline):
+    GIG PLATFORM KEYWORDS:
+      ["SWIGGY", "ZOMATO", "OLA", "UBER", "RAPIDO", "DUNZO", "PORTER",
+       "URBAN COMPANY", "URBANCLAP", "FLIPKART", "AMAZON FLEX", "BLINKIT",
+       "ZEPTO", "BIGBASKET", "INSTAMART", "MEESHO", "UPWORK", "FIVERR",
+       "FREELANCER"]
+    EMI KEYWORDS: ["EMI", "LOAN EMI", "NACH EMI", "FINANCE", "BAJAJ", "CARD EMI", "BNPL"]
+    UTILITY KEYWORDS: ["TNEB", "BESCOM", "MSEDCL", "BSES", "TATA POWER",
+       "AIRTEL", "JIO", "VI ", "BSNL", "WATER BOARD", "GAS"]
+
+    Tags: GIG_INCOME, SALARY, EMI_DEBIT, UTILITY_PAYMENT, SAVINGS,
+          P2P_TRANSFER, CASH_WITHDRAWAL, BANK_CHARGES
+
+  LAYER 2 — PATTERN MATCHING (new):
+    UPI: "UPI/P2P/{sender}/{receiver}/{id}" -> extract sender/receiver
+    NEFT: "NEFT/{bank}/{name}/{ref}" -> extract by position
+    IMPS: "IMPS/{ref}/{name}" -> extract name
+    NACH: "NACH/{mandate}/{ref}" -> always recurring = EMI or SUBSCRIPTION
+
+  LAYER 3 — AMOUNT-BASED HEURISTICS (new):
+    Credits INR 200-2,000 with frequency > 10/month -> likely GIG_INCOME
+    Identical debit amounts monthly -> likely EMI or SUBSCRIPTION
+    Large single credits > INR 20,000 -> likely SALARY or LOAN_DISBURSEMENT
+    Small debits INR 1-100 -> likely BANK_CHARGES
+
+  LAYER 4 — UNTAGGED FALLBACK (new):
+    Transactions matching no pattern -> tag as "UNCATEGORIZED"
+    UNCATEGORIZED still counts toward:
+      - Total transaction count
+      - Average balance computation
+      - Cash flow volatility
+    Does NOT count toward specific pillar features like gig_income_count
+
+-------------------------
+FIX-C2: Income Anchor — Multi-State Workers
+AFFECTED FILES: Feature Engineering
+-------------------------
+
+  PROBLEM:
+    Income anchor uses residential state median. Gig workers
+    often work across state borders.
+
+  FIX:
+    RULE: income_anchor = median_income[work_city OR work_state]
+
+    DETERMINATION ORDER:
+      1. If platform screenshots show city -> use that city
+      2. If bank branch IFSC maps to a city -> use that city's state
+      3. If utility bill address shows city -> use that city
+      4. Else: use address from Step-1
+
+    ANCHOR DATA (ship with app):
+      Top 10 city medians: Mumbai, Delhi, Bangalore, Chennai,
+        Hyderabad, Pune, Kolkata, Ahmedabad, Jaipur, Lucknow
+      36 state/UT medians: all Indian states and union territories
+      National median: fallback if city/state unknown
+
+    STORED IN: assets/constants/state_income_anchors.json
+
+
+================================================================================
+FIX-D : UI/UX CORRECTIONS
+================================================================================
+
+-------------------------
+FIX-D1: Report Screen — 8 Pillars, Not 7
+AFFECTED FILE: MASTER UI_UX DESIGN PROMPT
+-------------------------
+
+  CHANGE:
+    OLD: "7 pillar progress bars" on report screen
+    NEW: 8 pillar progress bars on report screen
+
+  The 8 pillars to display:
+    1. Income Stability (P1)        — weight 0.25
+    2. Payment Discipline (P2)      — weight 0.20
+    3. Debt Management (P3)         — weight 0.15
+    4. Savings Behaviour (P4)       — weight 0.15
+    5. Work & Identity (P5)         — weight 0.10
+    6. Financial Resilience (P6)    — weight 0.07
+    7. Social Accountability (P7)   — weight 0.05
+    8. Tax Compliance (P8)          — weight 0.03
+
+  DISPLAY FORMAT:
+    Horizontal progress bar per pillar
+    Score shown as percentage (0-100%)
+    Color coding:
+      Green:  >= 70%
+      Amber:  40-69%
+      Red:    < 40%
+    Show pillar weight in smaller text below bar
+
+    For pillars with confidence < 0.30:
+      Show grayed-out bar with text "Not enough data"
+
+-------------------------
+FIX-D2: Progress Bar — 8 Steps
+AFFECTED FILE: MASTER UI_UX DESIGN PROMPT
+-------------------------
+
+  The onboarding progress bar shows 8 steps:
+    Step 1: Identity (Aadhaar + PAN)
+    Step 2: Bank Statement
+    Step 3: Utility Bills
+    Step 4: Work Proof
+    Step 5: Government Schemes
+    Step 6: Insurance
+    Step 7: Tax (ITR)
+    Step 8: Additional Documents
+
+  Step-9 (EMI Detection) is NOT shown in progress bar.
+  It runs automatically after Step-2 bank data is processed.
+
+-------------------------
+FIX-D3: Dynamic Score Display During Onboarding
+AFFECTED FILE: MASTER UI_UX DESIGN PROMPT (NEW ADDITION)
+-------------------------
+
+  After Step-3 (bank statement) is completed:
+    Show a provisional score card at the top of subsequent steps
+    Format: "Provisional Score: 520 | Complete more steps to improve"
+    Score updates after each step completion (~20ms recalculation)
+
+  This provides instant feedback and motivates users to complete
+  remaining optional steps to improve their score.
+
+
+================================================================================
+FIX-E : BACKEND ADDITIONS
+================================================================================
+
+-------------------------
+FIX-E1: MongoDB Schema Definitions (Formalized)
+AFFECTED FILE: Master Backend Specification, Phase-4
+-------------------------
+
+  pan_db:
+    _id: ObjectId
+    pan_number: String (indexed, unique)
+    full_name: String
+    dob: Date
+    status: "ACTIVE" | "INACTIVE"
+    created_at: Date (TTL index: 365 days for auto-cleanup)
+
+  aadhaar_db:
+    _id: ObjectId
+    aadhaar_last4: String (indexed — store only last 4 digits)
+    full_name: String
+    dob: Date
+    address_state: String
+    status: "ACTIVE"
+    created_at: Date (TTL: 365 days)
+
+  bank_accounts_db:
+    _id: ObjectId
+    account_number_hash: String (indexed, hashed for privacy)
+    ifsc_code: String
+    account_holder_name: String
+    bank_name: String
+    status: "ACTIVE" | "CLOSED"
+    created_at: Date (TTL: 365 days)
+
+  loan_accounts_db:
+    _id: ObjectId
+    loan_id: String (indexed, unique)
+    borrower_name: String
+    lender: String
+    loan_type: "Personal" | "Home" | "Vehicle" | "BNPL" | "Card"
+    emi_amount: Number
+    loan_status: "Active" | "Closed"
+    created_at: Date (TTL: 365 days)
+
+  score_reports_db:
+    _id: ObjectId
+    user_id: String (hashed phone, indexed)
+    score: Number (300-900)
+    grade: String (S/A/B/C/D/E)
+    risk_band: String (Low/Medium/High)
+    pillar_scores: Object (P1-P8)
+    work_type: String
+    generated_at: Date (indexed)
+    report_text: String (LLM-generated)
+
+  INDEXES:
+    All collections: primary lookup field indexed
+    TTL indexes on created_at for auto-cleanup of simulation data
+    score_reports_db: compound index on (user_id, generated_at)
+
+  NOTE: These are SIMULATION databases pre-seeded with test data.
+        The backend simulates government API responses.
+        In production, these would be real government API calls.
+
+
+================================================================================
+FIX-F : SECURITY AND ERROR HANDLING UPDATES
+================================================================================
+
+-------------------------
+FIX-F1: Error Handling Updates for m2cgen Pipeline
+AFFECTED FILE: Master Error Handling Spec
+-------------------------
+
+  REMOVED ERROR CATEGORIES:
+    - MODEL_DECRYPTION_FAILED (no longer applicable)
+    - TFLITE_INTERPRETER_ERROR (no longer applicable)
+    - MODEL_FILE_CORRUPTED (no model files exist)
+    - MODEL_LOAD_TIMEOUT (instant — no loading)
+
+  ADDED ERROR CATEGORIES:
+    - SCORER_NAN_OUTPUT: m2cgen scorer returned NaN
+      Action: use 0.50 fallback, log warning, continue
+      Severity: WARNING
+
+    - SCORER_OUT_OF_BOUNDS: m2cgen scorer returned value outside [0,1]
+      Action: clamp to [0,1], log warning, continue
+      Severity: WARNING
+
+    - FEATURE_SANITIZATION_TRIGGERED: NaN/Inf found in feature vector
+      Action: replace with 0.50, log which feature, continue
+      Severity: INFO
+
+  UNCHANGED ERROR CATEGORIES:
+    All INPUT_ERROR, PROCESSING_ERROR, VALIDATION_ERROR, SECURITY_ERROR,
+    NETWORK_ERROR, DATA_INCONSISTENCY_ERROR categories remain as-is.
+
+-------------------------
+FIX-F2: Android Keystore Usage (Updated)
+AFFECTED FILE: Phase-3 Section-2
+-------------------------
+
+  OLD KEYSTORE USAGE:
+    - Generate AES key for model decryption
+    - Decrypt .enc model files at runtime
+    - Clear decrypted models from RAM after use
+
+  NEW KEYSTORE USAGE (m2cgen pipeline):
+    - Generate AES key for SESSION DATA encryption
+    - Encrypt/decrypt verified_profile.enc (user financial data)
+    - Encrypt/decrypt bank_transactions.csv (if cached)
+    - Keystore key is NOT used for model data (models are Dart code)
+    - All security measures for USER DATA remain unchanged
+
+  KEYSTORE FLOW:
+    App First Launch
+    -> Generate AES-256 key
+    -> Store in Android Keystore (hardware-backed if available)
+    -> Use for encrypting any user financial data cached locally
+    -> Key never leaves the Keystore
+
+-------------------------
+FIX-F3: Secure Cleanup (Updated)
+AFFECTED FILE: Phase-3 Section-19
+-------------------------
+
+  AFTER REPORT GENERATION, DELETE:
+    - Document images (original uploads)
+    - OCR temporary text files
+    - bank_transactions.csv
+    - utility_records.json
+    - Intermediate feature vectors
+    - Any temporary processing files
+
+  KEEP:
+    - verified_profile.enc (for session recovery, expires in 24h)
+    - step_progress.json (for session recovery)
+    - Score history records (persistent)
+    - App settings and preferences
+
+  NOTE: "Keep encrypted models" from old spec is no longer relevant.
+        Models are compiled Dart code — they exist as part of the app
+        binary and cannot be selectively deleted.
+
+
+================================================================================
+CROSS-REFERENCE: WHICH FILES NEED WHICH FIXES
+================================================================================
+
+ML workflow (1).txt:
+  -> SUPERSEDED by REVISED SCORING ENGINE ARCHITECTURE spec (Parts 1-13)
+
+PHASE-2:
+  -> Training pipeline: SUPERSEDED by REVISED SCORING ENGINE Parts 2-4
+  -> SHAP: SUPERSEDED by REVISED SCORING ENGINE Part 5
+  -> Model conversion: SUPERSEDED by REVISED SCORING ENGINE Part 7
+
+PHASE-3:
+  -> Section-2 (Keystore): Apply FIX-F2
+  -> Section-7 (Face verification): Apply FIX-A6
+  -> Section-13 (ML execution): SUPERSEDED by REVISED SCORING ENGINE Part 9
+  -> Section-14 (SHAP): SUPERSEDED by REVISED SCORING ENGINE Part 5
+  -> Section-19 (Cleanup): Apply FIX-F3
+  -> Section-21 (Performance): SUPERSEDED by REVISED SCORING ENGINE Part 9
+  -> Add Section-3 camera/gallery: Apply FIX-B6
+  -> Add Section-10 PDF handling: Apply FIX-B7
+
+PHASE-5:
+  -> Step count: Apply FIX-A4 (8 user steps + EMI auto-analysis)
+  -> Score computation references: use meta-learner only (FIX-A1)
+  -> Add session recovery: Apply FIX-B3
+
+MASTER UI/UX:
+  -> Report screen pillars: Apply FIX-D1 (8 not 7)
+  -> Progress bar: Apply FIX-D2 (8 steps)
+  -> Add dynamic score display: Apply FIX-D3
+  -> Add login flow: Apply FIX-B5
+
+MASTER BACKEND:
+  -> Add auth: Apply FIX-B4
+  -> Add MongoDB schemas: Apply FIX-E1
+
+REPORT PIPELINE:
+  -> Delete weighted sum score computation (FIX-A1)
+  -> Use meta-learner score from REVISED SCORING ENGINE Part 6
+
+ERROR HANDLING:
+  -> Apply FIX-F1 (remove TFLite errors, add scorer errors)
+
+FEATURE ENGINEERING:
+  -> Apply FIX-C2 (income anchor multi-state)
+  -> Transaction tagging: Apply FIX-C1
+
+
+================================================================================
+END OF COMPREHENSIVE FIXES DOCUMENT
+================================================================================

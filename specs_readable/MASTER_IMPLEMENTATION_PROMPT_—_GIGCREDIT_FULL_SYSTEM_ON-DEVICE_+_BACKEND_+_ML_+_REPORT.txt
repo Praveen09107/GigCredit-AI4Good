@@ -1,0 +1,849 @@
+MASTER IMPLEMENTATION PROMPT — GIGCREDIT FULL SYSTEM (ON-DEVICE + BACKEND + ML + REPORT)
+
+
+OBJECTIVE
+
+
+Build a privacy-first mobile application that performs:
+
+
+• Multi-step verification
+• On-device OCR + validation
+• Fraud detection (AI image detection)
+• Face verification
+• Feature engineering (95 features)
+• ML-based credit scoring
+• Explainable AI analysis (SHAP approximation)
+• LLM-based report generation
+
+
+STRICT RULE:
+
+
+ONLY VERIFIED DATA MUST ENTER THE MODEL PIPELINE.
+
+
+---
+
+
+GLOBAL SYSTEM ARCHITECTURE
+
+
+The system consists of 3 execution environments:
+
+
+1. MOBILE (PRIMARY ENGINE)
+2. BACKEND SERVER (VERIFICATION + LLM)
+3. OFFLINE ML TRAINING SYSTEM
+
+
+---
+
+
+==================================================
+SECTION-1 — DEVELOPMENT & MODEL PREPARATION
+
+
+STEP-1: DATASET PREPARATION
+
+
+Create structured dataset containing:
+
+
+• Bank transactions (6–12 months)
+• UPI transactions
+• Utility payments
+• Insurance records
+• ITR income
+• Work type
+
+
+Each record must simulate a gig worker.
+
+
+---
+
+
+STEP-2: FEATURE ENGINEERING PIPELINE (TRAINING)
+
+
+For each user:
+
+
+1. Clean data
+
+
+2. Tag transactions:
+   
+   GIG_INCOME
+   EMI_DEBIT
+   UTILITY_PAYMENT
+   SAVINGS
+   P2P_TRANSFER
+
+
+3. Monthly aggregation:
+   
+   monthly_credit
+   monthly_debit
+   monthly_balance
+   monthly_emi
+   monthly_utility
+
+
+4. Compute features (~95):
+   
+   avg_income
+   income_variance
+   emi_ratio
+   utility_ratio
+   savings_ratio
+
+
+5. Normalize all features to [0,1]
+
+
+OUTPUT:
+
+
+feature_vector[95]
+
+
+---
+
+
+STEP-3: MODEL TRAINING
+
+
+Train models:
+
+
+P1 Income Stability
+P2 Payment Discipline
+P3 Debt Management
+P4 Savings Behaviour
+P6 Financial Resilience
+
+
+Use:
+
+
+LightGBM / XGBoost
+
+
+Train meta-model:
+
+
+Input: [P1..P6]
+Output: credit score (300–900)
+
+
+---
+
+
+STEP-4: SHAP ANALYSIS (TRAINING ONLY)
+
+
+Use Tree SHAP:
+
+
+trained_model
+↓
+compute SHAP values
+↓
+average per feature
+
+
+Store:
+
+
+feature_shap_coefficients[95]
+feature_population_means[95]
+
+
+IMPORTANT:
+
+
+Runtime MUST NOT run SHAP.
+
+
+---
+
+
+STEP-5: MODEL CONVERSION
+
+
+Convert models:
+
+
+→ TensorFlow Lite (.tflite)
+
+
+Optimize:
+
+
+• quantization
+• size reduction
+
+
+---
+
+
+STEP-6: MODEL ENCRYPTION
+
+
+Encrypt:
+
+
+model.tflite → model.enc
+
+
+Algorithm:
+
+
+AES-256
+
+
+Store in app assets.
+
+
+---
+
+
+==================================================
+SECTION-2 — MOBILE APP INITIALIZATION
+
+
+TRIGGER:
+
+
+App launch
+
+
+---
+
+
+STEP-1: SECURITY CHECKS
+
+
+Execute in order:
+
+
+• Root detection
+• Debugger detection
+• Hook detection
+• App integrity check
+
+
+IF failed → block execution
+
+
+---
+
+
+STEP-2: KEYSTORE INITIALIZATION
+
+
+IF first launch:
+
+
+Generate AES key
+Store in Android Keystore
+
+
+---
+
+
+STEP-3: MODEL LOADING
+
+
+FOR EACH encrypted model:
+
+
+model.enc
+↓
+fetch key
+↓
+decrypt in RAM
+↓
+initialize TFLite interpreter
+
+
+IMPORTANT:
+
+
+• Never store decrypted model on disk
+• Only in RAM
+
+
+---
+
+
+STEP-4: LOAD SUPPORT FILES
+
+
+• shap_coefficients.json
+• feature_means.json
+
+
+---
+
+
+==================================================
+SECTION-3 — STEP-WISE USER WORKFLOW ENGINE
+
+
+Each step must follow:
+
+
+INPUT → PROCESS → VALIDATE → STORE → NEXT
+
+
+STATE:
+
+
+NOT_STARTED → IN_PROGRESS → VERIFIED
+
+
+---
+
+
+==================================================
+SECTION-4 — DOCUMENT PROCESSING PIPELINE
+
+
+TRIGGER:
+
+
+Any document upload
+
+
+---
+
+
+STEP-1: INPUT HANDLING
+
+
+IF PDF:
+→ Convert to images
+
+
+---
+
+
+STEP-2: AI FRAUD DETECTION
+
+
+Model:
+
+
+EfficientNet-Lite0
+
+
+FLOW:
+
+
+image
+↓
+preprocess
+↓
+model inference
+
+
+OUTPUT:
+
+
+REAL
+AI_GENERATED
+EDITED
+
+
+IF NOT REAL:
+
+
+→ reject upload
+→ stop processing
+
+
+---
+
+
+STEP-3: IMAGE PREPROCESSING
+
+
+• resize
+• denoise
+• normalize
+
+
+---
+
+
+STEP-4: OCR
+
+
+Model:
+
+
+PaddleOCR Lite
+
+
+FLOW:
+
+
+image
+↓
+text detection
+↓
+text recognition
+
+
+---
+
+
+OUTPUT:
+
+
+full_ocr_text
+structured_fields (via regex)
+
+
+---
+
+
+STEP-5: TEMP STORAGE
+
+
+Store:
+
+
+temp_storage.ocr_text
+temp_storage.fields
+
+
+---
+
+
+==================================================
+SECTION-5 — FACE VERIFICATION
+
+
+INPUT:
+
+
+document_image
+selfie
+
+
+---
+
+
+PROCESS:
+
+
+MediaPipe → detect face
+↓
+crop
+↓
+MobileFaceNet
+↓
+embedding
+
+
+Compute:
+
+
+cosine similarity
+
+
+---
+
+
+DECISION:
+
+
+«0.75 → pass
+<0.60 → reject»
+
+
+---
+
+
+==================================================
+SECTION-6 — VALIDATION ENGINE
+
+
+LAYER-1: INDIVIDUAL
+
+
+Regex validation
+
+
+---
+
+
+LAYER-2: CROSS-INTERNAL
+
+
+Within document
+
+
+---
+
+
+LAYER-3: CROSS-STEP
+
+
+Across steps
+
+
+---
+
+
+LAYER-4: BACKEND VALIDATION
+
+
+API call:
+
+
+POST /gov/pan/verify
+
+
+↓
+
+
+compare with OCR
+
+
+---
+
+
+IF ALL PASS:
+
+
+→ mark step VERIFIED
+→ update verified_profile
+
+
+---
+
+
+==================================================
+SECTION-7 — BANK STATEMENT PROCESSING
+
+
+INPUT:
+
+
+OCR bank text
+
+
+---
+
+
+STEP-1:
+
+
+Extract transaction rows
+
+
+---
+
+
+STEP-2:
+
+
+Convert to structured format
+
+
+(date, description, amount, type, balance)
+
+
+---
+
+
+STEP-3:
+
+
+Save as:
+
+
+bank_transactions.csv
+
+
+---
+
+
+STEP-4:
+
+
+MULTIPLE FILES:
+
+
+merge → deduplicate → final dataset
+
+
+---
+
+
+==================================================
+SECTION-8 — VERIFIED PROFILE OBJECT
+
+
+Maintain:
+
+
+verified_profile = {
+
+
+identity: {},
+bank: {},
+utilities: {},
+work: {},
+schemes: {},
+insurance: {},
+itr: {},
+emi: {}
+
+
+}
+
+
+ONLY store VERIFIED data
+
+
+---
+
+
+==================================================
+SECTION-9 — FEATURE ENGINEERING (ON DEVICE)
+
+
+INPUT:
+
+
+verified_profile
+bank_transactions.csv
+
+
+---
+
+
+PROCESS:
+
+
+1. Merge data
+2. Tag transactions
+3. Monthly aggregation
+4. Compute metrics
+5. Normalize
+
+
+---
+
+
+OUTPUT:
+
+
+feature_vector[95]
+
+
+---
+
+
+==================================================
+SECTION-10 — ML SCORING
+
+
+INPUT:
+
+
+feature_vector
+
+
+---
+
+
+PROCESS:
+
+
+P1 → P2 → P3 → P4 → P6
+
+
+↓
+
+
+meta_model
+
+
+---
+
+
+OUTPUT:
+
+
+credit_score
+risk_level
+pillar_scores
+
+
+---
+
+
+==================================================
+SECTION-11 — EXPLAINABILITY ENGINE
+
+
+FOR EACH FEATURE:
+
+
+impact = coefficient × (value − mean)
+
+
+---
+
+
+SELECT:
+
+
+top positive
+top negative
+
+
+---
+
+
+==================================================
+SECTION-12 — PILLAR AGGREGATION
+
+
+Map features → pillars
+
+
+Compute:
+
+
+pillar explanations
+
+
+---
+
+
+==================================================
+SECTION-13 — LLM REPORT GENERATION
+
+
+INPUT:
+
+
+{
+score,
+pillars,
+impacts,
+language
+}
+
+
+---
+
+
+CALL:
+
+
+POST /report/generate
+
+
+---
+
+
+LLM OUTPUT:
+
+
+• explanation
+• suggestions
+
+
+---
+
+
+RULE:
+
+
+LLM DOES NOT MODIFY SCORE
+
+
+---
+
+
+==================================================
+SECTION-14 — FINAL REPORT
+
+
+Combine:
+
+
+• score
+• pillar breakdown
+• explanation
+• suggestions
+
+
+Render UI
+
+
+---
+
+
+==================================================
+SECTION-15 — DATA CLEANUP
+
+
+DELETE:
+
+
+• images
+• OCR text
+• CSV files
+• temp data
+
+
+KEEP:
+
+
+• encrypted models
+
+
+---
+
+
+==================================================
+FINAL EXECUTION FLOW
+
+
+App launch
+↓
+Security checks
+↓
+Model load
+↓
+User steps
+↓
+OCR + validation
+↓
+Verified profile
+↓
+Feature engineering
+↓
+ML scoring
+↓
+Explainability
+↓
+LLM report
+↓
+Cleanup
+
+
+---
+
+
+END OF MASTER PROMPT

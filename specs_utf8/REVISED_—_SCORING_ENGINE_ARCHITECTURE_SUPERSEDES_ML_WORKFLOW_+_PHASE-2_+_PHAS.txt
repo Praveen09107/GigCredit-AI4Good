@@ -1,0 +1,1249 @@
+================================================================================
+  GIGCREDIT -- REVISED SCORING ENGINE ARCHITECTURE
+  Version 4.0 FINAL
+  THIS DOCUMENT SUPERSEDES:
+    - ML workflow (1).txt -- Parts 1-7 (synthetic data, training, conversion, inference)
+    - PHASE-2 -- Model training, SHAP, deployment sections
+    - PHASE-3 -- Sections 2, 13, 14, 20, 21 (model loading, execution, SHAP, memory)
+    - MASTER IMPLEMENTATION PROMPT -- ML pipeline sections
+    - MASTER SYSTEM DESIGN -- Scoring pipeline sections
+    - REPORT PIPELINE -- Score computation method (weighted sum REMOVED)
+================================================================================
+
+
+================================================================================
+DOCUMENT PURPOSE
+================================================================================
+
+This document defines the COMPLETE revised machine learning scoring pipeline
+for GigCredit. It incorporates all corrections and improvements identified
+during the specification review process. Every change is justified.
+
+An AI agent reading this document must be able to implement the entire
+scoring engine without any external reference.
+
+CRITICAL ARCHITECTURE NOTE:
+  The scoring engine runs ENTIRELY ON THE USER'S FLUTTER DEVICE.
+  FastAPI backend is used ONLY for:
+    - Government API verification (Aadhaar, PAN, RC, Insurance, ITR)
+    - MongoDB storage of final ScoreReport after scoring completes
+    - LLM report generation (multilingual explanation)
+  NO credit scoring computation happens on the FastAPI server.
+
+
+================================================================================
+WHAT CHANGED AND WHY
+================================================================================
+
+CHANGE 1 -- DEPLOYMENT METHOD
+  OLD: Python .pkl -> ONNX -> TF SavedModel -> TFLite -> INT8 -> AES-256 .enc
+  NEW: Python model -> m2cgen export_to_dart() -> pure .dart files
+  WHY: The old 5-step conversion pipeline had documented failure points.
+       TF-DF requires Flex delegates (custom ops), not pure TFLite.
+       CatBoost ONNX conversion has known issues.
+       m2cgen transpiles trained models to pure Dart arithmetic code.
+       Zero runtime dependencies. Zero conversion fragility.
+       Model becomes compiled ARM code -- more secure than encrypted files.
+
+CHANGE 2 -- ALGORITHM ASSIGNMENT
+  OLD: XGBoost (P1,P3) + CatBoost (P2) + LightGBM (P4) + RandomForest (P6)
+  NEW: XGBoost (P1,P2,P3,P4) + RandomForest (P6)
+  WHY: On <15,000 heterogeneous tabular samples, differences between
+       XGBoost/CatBoost/LightGBM are within random seed variation
+       (McElfresh et al., 2023). CatBoost's ordered boosting only benefits
+       categorical feature encoding -- all GigCredit features are continuous
+       [0,1] floats, so ordered boosting provides zero benefit.
+       RandomForest kept for P6: 6 of 11 features are sparse binary flags
+       where bootstrap aggregation genuinely outperforms sequential boosting.
+       Unified XGBoost simplifies to ONE framework + ONE conversion path.
+
+CHANGE 3 -- SYNTHETIC DATA SCALE
+  OLD: 5,000 profiles
+  NEW: 15,000 profiles
+  WHY: Free to generate, dramatically improves model stability. Previous
+       per-cell count was 250 samples (5000/4 work types/5 tiers). New
+       per-cell count is 750 samples -- 3x more robust.
+
+CHANGE 4 -- HYPERPARAMETER TUNING
+  OLD: Manually specified hyperparameters
+  NEW: Optuna Bayesian optimization with 5-fold stratified CV
+  WHY: Automated search finds better hyperparameters in fewer trials.
+       100 trials x 5 folds x 5 models = ~2,500 training runs.
+       On 15,000 samples this completes in ~15-30 minutes.
+
+CHANGE 5 -- META-LEARNER
+  OLD: 4 separate Logistic Regression models (one per work type)
+  NEW: 1 Logistic Regression with work-type interaction terms
+  WHY: Freelancer meta-learner previously trained on only 750 samples
+       (high variance). Single LR on 15,000 samples with interaction
+       terms captures work-type-specific behavior with 6.7x more data.
+
+CHANGE 6 -- TREE CONSTRAINTS (MANDATORY FOR m2cgen)
+  OLD: n_estimators=300, max_depth=6
+  NEW: n_estimators=100-150, max_depth=4
+  WHY: m2cgen GitHub Issue #168 -- tree_method='hist' produces incorrect
+       code output. MUST use tree_method='exact'.
+       Large ensembles cause RecursionError during code generation.
+       150 trees at depth 4 produces ~200-300KB Dart per model.
+       300 trees at depth 6 produces ~2.6MB Dart per model.
+       Accuracy impact minimal with Optuna tuning on 15,000 samples.
+
+CHANGE 7 -- SCORE COMPUTATION METHOD (CONTRADICTION RESOLVED)
+  OLD: Two conflicting methods existed:
+       - ML Workflow: Logistic Regression meta-learner
+       - Report Pipeline: Simple weighted sum
+  NEW: ONLY Logistic Regression meta-learner (weighted sum DELETED)
+  WHY: These produce completely different results. Only one can be used.
+       LR meta-learner is trainable and adapts to data. Weighted sum
+       is a rigid manual formula. LR is strictly superior.
+
+CHANGE 8 -- EXECUTION STRATEGY (CONTRADICTION RESOLVED)
+  OLD: Phase-3 said "sequential". ML Workflow said "parallel Isolates".
+  NEW: Sequential execution, no Isolates needed.
+  WHY: With m2cgen, inference is pure Dart arithmetic (~2-5ms per model).
+       Total scoring time ~15-20ms. No need for Isolate overhead.
+       Eliminates the contradiction between Phase-3 and ML Workflow.
+
+REMOVED FROM SPEC:
+  - All .enc encrypted model files (p1.enc, p2.enc, etc.)
+  - Android Keystore model decryption logic
+  - TFLite Interpreter pool (model_interpreter_pool.dart)
+  - INT8 quantisation step
+  - ONNX conversion step
+  - Model decryption at app startup
+  - TFLite runtime dependency (tflite_flutter plugin)
+  - Weighted sum score computation from Report Pipeline spec
+
+
+================================================================================
+PART 1 -- ARCHITECTURAL OVERVIEW
+================================================================================
+
+THE SCORING ENGINE HAS TWO DISTINCT PHASES:
+
+PHASE A -- OFFLINE (runs ONCE on development machine, Python)
+  1. Synthetic data generation (15,000 profiles, 95 features each)
+  2. Optuna hyperparameter search (100 trials, 5-fold CV per pillar)
+  3. Per-pillar model training (4 XGBoost + 1 RandomForest)
+  4. 5-fold cross-validation on all 5 models
+  5. SHAP coefficient extraction (binned lookup tables)
+  6. Meta-learner training (1 LR with work-type interactions)
+  7. m2cgen export to Dart (5 .dart scorer files)
+  8. Validation gate (Python vs Dart output comparison)
+  9. Constants export to scoring_constants.dart
+
+PHASE B -- ONLINE (runs on user's Flutter device, every scoring, Dart)
+  1. Feature engineering from VerifiedProfile (95 features)
+  2. NaN sanitization guard
+  3. Per-pillar Dart scoring (P1-P4 XGBoost, P6 RF -- all pure Dart)
+  4. P5 + P7 + P8 scorecard computation in Dart
+  5. Output validation (assert [0.0, 1.0], NaN -> 0.50 fallback)
+  6. Confidence Engine
+  7. Meta-Learner inference (LR dot product in Dart)
+  8. SHAP Explanation Engine
+  9. ScoreReport assembly
+  10. POST ScoreReport to FastAPI -> MongoDB storage
+
+PILLAR MODEL ASSIGNMENT (FINAL):
+  P1 Income Stability        : XGBoost Regressor       (13 features)
+  P2 Payment Discipline      : XGBoost Regressor       (15 features)
+  P3 Debt Management         : XGBoost Regressor       (9 features)
+  P4 Savings Behaviour       : XGBoost Regressor       (12 features)
+  P5 Work & Identity         : Dart Scorecard           (18 features, no ML)
+  P6 Financial Resilience    : RandomForest Regressor   (11 features)
+  P7 Social Accountability   : Dart Scorecard           (10 features, no ML)
+  P8 Tax Compliance          : Dart Scorecard           (7 features, no ML)
+  Meta-Learner               : Logistic Regression x 1  (with work-type interactions)
+
+DEPLOYMENT FORMAT:
+  p1_scorer.dart  -- m2cgen generated XGBoost (~200-300KB source)
+  p2_scorer.dart  -- m2cgen generated XGBoost (~200-300KB source)
+  p3_scorer.dart  -- m2cgen generated XGBoost (~200-300KB source)
+  p4_scorer.dart  -- m2cgen generated XGBoost (~200-300KB source)
+  p6_scorer.dart  -- m2cgen generated RandomForest (~200-300KB source)
+  scoring_constants.dart -- meta-learner coefficients, SHAP data, feature means
+
+TOTAL SCORING CODE: ~1-1.5MB Dart source -> ~300-500KB compiled ARM
+TOTAL INFERENCE TIME: ~15-20ms (pure Dart, no model loading)
+RUNTIME DEPENDENCIES: ZERO (no TFLite, no ONNX, no native plugins)
+
+
+================================================================================
+PART 2 -- SYNTHETIC DATA GENERATION
+================================================================================
+
+WHY SYNTHETIC DATA:
+  GigCredit has no real user data at launch. Synthetic data is generated
+  to train the models. Profiles must be statistically realistic -- reflecting
+  actual Indian gig worker financial patterns -- so models learn genuine
+  relationships, not artificial rules.
+
+-------------------------
+2.1 PROFILE STRUCTURE
+-------------------------
+
+Every synthetic profile contains exactly 95 features and pillar labels.
+
+PROFILE COMPONENTS:
+  work_type     : one of [platform_worker, vendor, tradesperson, freelancer]
+  features[95]  : all feature values (computed from simulated financials)
+  final_label   : float 0.0-1.0 (overall creditworthiness)
+  p1_label      : float 0.0-1.0 (income quality)
+  p2_label      : float 0.0-1.0 (payment discipline)
+  p3_label      : float 0.0-1.0 (debt management)
+  p4_label      : float 0.0-1.0 (savings quality)
+  p6_label      : float 0.0-1.0 (resilience quality)
+
+NOTE: P5, P7, P8 are scorecard pillars -- no training labels needed.
+      Their output is computed deterministically in Dart at inference time.
+
+-------------------------
+2.2 DATASET SIZE AND DISTRIBUTION
+-------------------------
+
+TOTAL PROFILES        : 15,000
+WORK TYPE SPLIT:
+  Platform Worker     : 5,250 profiles (35%)
+  Street Vendor       : 3,750 profiles (25%)
+  Skilled Tradesperson: 3,750 profiles (25%)
+  Freelancer          : 2,250 profiles (15%)
+
+CREDITWORTHINESS TIER DISTRIBUTION (same across all work types):
+  Excellent  (label 0.75-1.00) : 15%  ->  2,250 profiles
+  Good       (label 0.60-0.75) : 25%  ->  3,750 profiles
+  Average    (label 0.45-0.60) : 30%  ->  4,500 profiles
+  Poor       (label 0.25-0.45) : 20%  ->  3,000 profiles
+  Very Poor  (label 0.00-0.25) : 10%  ->  1,500 profiles
+
+Stratified split enforced: every work type has identical tier proportions.
+
+PER-CELL SAMPLE COUNT:
+  Largest cell:  Platform Worker x Average = 5,250 x 0.30 = 1,575
+  Smallest cell: Freelancer x Very Poor    = 2,250 x 0.10 = 225
+  Average cell:  750 samples -- 3x improvement over previous 250
+
+-------------------------
+2.3 STATISTICAL DISTRIBUTIONS PER FEATURE
+-------------------------
+
+(Same distributions as original ML workflow spec -- LogNormal for income,
+ Beta for ratios, AR(1) for time series, Bernoulli for binary flags.
+ Only the sample counts change. All distribution parameters unchanged.)
+
+avg_monthly_income_norm (P1, idx 0):
+  Generated from LogNormal distribution. Parameters vary by work type + tier:
+    Platform Excellent: mu=10.5, sigma=0.4 -> mean ~36,000/month
+    Platform Poor:      mu=9.2,  sigma=0.5 -> mean ~9,900/month
+    Vendor Excellent:   mu=10.2, sigma=0.5 -> mean ~27,000/month
+  LogNormal chosen: income cannot be negative, is right-skewed in
+  real Indian populations.
+  Normalised: raw_income / (ANCHOR * 3), clamp [0.0, 1.0]
+
+income_stability_cv (P1, idx 1):
+  Generated from Beta distribution.
+  Excellent tier: Beta(a=8, b=2) -> most values 0.05-0.20 (stable)
+  Poor tier:      Beta(a=2, b=5) -> most values 0.40-0.70 (unstable)
+  cv = stdDev / mean of 6 monthly credits, inverted: score = 1 - min(cv, 1)
+
+Monthly income time series (6 months, used for income_growth_slope):
+  Generated using AutoRegressive(1) model:
+    month_t = rho * month_(t-1) + epsilon
+    rho = 0.7 (moderate autocorrelation)
+    epsilon = Gaussian noise (sigma scales with tier)
+
+emi_to_income_ratio (P3, idx 28):
+  Generated from Beta distribution. Bounded 0.0-0.95.
+  Excellent: Beta(a=2, b=8) -> most near 0.15-0.25
+  Very Poor: Beta(a=6, b=3) -> most near 0.55-0.80
+
+Binary insurance features (P6 idx 67-73):
+  Generated from Bernoulli distribution. P(active) varies by tier:
+  health_insurance_active: P=0.72 (Excellent), P=0.18 (Very Poor)
+
+(All other feature distributions remain exactly as specified in
+ the original ML workflow spec. No distribution changes.)
+
+-------------------------
+2.4 TRAIN/VALIDATION SPLIT
+-------------------------
+
+SPLIT RATIO: 80% train / 20% validation
+STRATIFICATION: by work_type AND tier (ensures proportional representation)
+
+  Training set:   12,000 profiles
+  Validation set:  3,000 profiles
+
+
+================================================================================
+PART 3 -- HYPERPARAMETER TUNING WITH OPTUNA
+================================================================================
+
+This section is NEW. The original spec used manually set hyperparameters.
+Optuna Bayesian optimization replaces manual tuning.
+
+-------------------------
+3.1 OPTUNA CONFIGURATION
+-------------------------
+
+SAMPLER: TPE (Tree-structured Parzen Estimator) -- Optuna default
+TRIALS: 100 per pillar model
+CV: 5-fold stratified (stratified by work_type + tier)
+METRIC: neg_mean_squared_error (minimize MSE)
+SEED: 42 (reproducibility)
+
+-------------------------
+3.2 SEARCH SPACE PER PILLAR
+-------------------------
+
+XGBoost search space (P1, P2, P3, P4):
+
+  LOCKED (NOT in search space):
+    tree_method = 'exact'        # MANDATORY for m2cgen correctness
+    random_state = 42
+    objective = 'reg:squarederror'
+
+  SEARCHABLE:
+    n_estimators:    int    [80, 150]
+    max_depth:       int    [3, 4]
+    learning_rate:   float  [0.01, 0.3]    (log scale)
+    gamma:           float  [0.0, 1.0]
+    min_child_weight: int   [5, 30]
+    subsample:       float  [0.6, 1.0]
+    colsample_bytree: float [0.5, 1.0]
+    reg_alpha:       float  [0.0, 0.5]
+    reg_lambda:      float  [0.0, 0.5]
+
+RandomForest search space (P6):
+
+  LOCKED:
+    random_state = 42
+
+  SEARCHABLE:
+    n_estimators:    int    [80, 150]
+    max_depth:       int    [3, 4]
+    min_samples_split: int  [5, 30]
+    min_samples_leaf:  int  [5, 20]
+    max_features:    categorical ['sqrt', 'log2', 0.7, 0.8]
+
+-------------------------
+3.3 OPTUNA TRAINING CODE
+-------------------------
+
+import optuna
+from xgboost import XGBRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import cross_val_score, StratifiedKFold
+
+def create_xgb_objective(X, y, strat_labels):
+    def objective(trial):
+        params = {
+            'tree_method': 'exact',          # LOCKED -- m2cgen requirement
+            'random_state': 42,
+            'objective': 'reg:squarederror',
+            'n_estimators': trial.suggest_int('n_estimators', 80, 150),
+            'max_depth': trial.suggest_int('max_depth', 3, 4),
+            'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True),
+            'gamma': trial.suggest_float('gamma', 0.0, 1.0),
+            'min_child_weight': trial.suggest_int('min_child_weight', 5, 30),
+            'subsample': trial.suggest_float('subsample', 0.6, 1.0),
+            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
+            'reg_alpha': trial.suggest_float('reg_alpha', 0.0, 0.5),
+            'reg_lambda': trial.suggest_float('reg_lambda', 0.0, 0.5),
+        }
+        model = XGBRegressor(**params)
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        scores = cross_val_score(model, X, y, cv=cv, scoring='neg_mean_squared_error')
+        return scores.mean()
+    return objective
+
+# Run for each XGBoost pillar
+for pillar_name, X_pillar, y_pillar, strat in pillars_xgb:
+    study = optuna.create_study(direction='maximize')
+    study.optimize(create_xgb_objective(X_pillar, y_pillar, strat), n_trials=100)
+    best_params[pillar_name] = study.best_params
+
+# Run for P6 RandomForest
+def rf_objective(trial):
+    params = {
+        'random_state': 42,
+        'n_estimators': trial.suggest_int('n_estimators', 80, 150),
+        'max_depth': trial.suggest_int('max_depth', 3, 4),
+        'min_samples_split': trial.suggest_int('min_samples_split', 5, 30),
+        'min_samples_leaf': trial.suggest_int('min_samples_leaf', 5, 20),
+        'max_features': trial.suggest_categorical('max_features', ['sqrt', 'log2', 0.7, 0.8]),
+    }
+    model = RandomForestRegressor(**params)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    scores = cross_val_score(model, X_p6, y_p6, cv=cv, scoring='neg_mean_squared_error')
+    return scores.mean()
+
+study_p6 = optuna.create_study(direction='maximize')
+study_p6.optimize(rf_objective, n_trials=100)
+best_params['P6'] = study_p6.best_params
+
+-------------------------
+3.4 VALIDATION TARGETS
+-------------------------
+
+After Optuna tuning, validate each model:
+  P1: RMSE < 0.08 on validation set
+  P2: RMSE < 0.08 on validation set
+  P3: RMSE < 0.10 on validation set
+  P4: RMSE < 0.08 on validation set
+  P6: RMSE < 0.10 on validation set
+
+If any model exceeds target RMSE:
+  1. Check for data quality issues in synthetic generation
+  2. Consider expanding search space (more trials, wider ranges)
+  3. Do NOT increase max_depth beyond 4 or n_estimators beyond 150
+     (m2cgen code size constraint)
+
+
+================================================================================
+PART 4 -- MODEL TRAINING
+================================================================================
+
+-------------------------
+4.1 TRAINING PROCEDURE
+-------------------------
+
+After Optuna finds best hyperparameters:
+
+  1. Train final model with best_params on FULL training set (12,000 samples)
+  2. Evaluate on held-out validation set (3,000 samples)
+  3. Record: RMSE, MAE, R-squared, feature importance ranking
+  4. Save model object for SHAP extraction and m2cgen export
+
+TRAINING CODE:
+
+from xgboost import XGBRegressor
+from sklearn.ensemble import RandomForestRegressor
+
+# P1 -- XGBoost (Income Stability)
+model_p1 = XGBRegressor(
+    tree_method='exact',  # MANDATORY for m2cgen
+    **best_params['P1']
+)
+model_p1.fit(X_train_p1, y_train_p1)
+
+# P2 -- XGBoost (Payment Discipline)
+model_p2 = XGBRegressor(
+    tree_method='exact',  # MANDATORY for m2cgen
+    **best_params['P2']
+)
+model_p2.fit(X_train_p2, y_train_p2)
+
+# P3 -- XGBoost (Debt Management)
+model_p3 = XGBRegressor(
+    tree_method='exact',  # MANDATORY for m2cgen
+    **best_params['P3']
+)
+model_p3.fit(X_train_p3, y_train_p3)
+
+# P4 -- XGBoost (Savings Behaviour)
+model_p4 = XGBRegressor(
+    tree_method='exact',  # MANDATORY for m2cgen
+    **best_params['P4']
+)
+model_p4.fit(X_train_p4, y_train_p4)
+
+# P6 -- RandomForest (Financial Resilience)
+model_p6 = RandomForestRegressor(
+    **best_params['P6']
+)
+model_p6.fit(X_train_p6, y_train_p6)
+
+-------------------------
+4.2 FEATURE ASSIGNMENT PER PILLAR
+-------------------------
+
+(Same as original spec -- 95 features across 8 pillars. No changes.)
+
+  P1 Income Stability       : features[0..12]   -- 13 features
+  P2 Payment Discipline     : features[13..27]   -- 15 features
+  P3 Debt Management        : features[28..36]   -- 9 features
+  P4 Savings Behaviour      : features[37..48]   -- 12 features
+  P5 Work & Identity        : features[49..66]   -- 18 features (scorecard)
+  P6 Financial Resilience   : features[67..77]   -- 11 features
+  P7 Social Accountability  : features[78..87]   -- 10 features (scorecard)
+  P8 Tax Compliance         : features[88..94]   -- 7 features (scorecard)
+
+
+================================================================================
+PART 5 -- SHAP EXPLAINABILITY
+================================================================================
+
+-------------------------
+5.1 SHAP EXTRACTION (OFFLINE)
+-------------------------
+
+For each of the 5 ML models, extract SHAP values using TreeExplainer:
+
+import shap
+import numpy as np
+import json
+
+shap_lookup = {}
+
+for pillar_name, model, X_data, feature_names in all_models:
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(X_data)
+
+    pillar_lookup = {}
+    for feat_idx, feat_name in enumerate(feature_names):
+        # Create 10 percentile bins
+        values = X_data[:, feat_idx]
+        bins = np.percentile(values, np.arange(0, 101, 10)).tolist()
+
+        # Compute average SHAP value per bin
+        bin_shap = []
+        for b in range(10):
+            if b < 9:
+                mask = (values >= bins[b]) & (values < bins[b + 1])
+            else:
+                mask = (values >= bins[b])
+            if mask.sum() > 0:
+                bin_shap.append(float(np.mean(shap_values[mask, feat_idx])))
+            else:
+                bin_shap.append(0.0)
+
+        pillar_lookup[feat_name] = {
+            'bins': bins,
+            'shap_values': bin_shap
+        }
+
+    shap_lookup[pillar_name] = pillar_lookup
+
+# Export (~8-12KB JSON file)
+with open('shap_lookup.json', 'w') as f:
+    json.dump(shap_lookup, f, indent=2)
+
+-------------------------
+5.2 ON-DEVICE SHAP LOOKUP (Dart)
+-------------------------
+
+On the device, feature importance is computed via simple bin lookup:
+
+  double getFeatureImpact(String pillar, String featureName, double value) {
+    var entry = shapLookup[pillar]![featureName]!;
+    List<double> bins = entry['bins'];
+    List<double> shaps = entry['shap_values'];
+
+    // Find which bin the value falls into
+    int binIdx = 0;
+    for (int i = 1; i < bins.length; i++) {
+      if (value >= bins[i]) binIdx = i;
+    }
+    if (binIdx >= shaps.length) binIdx = shaps.length - 1;
+
+    return shaps[binIdx];
+  }
+
+This replaces the previous linear approximation:
+  OLD: impact = coefficient * (value - mean)
+  NEW: impact = lookup_bin(value) -> pre-computed SHAP value
+
+The binned approach captures non-linear SHAP relationships that
+the linear approximation cannot. It is more accurate for tree models
+because tree models have inherently non-linear feature effects.
+
+File size: ~8-12KB for all 5 models (negligible).
+Computation: microseconds (simple array index lookup).
+
+-------------------------
+5.3 TOP FACTOR EXTRACTION
+-------------------------
+
+After computing SHAP impacts for all features:
+
+  1. Collect all (feature_name, impact_value) pairs across all pillars
+  2. Sort by absolute impact value (descending)
+  3. Top 3 POSITIVE impacts = "Strengths"
+  4. Top 3 NEGATIVE impacts = "Areas for Improvement"
+  5. Include in ScoreReport for LLM explanation generation
+
+NOTE: SHAP values are for EXPLANATION ONLY. They do NOT affect the
+      credit score calculation. The score is computed by the meta-learner.
+
+
+================================================================================
+PART 6 -- META-LEARNER
+================================================================================
+
+-------------------------
+6.1 META-LEARNER DESIGN
+-------------------------
+
+ONE Logistic Regression model with work-type interaction terms.
+
+INPUT FEATURES (20 total):
+  [0..7]   : 8 pillar scores (P1, P2, P3, P4, P5, P6, P7, P8)
+  [8..11]  : 4 work-type one-hot (is_platform, is_vendor, is_trades, is_freelancer)
+  [12..19] : 8 interaction terms (P1*is_platform, P1*is_vendor, P2*is_platform, P2*is_vendor,
+              P1*is_trades, P1*is_freelancer, P2*is_trades, P2*is_freelancer)
+
+NOTE: Only P1 and P2 interaction terms are included (the two highest-weighted
+      pillars). Adding interaction terms for all 8 pillars would create 32
+      interaction features -- too many for 15,000 samples. P1 (weight 0.25)
+      and P2 (weight 0.20) capture 45% of the score, so their work-type
+      interactions matter most.
+
+WHY SINGLE LR INSTEAD OF 4 SEPARATE LRs:
+  - Uses all 15,000 samples instead of splitting into 4 groups
+  - Freelancer group goes from 750 -> 15,000 training samples
+  - Work-type-specific behavior captured via interaction terms
+  - Fully interpretable: each coefficient has clear meaning
+  - More robust, lower variance estimates
+
+-------------------------
+6.2 META-LEARNER TRAINING
+-------------------------
+
+from sklearn.linear_model import LogisticRegression
+import numpy as np
+
+def build_meta_features(pillar_scores, work_type_onehot):
+    """
+    pillar_scores: array of shape (N, 8) -- P1 through P8
+    work_type_onehot: array of shape (N, 4)
+    Returns: array of shape (N, 20)
+    """
+    # Base features: 8 pillars + 4 work type flags
+    base = np.concatenate([pillar_scores, work_type_onehot], axis=1)
+
+    # Interaction terms: P1 and P2 x each work type
+    p1 = pillar_scores[:, 0:1]  # shape (N, 1)
+    p2 = pillar_scores[:, 1:2]  # shape (N, 1)
+    interactions = np.concatenate([
+        p1 * work_type_onehot,  # P1 x 4 work types = 4 features
+        p2 * work_type_onehot,  # P2 x 4 work types = 4 features
+    ], axis=1)
+
+    return np.concatenate([base, interactions], axis=1)
+
+# Build training features
+# pillar_scores_train = cross-validated predictions from 5 ML models + 3 scorecards
+X_meta = build_meta_features(pillar_scores_train, work_type_onehot_train)
+y_meta = final_labels_train  # binary: 1 if creditworthy, 0 if not
+
+# Train
+meta_model = LogisticRegression(C=1.0, max_iter=1000, random_state=42)
+meta_model.fit(X_meta, y_meta)
+
+# Extract coefficients and intercept
+meta_coefficients = meta_model.coef_[0].tolist()  # 20 values
+meta_intercept = float(meta_model.intercept_[0])
+
+# Export to Dart constants
+with open('meta_coefficients.json', 'w') as f:
+    json.dump({
+        'coefficients': meta_coefficients,
+        'intercept': meta_intercept
+    }, f)
+
+IMPORTANT: To avoid data leakage, pillar scores for meta-learner training
+must be generated via CROSS-VALIDATION (out-of-fold predictions), NOT by
+running the final trained models on the same training data. Use the 5-fold
+CV from Optuna -- the out-of-fold predictions from the best trial.
+
+-------------------------
+6.3 SCORE COMPUTATION (FINAL -- NO ALTERNATIVES)
+-------------------------
+
+This is the ONLY method for computing the final credit score.
+The weighted sum method from the Report Pipeline spec is DELETED.
+
+  STEP 1: Compute all 8 pillar scores (ML models + scorecards)
+  STEP 2: Apply confidence adjustment per pillar
+  STEP 3: Build meta-features (20 inputs)
+  STEP 4: Compute logit = dot(meta_features, coefficients) + intercept
+  STEP 5: Compute probability = 1 / (1 + exp(-logit))
+  STEP 6: Compute final_score = round(probability * 600 + 300)
+
+  Score range: 300-900 (matching CIBIL scale)
+  300 = worst possible (probability = 0.0)
+  900 = best possible (probability = 1.0)
+
+DART IMPLEMENTATION:
+
+  double computeFinalScore(List<double> pillarScores, int workTypeIndex) {
+    // Build work type one-hot
+    List<double> workTypeOH = [0.0, 0.0, 0.0, 0.0];
+    workTypeOH[workTypeIndex] = 1.0;
+
+    // Build meta features (20 total)
+    List<double> metaInput = [
+      ...pillarScores,                              // 8 pillar scores
+      ...workTypeOH,                                // 4 work type flags
+      pillarScores[0] * workTypeOH[0],              // P1 x platform
+      pillarScores[0] * workTypeOH[1],              // P1 x vendor
+      pillarScores[0] * workTypeOH[2],              // P1 x trades
+      pillarScores[0] * workTypeOH[3],              // P1 x freelancer
+      pillarScores[1] * workTypeOH[0],              // P2 x platform
+      pillarScores[1] * workTypeOH[1],              // P2 x vendor
+      pillarScores[1] * workTypeOH[2],              // P2 x trades
+      pillarScores[1] * workTypeOH[3],              // P2 x freelancer
+    ];
+
+    // Dot product
+    double logit = metaIntercept;
+    for (int i = 0; i < 20; i++) {
+      logit += metaInput[i] * metaCoefficients[i];
+    }
+
+    // Sigmoid
+    double probability = 1.0 / (1.0 + exp(-logit));
+
+    // Scale to 300-900
+    return (probability * 600 + 300).roundToDouble();
+  }
+
+GRADE ASSIGNMENT:
+  Score >= 800 : Grade S (Exceptional)
+  Score >= 720 : Grade A (Excellent)
+  Score >= 640 : Grade B (Good)
+  Score >= 560 : Grade C (Average)
+  Score >= 480 : Grade D (Below Average)
+  Score <  480 : Grade E (Poor)
+
+RISK BAND:
+  Score >= 651 : Low Risk
+  Score 451-650 : Medium Risk
+  Score <= 450 : High Risk
+
+
+================================================================================
+PART 7 -- m2cgen EXPORT TO DART
+================================================================================
+
+This section defines the model-to-code conversion pipeline.
+
+-------------------------
+7.1 m2cgen INSTALLATION AND SETUP
+-------------------------
+
+pip install m2cgen>=2.8.0
+pip install xgboost>=1.7.0
+pip install scikit-learn>=1.2.0
+
+IMPORTANT: m2cgen version must be >= 2.8.0 for Dart support.
+
+-------------------------
+7.2 EXPORT PROCEDURE
+-------------------------
+
+import m2cgen as m2c
+import sys
+
+# MANDATORY: increase recursion limit for tree ensemble code generation
+sys.setrecursionlimit(50000)
+
+# Export each model to Dart
+models = {
+    'p1': model_p1,  # XGBoost
+    'p2': model_p2,  # XGBoost
+    'p3': model_p3,  # XGBoost
+    'p4': model_p4,  # XGBoost
+    'p6': model_p6,  # RandomForest
+}
+
+for name, model in models.items():
+    dart_code = m2c.export_to_dart(model, function_name=f'score_{name}')
+
+    # Wrap in a Dart class
+    full_dart = f'''
+// AUTO-GENERATED by m2cgen -- DO NOT EDIT MANUALLY
+// Model: {name.upper()}
+// Generated from: XGBoost/RandomForest trained on GigCredit synthetic data
+
+double score_{name}(List<double> input) {{
+{dart_code}
+}}
+'''
+    with open(f'{name}_scorer.dart', 'w') as f:
+        f.write(full_dart)
+
+    print(f'{name}: {len(dart_code)} chars, ~{len(dart_code)//1024}KB')
+
+-------------------------
+7.3 EXPECTED OUTPUT FORMAT
+-------------------------
+
+Each generated .dart file contains a single function:
+
+  double score_p1(List<double> input) {
+    double var0;
+    if (input[2] >= 0.4532) {
+      if (input[7] >= 0.6721) {
+        var0 = 0.0234;
+      } else {
+        var0 = -0.0156;
+      }
+    } else {
+      ...
+    }
+    // ... (150 trees, each contributing a var)
+    return var0 + var1 + var2 + ... ;
+  }
+
+This is pure Dart arithmetic. No ML library, no TFLite, no ONNX.
+The function takes a List<double> of features and returns a double.
+
+For XGBoost regressors, the output is the raw prediction.
+For RandomForest regressors, the output is the averaged tree predictions.
+Both produce values in approximately [0.0, 1.0] range (trained on [0,1] labels).
+
+-------------------------
+7.4 m2cgen CRITICAL REQUIREMENTS
+-------------------------
+
+REQUIREMENT 1 -- tree_method='exact':
+  XGBoost models MUST be trained with tree_method='exact'.
+  m2cgen Issue #168: tree_method='hist' produces silently incorrect
+  Dart output because hist uses approximate split thresholds that
+  m2cgen does not replicate correctly.
+  This is a MANDATORY training parameter, not optional.
+
+REQUIREMENT 2 -- sys.setrecursionlimit(50000):
+  m2cgen traverses the tree structure recursively during code generation.
+  150 trees x depth 4 = ~2,250 nodes. Default Python recursion limit
+  is 1,000. Must be increased before calling export_to_dart().
+
+REQUIREMENT 3 -- No NaN inputs:
+  m2cgen Issue #476: XGBoost's native NaN routing through trees is NOT
+  replicated in generated code. All features MUST have explicit numeric
+  fallback values. No NaN must ever reach the generated scorer function.
+  The GigCredit feature engineering spec already enforces this via
+  per-feature fallback values. Add a sanitization guard in Dart (see Part 9).
+
+REQUIREMENT 4 -- n_estimators <= 150, max_depth <= 4:
+  Prevents excessive code generation:
+    150 trees x depth 4 = ~200-300KB Dart source per model (manageable)
+    300 trees x depth 6 = ~2.6MB Dart source per model (too large)
+  Flutter's AOT compiler handles ~1-1.5MB total Dart source well.
+  Beyond 5MB total may slow compilation and hit analyser limits.
+
+
+================================================================================
+PART 8 -- VALIDATION GATE (MANDATORY)
+================================================================================
+
+Before shipping the generated Dart code, run this validation:
+
+import subprocess
+import numpy as np
+
+def validate_m2cgen_output(model, dart_function_path, X_test, pillar_name):
+    """
+    Compares Python model predictions with Dart generated code predictions.
+    MUST pass before shipping.
+    """
+    # Python predictions
+    python_preds = model.predict(X_test)
+
+    # Dart predictions (run via dart command or flutter test)
+    dart_preds = run_dart_predictions(dart_function_path, X_test)
+
+    # Compare
+    max_diff = np.max(np.abs(python_preds - dart_preds))
+    mean_diff = np.mean(np.abs(python_preds - dart_preds))
+
+    print(f'{pillar_name}: max_diff={max_diff:.8f}, mean_diff={mean_diff:.8f}')
+
+    assert max_diff < 1e-5, (
+        f'VALIDATION FAILED for {pillar_name}! '
+        f'Max difference: {max_diff}. '
+        f'DO NOT ship this model. Check tree_method and m2cgen version.'
+    )
+
+    print(f'{pillar_name}: VALIDATION PASSED')
+
+# Run for all 5 models
+for name, model, X_val in all_models:
+    validate_m2cgen_output(model, f'{name}_scorer.dart', X_val[:200], name)
+
+VALIDATION CRITERIA:
+  - Maximum absolute difference between Python and Dart: < 1e-5
+  - Test on at least 200 validation samples
+  - If ANY model fails: DO NOT proceed. Debug the issue.
+
+COMMON FAILURE CAUSES:
+  - tree_method was 'hist' instead of 'exact'
+  - NaN values in test features
+  - m2cgen version mismatch
+  - Float64 vs Float32 precision (m2cgen uses float64, which is Dart's default)
+
+
+================================================================================
+PART 9 -- ON-DEVICE INFERENCE (DART)
+================================================================================
+
+-------------------------
+9.1 FEATURE SANITIZATION (MANDATORY FIRST STEP)
+-------------------------
+
+Before ANY scoring function is called:
+
+  List<double> sanitizeFeatures(List<double> features) {
+    return features.map((f) {
+      if (f.isNaN || f.isInfinite) return 0.50;  // neutral fallback
+      return f.clamp(0.0, 1.0);                   // enforce bounds
+    }).toList();
+  }
+
+This guard ensures no NaN reaches m2cgen code (Issue #476 protection).
+
+-------------------------
+9.2 PILLAR SCORING
+-------------------------
+
+All scoring runs sequentially on the main Dart thread.
+No Isolates needed -- each call is ~2-5ms of pure arithmetic.
+
+  // Input: 95 sanitized features
+  List<double> features = sanitizeFeatures(rawFeatures);
+
+  // ML Pillar Scores (m2cgen generated functions)
+  double p1Raw = score_p1(features.sublist(0, 13));
+  double p2Raw = score_p2(features.sublist(13, 28));
+  double p3Raw = score_p3(features.sublist(28, 37));
+  double p4Raw = score_p4(features.sublist(37, 49));
+  double p6Raw = score_p6(features.sublist(67, 78));
+
+  // Scorecard Pillar Scores (Dart weighted sums)
+  double p5Raw = computeScorecard_P5(features.sublist(49, 67));
+  double p7Raw = computeScorecard_P7(features.sublist(78, 88));
+  double p8Raw = computeScorecard_P8(features.sublist(88, 95));
+
+-------------------------
+9.3 OUTPUT VALIDATION (AFTER EACH PILLAR)
+-------------------------
+
+  double validatePillarOutput(double raw, String pillarName) {
+    if (raw.isNaN || raw.isInfinite) {
+      logWarning('$pillarName produced NaN/Inf, using neutral fallback');
+      return 0.50;
+    }
+    if (raw < 0.0 || raw > 1.0) {
+      logWarning('$pillarName out of bounds ($raw), clamping');
+      return raw.clamp(0.0, 1.0);
+    }
+    return raw;
+  }
+
+  // Apply to each pillar
+  double p1 = validatePillarOutput(p1Raw, 'P1_Income');
+  double p2 = validatePillarOutput(p2Raw, 'P2_Payment');
+  double p3 = validatePillarOutput(p3Raw, 'P3_Debt');
+  double p4 = validatePillarOutput(p4Raw, 'P4_Savings');
+  double p5 = validatePillarOutput(p5Raw, 'P5_WorkIdentity');
+  double p6 = validatePillarOutput(p6Raw, 'P6_Resilience');
+  double p7 = validatePillarOutput(p7Raw, 'P7_Social');
+  double p8 = validatePillarOutput(p8Raw, 'P8_Tax');
+
+-------------------------
+9.4 CONFIDENCE ENGINE (UNCHANGED FROM ORIGINAL SPEC)
+-------------------------
+
+  double adjustForConfidence(double rawScore, double confidence) {
+    return rawScore * confidence + 0.50 * (1.0 - confidence);
+  }
+
+  Confidence per pillar is computed from data completeness:
+    - All required documents provided + verified: confidence = 1.0
+    - Some optional documents missing: confidence = 0.6-0.9
+    - Most data missing: confidence = 0.3-0.5
+    - Below 0.30: pillar excluded from scoring (see minimum data rules)
+
+  MINIMUM DATA THRESHOLD (NEW):
+    Step-1 (Identity) MUST be completed: required
+    Step-2 (ID Verification) MUST be completed: required
+    Step-3 (Bank Statement) MUST be completed with >= 30 transactions: required
+
+    IF MINIMUM NOT MET:
+      -> Do NOT compute score
+      -> Show: "Insufficient data for credit assessment."
+
+    If confidence < 0.30 for any pillar:
+      -> Exclude pillar from meta-learner (set to 0.50 neutral)
+      -> Report shows "Not enough data" for that pillar
+
+  Apply confidence adjustment:
+    double p1Adj = adjustForConfidence(p1, confidenceP1);
+    double p2Adj = adjustForConfidence(p2, confidenceP2);
+    // ... for all 8 pillars
+
+-------------------------
+9.5 META-LEARNER EXECUTION
+-------------------------
+
+  List<double> pillarScores = [p1Adj, p2Adj, p3Adj, p4Adj,
+                                p5Adj, p6Adj, p7Adj, p8Adj];
+
+  double finalScore = computeFinalScore(pillarScores, workTypeIndex);
+  // Returns 300-900 (see Part 6.3 for full implementation)
+
+  String grade = assignGrade(finalScore);
+  String riskBand = assignRiskBand(finalScore);
+
+-------------------------
+9.6 DYNAMIC SCORING (HOW SCORE EVOLVES)
+-------------------------
+
+The score updates each time the user completes a new step:
+
+  After Step-3 (bank statement):
+    P1, P2, P3, P4 have real data -> confidence high
+    P5-P8 have partial/no data -> confidence low, scores near 0.50
+    -> Provisional score (e.g., 520)
+
+  After Step-5 (work documents):
+    P5 now has real data -> confidence increases
+    -> Score improves (e.g., 560)
+
+  After Step-7 (insurance):
+    P6 now has real data -> confidence increases
+    -> Score improves (e.g., 625)
+
+  Each step completion triggers re-inference (~15-20ms).
+  The user sees their score grow in real time.
+
+  This dynamic behavior comes from the Confidence Engine, NOT from
+  the model architecture. It works identically with any model type.
+
+-------------------------
+9.7 HARD RULES (UNCHANGED)
+-------------------------
+
+  DEBT BAND CAP:
+    If emi_to_income_ratio > 0.80:
+      P3 score capped at 0.30 regardless of model output.
+
+  This is applied AFTER model inference, BEFORE confidence adjustment.
+
+-------------------------
+9.8 COMPLETE ON-DEVICE SCORING FLOW
+-------------------------
+
+  FUNCTION: computeGigCreditScore(VerifiedProfile profile)
+
+  1. features = engineerFeatures(profile)          // 95 features
+  2. features = sanitizeFeatures(features)          // NaN guard
+  3. p1Raw = score_p1(features[0..12])              // m2cgen XGBoost
+  4. p2Raw = score_p2(features[13..27])             // m2cgen XGBoost
+  5. p3Raw = score_p3(features[28..36])             // m2cgen XGBoost
+  6. p4Raw = score_p4(features[37..48])             // m2cgen XGBoost
+  7. p5Raw = scorecard_p5(features[49..66])         // Dart scorecard
+  8. p6Raw = score_p6(features[67..77])             // m2cgen RandomForest
+  9. p7Raw = scorecard_p7(features[78..87])         // Dart scorecard
+  10. p8Raw = scorecard_p8(features[88..94])        // Dart scorecard
+  11. [p1..p8] = validateAllOutputs([p1Raw..p8Raw]) // Clamp + NaN guard
+  12. Apply debt band cap (P3)
+  13. [p1Adj..p8Adj] = applyConfidence([p1..p8], [conf1..conf8])
+  14. finalScore = metaLearner([p1Adj..p8Adj], workType) // 300-900
+  15. grade = assignGrade(finalScore)
+  16. riskBand = assignRiskBand(finalScore)
+  17. shapInsights = computeSHAP(features)           // Binned lookup
+  18. return ScoreReport(finalScore, grade, riskBand, pillarScores, shapInsights)
+
+  Total execution time: ~15-20ms
+  Memory usage: negligible (pure arithmetic, no model objects in RAM)
+
+
+================================================================================
+PART 10 -- SCORECARDS (P5, P7, P8 -- UNCHANGED)
+================================================================================
+
+P5, P7, P8 remain as Dart weighted scorecards. No changes from original spec.
+
+P5 (Work & Identity, 18 features, weight 0.10):
+  Weighted sum of normalized features with intra-pillar weights summing to 1.0
+  Features include: aadhaar_verified, pan_verified, face_match_score,
+  address_match, work_type indicators, experience metrics
+
+P7 (Social Accountability, 10 features, weight 0.05):
+  Government scheme participation indicators
+  e-Shram, PM-SYM, Mudra, PM-Kisan registration flags
+
+P8 (Tax Compliance, 7 features, weight 0.03):
+  ITR filing status, years filed, declared income ratio
+
+Each scorecard computes:
+  pillar_score = sum(feature_value * intra_pillar_weight) for all features in pillar
+  Output: [0.0, 1.0]
+
+
+================================================================================
+PART 11 -- SCORE REPORT STRUCTURE
+================================================================================
+
+The ScoreReport JSON sent to the backend for LLM report generation:
+
+{
+  "user_id": "hashed_phone",
+  "work_type": "platform_worker",
+  "final_score": 682,
+  "grade": "B",
+  "risk_band": "Low",
+  "pillar_scores": {
+    "P1_income_stability": 0.72,
+    "P2_payment_discipline": 0.68,
+    "P3_debt_management": 0.55,
+    "P4_savings_behaviour": 0.61,
+    "P5_work_identity": 0.78,
+    "P6_financial_resilience": 0.45,
+    "P7_social_accountability": 0.60,
+    "P8_tax_compliance": 0.50
+  },
+  "confidence_scores": {
+    "P1": 0.95,
+    "P2": 0.88,
+    "P3": 0.92,
+    "P4": 0.90,
+    "P5": 0.85,
+    "P6": 0.60,
+    "P7": 0.70,
+    "P8": 0.40
+  },
+  "top_positive_factors": [
+    {"feature": "income_stability_cv", "impact": 0.15, "pillar": "P1"},
+    {"feature": "utility_ontime_ratio", "impact": 0.12, "pillar": "P2"},
+    {"feature": "balance_growth_slope", "impact": 0.09, "pillar": "P4"}
+  ],
+  "top_negative_factors": [
+    {"feature": "emi_to_income_ratio", "impact": -0.18, "pillar": "P3"},
+    {"feature": "no_insurance_penalty", "impact": -0.10, "pillar": "P6"},
+    {"feature": "itr_not_filed", "impact": -0.05, "pillar": "P8"}
+  ],
+  "language": "en",
+  "timestamp": "2026-03-17T10:30:00Z"
+}
+
+This payload is sent to the backend LLM endpoint for report generation.
+The LLM generates explanation text and suggestions -- it MUST NOT modify scores.
+
+
+================================================================================
+PART 12 -- FILE STRUCTURE (REVISED)
+================================================================================
+
+Flutter project scoring files:
+
+  lib/
+    scoring/
+      p1_scorer.dart              // m2cgen generated -- XGBoost P1
+      p2_scorer.dart              // m2cgen generated -- XGBoost P2
+      p3_scorer.dart              // m2cgen generated -- XGBoost P3
+      p4_scorer.dart              // m2cgen generated -- XGBoost P4
+      p6_scorer.dart              // m2cgen generated -- RandomForest P6
+      scorecard_p5.dart           // Hand-written Dart weighted scorecard
+      scorecard_p7.dart           // Hand-written Dart weighted scorecard
+      scorecard_p8.dart           // Hand-written Dart weighted scorecard
+      meta_learner.dart           // LR dot product + sigmoid
+      confidence_engine.dart      // Confidence adjustment logic
+      feature_engineering.dart    // Profile -> 95 features
+      feature_sanitizer.dart      // NaN guard + bounds validation
+      pillar_validator.dart       // Output validation per pillar
+      score_report.dart           // ScoreReport assembly
+      scoring_constants.dart      // All constants (meta coefficients, SHAP, etc.)
+
+  assets/
+    constants/
+      shap_lookup.json            // Binned SHAP values (~8-12KB)
+      meta_coefficients.json      // LR coefficients + intercept (<1KB)
+      feature_means.json          // Feature means for fallback (<1KB)
+      state_income_anchors.json   // State-level median incomes (<1KB)
+
+REMOVED FILES (no longer needed):
+  assets/models/p1.enc            // DELETED -- no encrypted model files
+  assets/models/p2.enc            // DELETED
+  assets/models/p3.enc            // DELETED
+  assets/models/p4.enc            // DELETED
+  assets/models/p6.enc            // DELETED
+  lib/scoring/model_decryptor.dart      // DELETED -- no decryption needed
+  lib/scoring/tflite_interpreter.dart   // DELETED -- no TFLite runtime
+  lib/scoring/model_interpreter_pool.dart // DELETED
+
+REMOVED DEPENDENCIES (pubspec.yaml):
+  tflite_flutter: REMOVED          // No longer needed
+  tflite_flutter_helper: REMOVED   // No longer needed
+
+NO NEW DEPENDENCIES ADDED. The scoring engine uses only Dart standard library.
+
+
+================================================================================
+PART 13 -- TRAINING PIPELINE SUMMARY (OFFLINE PYTHON)
+================================================================================
+
+Complete offline pipeline in execution order:
+
+  STEP 1: Generate 15,000 synthetic profiles
+           -> synthetic_data.csv (95 features + labels per profile)
+
+  STEP 2: Split 80/20 stratified by work_type + tier
+           -> train.csv (12,000), val.csv (3,000)
+
+  STEP 3: Optuna hyperparameter search (5 models x 100 trials x 5-fold CV)
+           -> best_params.json
+
+  STEP 4: Train final models with best params on full training set
+           -> model_p1.pkl, model_p2.pkl, model_p3.pkl, model_p4.pkl, model_p6.pkl
+
+  STEP 5: Validate on held-out validation set
+           -> RMSE, MAE, R-squared per model
+
+  STEP 6: Extract SHAP binned lookup tables
+           -> shap_lookup.json
+
+  STEP 7: Generate cross-validated pillar predictions for meta-learner training
+           -> pillar_predictions_cv.csv
+
+  STEP 8: Train LR meta-learner with interaction terms
+           -> meta_coefficients.json
+
+  STEP 9: Export models to Dart via m2cgen
+           -> p1_scorer.dart, p2_scorer.dart, p3_scorer.dart,
+              p4_scorer.dart, p6_scorer.dart
+
+  STEP 10: Run validation gate (Python vs Dart output comparison)
+           -> MUST PASS before proceeding
+
+  STEP 11: Copy .dart files + .json assets to Flutter project
+           -> Ready for app compilation
+
+TOTAL PIPELINE RUNTIME: ~30-60 minutes on a modern laptop
+PYTHON DEPENDENCIES: xgboost, scikit-learn, optuna, shap, m2cgen, numpy, pandas
+
+
+================================================================================
+PART 14 -- SECURITY CONSIDERATIONS (REVISED)
+================================================================================
+
+WITH m2cgen DEPLOYMENT:
+
+  MODEL SECURITY:
+    - Models are compiled into the app binary as Dart code
+    - Flutter AOT compiler transforms Dart -> ARM machine instructions
+    - Tree logic becomes indistinguishable from other app code
+    - Cannot be extracted as a model file (unlike .tflite/.enc)
+    - R8/ProGuard obfuscation further protects the compiled output
+    - This is MORE secure than encrypted model files, which are
+      vulnerable to memory-dump attacks during decryption
+
+  WHAT IS NO LONGER NEEDED:
+    - Android Keystore for model encryption keys
+    - AES-256-CBC model encryption/decryption
+    - Runtime model integrity verification
+    - Anti-tampering checks on model files
+
+  WHAT IS STILL NEEDED:
+    - Android Keystore for session data encryption (verified_profile)
+    - Root/debugger/hook detection (protect scoring logic in memory)
+    - App signature verification (prevent repackaging)
+    - Secure cleanup of user financial data after report generation
+    - All security measures for user data remain UNCHANGED
+
+
+================================================================================
+END OF REVISED SCORING ENGINE SPECIFICATION
+================================================================================

@@ -1,0 +1,531 @@
+PHASE-2 — MACHINE LEARNING DEVELOPMENT, TRAINING PIPELINE, SHAP GENERATION, AND MOBILE DEPLOYMENT
+
+
+OBJECTIVE
+
+
+Define the complete machine learning lifecycle:
+
+
+• Feature pipeline creation
+• Model training (P1–P6)
+• SHAP explainability generation
+• Model optimization for mobile
+• Conversion to TensorFlow Lite
+• Model encryption for secure on-device deployment
+
+
+This phase ensures the models are:
+
+
+• Accurate
+• Lightweight
+• Explainable
+• Secure
+• Mobile-compatible
+
+
+---
+
+
+SECTION-1 — DATASET DESIGN
+
+
+INPUT DATA SOURCES
+
+
+Training dataset must simulate real gig worker data:
+
+
+• Bank transaction history (6–12 months)
+• UPI transaction history
+• Utility bill payments
+• Insurance data
+• ITR declared income
+• Work type (driver, vendor, freelancer, etc.)
+
+
+Each user record should contain:
+
+
+raw_user_data = {
+transactions: [...],
+upi_transactions: [...],
+utility_payments: [...],
+itr_data: {...},
+work_type: "...",
+insurance_data: {...}
+}
+
+
+---
+
+
+SECTION-2 — FEATURE ENGINEERING PIPELINE (TRAINING TIME)
+
+
+IMPORTANT:
+
+
+This pipeline MUST EXACTLY MATCH on-device implementation.
+
+
+Any mismatch → wrong predictions.
+
+
+---
+
+
+STEP-1: DATA CLEANING
+
+
+• Remove invalid rows
+• Normalize date formats
+• Handle missing values
+• Remove duplicates
+
+
+---
+
+
+STEP-2: TRANSACTION TAGGING ENGINE
+
+
+Each transaction must be categorized.
+
+
+Tags:
+
+
+GIG_INCOME
+SALARY
+EMI_DEBIT
+UTILITY_PAYMENT
+SAVINGS
+P2P_TRANSFER
+CASH_WITHDRAWAL
+
+
+Example:
+
+
+"HDFC LOAN EMI" → EMI_DEBIT
+"TNEB BILL" → UTILITY_PAYMENT
+"SWIGGY Payout" → GIG_INCOME
+
+
+---
+
+
+STEP-3: MONTHLY AGGREGATION
+
+
+For each month:
+
+
+monthly_credit
+monthly_debit
+monthly_balance
+monthly_emi
+monthly_utility
+
+
+---
+
+
+STEP-4: FEATURE COMPUTATION
+
+
+Total features: ~95
+
+
+Examples:
+
+
+avg_monthly_income
+income_variance
+emi_to_income_ratio
+utility_payment_ratio
+bounce_count_ratio
+savings_ratio
+upi_usage_ratio
+
+
+All features must be:
+
+
+• Float32
+• Normalized [0–1]
+
+
+---
+
+
+STEP-5: FEATURE NORMALIZATION
+
+
+Use:
+
+
+min-max normalization OR domain-based normalization
+
+
+Example:
+
+
+income_norm = income / (anchor × 2.5)
+
+
+---
+
+
+STEP-6: FINAL FEATURE VECTOR
+
+
+feature_vector = [f1, f2, f3, ..., f95]
+
+
+---
+
+
+SECTION-3 — MODEL TRAINING
+
+
+You will train MULTIPLE models.
+
+
+---
+
+
+PILLAR MODELS
+
+
+P1 → Income Stability
+P2 → Payment Discipline
+P3 → Debt Management
+P4 → Savings Behaviour
+P6 → Financial Resilience
+
+
+NOTE:
+
+
+P5 is rule-based → NOT ML
+
+
+---
+
+
+MODEL TYPE (RECOMMENDED)
+
+
+Use:
+
+
+• LightGBM OR XGBoost
+
+
+Reason:
+
+
+• High performance
+• Works well with tabular data
+• SHAP compatible
+
+
+---
+
+
+TRAINING PIPELINE
+
+
+feature_vector
+↓
+Split dataset (train/test)
+↓
+Train each pillar model
+↓
+Evaluate (RMSE / accuracy)
+↓
+Save trained models
+
+
+---
+
+
+META-LEARNER MODEL
+
+
+Combines pillar outputs.
+
+
+Input:
+
+
+[P1, P2, P3, P4, P6]
+
+
+Output:
+
+
+Final credit score (300–900)
+
+
+---
+
+
+SECTION-4 — SHAP EXPLAINABILITY GENERATION
+
+
+IMPORTANT CLARIFICATION:
+
+
+SHAP is ONLY used during training.
+
+
+---
+
+
+PROCESS
+
+
+trained_model
+↓
+TreeExplainer (SHAP)
+↓
+Compute SHAP values
+↓
+Aggregate across dataset
+↓
+Compute mean contribution
+
+
+---
+
+
+STORE OUTPUT
+
+
+feature_shap_coefficients[95]
+feature_population_means[95]
+
+
+---
+
+
+WHY THIS IS IMPORTANT
+
+
+On device:
+
+
+You DO NOT run SHAP
+
+
+Instead:
+
+
+impact = coefficient × (value − mean)
+
+
+---
+
+
+SECTION-5 — MODEL EXPORT PIPELINE
+
+
+Convert models to mobile format.
+
+
+---
+
+
+STEP-1: CONVERT TO TENSORFLOW FORMAT
+
+
+If using XGBoost:
+
+
+Convert → ONNX → TensorFlow → TFLite
+
+
+---
+
+
+STEP-2: TFLITE CONVERSION
+
+
+model
+↓
+TFLite converter
+↓
+model.tflite
+
+
+---
+
+
+STEP-3: OPTIMIZATION
+
+
+Apply:
+
+
+• Quantization (float16 or int8)
+• Size reduction
+
+
+Target size:
+
+
+1–2 MB total
+
+
+---
+
+
+SECTION-6 — MODEL ENCRYPTION
+
+
+CRITICAL FOR SECURITY
+
+
+---
+
+
+ALGORITHM
+
+
+AES-256 encryption
+
+
+---
+
+
+PROCESS
+
+
+model.tflite
+↓
+Encrypt using AES key
+↓
+model.enc
+
+
+---
+
+
+KEY MANAGEMENT
+
+
+DO NOT store raw key in code
+
+
+Use:
+
+
+Android Keystore
+
+
+---
+
+
+SECTION-7 — FILE STRUCTURE (FINAL OUTPUT)
+
+
+Mobile app must include:
+
+
+/assets/models/
+
+
+efficientnet_lite0.tflite
+mobilefacenet.tflite
+mediapipe_face.tflite
+
+
+p1_model.enc
+p2_model.enc
+p3_model.enc
+p4_model.enc
+p6_model.enc
+
+
+meta_model.enc
+
+
+shap_coefficients.json
+feature_means.json
+
+
+---
+
+
+SECTION-8 — VALIDATION BETWEEN TRAINING & DEVICE
+
+
+CRITICAL STEP
+
+
+You MUST verify:
+
+
+Same input → same output
+
+
+---
+
+
+TEST FLOW
+
+
+Take sample user data
+↓
+Run training pipeline
+↓
+Run mobile pipeline
+↓
+Compare outputs
+
+
+If mismatch → FIX FEATURE ENGINEERING
+
+
+---
+
+
+SECTION-9 — PERFORMANCE TARGETS
+
+
+Scoring model:
+
+
+<10 ms
+
+
+Total pipeline:
+
+
+<700 ms
+
+
+---
+
+
+SECTION-10 — OUTPUT OF PHASE-2
+
+
+After this phase, you MUST have:
+
+
+• Trained models
+• SHAP coefficients
+• TFLite models
+• Encrypted model files
+• Verified feature pipeline
+
+
+NO mobile implementation should start before this is complete.
+
+
+END OF PHASE-2

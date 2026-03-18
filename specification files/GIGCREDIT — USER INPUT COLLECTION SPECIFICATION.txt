@@ -1,0 +1,843 @@
+﻿GIGCREDIT — USER INPUT COLLECTION SPECIFICATION
+Complete Onboarding Workflow | Steps 1 through 8
+Version 2.0 | For Agent Implementation
+DOCUMENT PURPOSE
+This specification defines every user input collected during the GigCredit onboarding process. It is written for an implementation agent and covers the exact inputs required in each step, the format and UI method for collecting each input, whether each input is mandatory or optional, the total count of inputs per step, and how Step 5 dynamically reconfigures itself based on the gig worker category selected in Step 1. No validation logic is covered in this document.
+
+
+SYSTEM OVERVIEW
+text
+Total Onboarding Steps    : 8
+Steps That Are Mandatory  : All 8 steps must be visited
+Steps With Dynamic Content: Step 5 (changes per work type)
+Steps With Conditional Content: Step 4 (rent), Step 7 (vehicle)
+
+
+Supported Work Types      : 4
+  1. Platform Worker
+  2. Vendor / Seller
+  3. Skilled Tradesperson
+  4. Freelancer
+
+
+Work Type Selection (Step 1) drives:
+  → Entire content of Step 5
+  → Feature engineering for P1 income features
+  → Meta-learner selection at scoring time
+
+
+Vehicle Ownership (Step 1) drives:
+  → Vehicle insurance mandatory status in Step 7
+STEP 1 — BASIC PROFILE INFORMATION
+Purpose
+Collect the user's fundamental personal and professional details. Capture the gig worker category that configures Step 5 and all downstream feature engineering. This step is entirely form-based — no document uploads occur here.
+
+
+How This Step Is Presented
+A multi-section scrollable form screen with clearly labelled input fields, a date picker, dropdown selectors, and a prominent four-option work type selector presented as illustrated cards. The user fills all mandatory fields and taps Continue to proceed.
+
+
+Section A — Personal Details
+#        Field Name        UI Element        Input Format        Example Value        Mandatory
+1        Full Name        Single-line text field        Plain text, no special characters        Ravi Kumar        ✅ Yes
+2        Date of Birth        Date picker (DD/MM/YYYY)        Calendar selector        12/06/1997        ✅ Yes
+3        Mobile Number        Numeric text field        10-digit number, no country code        9876543210        ✅ Yes
+4        Current Address        Multi-line text field        Free text, street, area, city        No 14, Anna Nagar, Chennai        ✅ Yes
+5        Permanent Address        Multi-line text field        Free text        Madurai, Tamil Nadu        ✅ Yes
+6        State of Residence        Dropdown selector        All 28 Indian states + 8 UTs listed        Tamil Nadu        ✅ Yes
+Section B — Professional Details
+#        Field Name        UI Element        Input Format        Example Value        Mandatory
+7        Work Type        Four illustrated card selector, single choice        One of four options (see below)        Platform Worker        ✅ Yes
+8        Self-Declared Monthly Income        Numeric text field with ₹ prefix        Integer, rupees per month        ₹22,000        ✅ Yes
+9        Years in Current Profession        Numeric stepper or text input        Integer, 0–40        3        ✅ Yes
+10        Number of Dependents        Numeric stepper        Integer, 0–10        2        ✅ Yes
+11        Vehicle Ownership        Radio button — Yes / No        Binary selection        Yes        ✅ Yes
+12        Secondary Income Source        Single-line text + ₹ amount field        Free text + integer        Part-time delivery, ₹5,000        ⬜ Optional
+Work Type Selector — Four Options
+The work type selector is displayed as four large illustrated cards in a 2×2 grid. Each card shows an icon, the work type label, and a short list of example occupations. The user taps one card to select it.
+
+
+text
+Card 1 — Platform Worker
+  Icon: Delivery scooter / ride vehicle
+  Label: Platform Worker
+  Examples shown on card:
+    Ola, Uber, Swiggy, Zomato,
+    Dunzo, Porter, Blinkit, Rapido
+
+
+Card 2 — Vendor / Seller
+  Icon: Market stall / cart
+  Label: Vendor / Seller
+  Examples shown on card:
+    Fruit seller, vegetable vendor,
+    street food, kirana, small goods
+
+
+Card 3 — Skilled Tradesperson
+  Icon: Toolbox / wrench
+  Label: Skilled Tradesperson
+  Examples shown on card:
+    Electrician, plumber, carpenter,
+    welder, mason, tailor, mechanic
+
+
+Card 4 — Freelancer
+  Icon: Laptop / creative tools
+  Label: Freelancer
+  Examples shown on card:
+    Designer, developer, writer,
+    content creator, consultant
+Dynamic Behaviour Triggered by Step 1
+text
+FIELD                 TRIGGERS
+─────────────────────────────────────────────────────────
+Work Type             → Determines entire Step 5 layout
+                        and all document requirements
+                      → Activates work-type specific
+                        features in income scoring (P1)
+                      → Selects the correct meta-learner
+                        at scoring time
+
+
+Vehicle Ownership     → If Yes: Vehicle Insurance becomes
+= Yes                   mandatory in Step 7
+                      → If No: Vehicle Insurance shown as
+                        optional in Step 7
+
+
+State of Residence    → Sets the state median income anchor
+                        used to normalise all bank features
+                      → Without this, feature engineering
+                        cannot produce meaningful ratios
+Step 1 Total Inputs: 12 | Mandatory: 11 | Optional: 1
+
+
+STEP 2 — IDENTITY VERIFICATION
+Purpose
+Verify the user's government-issued identity documents and confirm that the person physically present matches the identity on file. This step produces the KYC verification status used in P5 identity scoring.
+
+
+How This Step Is Presented
+Three separate upload cards, each clearly labelled, with camera/gallery options for document images and an in-app camera capture trigger for the selfie. Each card shows a guide overlay or sample image illustrating the correct way to photograph the document.
+
+
+Aadhaar Card
+#        Field Name        UI Element        Input Format        Count        Mandatory
+1        Aadhaar Number        Numeric text field, segmented 4-4-4        12-digit number        1 entry        ✅ Yes
+2        Aadhaar Card — Front Side        Image upload button        JPG or PNG, camera or gallery        1 image        ✅ Yes
+3        Aadhaar Card — Back Side        Image upload button        JPG or PNG, camera or gallery        1 image        ✅ Yes
+text
+Why both sides are required:
+  Front: name, date of birth, Aadhaar number, photo
+  Back:  full address including state and PIN code
+  Back address is needed for cross-matching against
+  utility bill addresses and confirming state of residence
+PAN Card
+#        Field Name        UI Element        Input Format        Count        Mandatory
+4        PAN Number        Alphanumeric text field        10 characters (ABCDE1234F format)        1 entry        ✅ Yes
+5        PAN Card Photo        Image upload button        JPG or PNG, camera or gallery        1 image        ✅ Yes
+Live Selfie
+#        Field Name        UI Element        Input Format        Count        Mandatory
+6        Live Selfie        In-app camera trigger button        Camera capture only — no gallery upload permitted        1 photo        ✅ Yes
+text
+Why camera-only for selfie:
+  Gallery uploads could be a photo of someone else's photo.
+  Camera-only with liveness instructions ensures the person
+  submitting is physically present at time of capture.
+  The captured selfie is compared against the Aadhaar front
+  photo using on-device face matching.
+What Is Extracted After Step 2 Submission
+text
+Aadhaar Front OCR  → Name, date of birth, Aadhaar number
+Aadhaar Back OCR   → Full address, state, PIN code
+Aadhaar Number     → Manual entry cross-checked against OCR
+PAN Card OCR       → Name, date of birth, PAN number, father name
+PAN API            → Income Tax API confirms PAN active status
+                     and ITR filing status (used in Steps 6 and 8)
+Selfie             → On-device MobileFaceNet compares selfie
+                     face against Aadhaar front photo
+Step 2 Total Inputs: 6 | Mandatory: 6 | Optional: 0
+
+
+STEP 3 — BANK VERIFICATION
+Purpose
+Collect bank transaction history to evaluate income patterns, expense behaviour, EMI obligations, savings habits, and debt indicators. The bank statement is the most data-rich input in the entire system, producing the majority of features used in P1 through P4 scoring.
+
+
+How This Step Is Presented
+A primary bank section shown by default with clearly labelled fields. An expandable secondary bank section collapsed by default with a toggle. A separate optional UPI section below both bank sections.
+
+
+Primary Bank Account
+#        Field Name        UI Element        Input Format        Example        Mandatory
+1        Bank Name        Searchable text field or scrollable dropdown        Free text or selection from list of Indian banks        HDFC Bank        ✅ Yes
+2        Account Holder Name        Single-line text field        Plain text        Ravi Kumar        ✅ Yes
+3        Bank Branch Name        Single-line text field        Plain text        Anna Nagar Chennai        ✅ Yes
+4        IFSC Code        Alphanumeric text field, uppercase        11 characters        HDFC0001234        ✅ Yes
+5        Account Number        Numeric text field        9–18 digits depending on bank        1234567890        ✅ Yes
+6        Bank Statement        PDF file picker        PDF only, minimum 6 months coverage, maximum 12 months        —        ✅ Yes
+7        MICR Code        Numeric text field        9-digit number        600240012        ⬜ Optional
+Secondary Bank Account
+The secondary bank section is collapsed behind a clearly labelled toggle: "Add Secondary Bank Account (recommended for platform workers)". When the user enables the toggle, the same seven fields as the primary bank section appear below.
+
+
+#        Field Name        UI Element        Input Format        Mandatory
+8        Enable Secondary Account        Toggle switch        Boolean — on/off        ⬜ Optional
+9        Bank Name (secondary)        Same as primary        Same format        ⬜ Optional
+10        Account Holder Name (secondary)        Same as primary        Same format        ⬜ Optional
+11        Branch Name (secondary)        Same as primary        Same format        ⬜ Optional
+12        IFSC Code (secondary)        Same as primary        Same format        ⬜ Optional
+13        Account Number (secondary)        Same as primary        Same format        ⬜ Optional
+14        Bank Statement (secondary)        PDF file picker        PDF, minimum 6 months        ⬜ Optional
+15        MICR Code (secondary)        Same as primary        Same format        ⬜ Optional
+text
+UI tip shown near secondary bank toggle:
+  "Platform workers often receive gig income in a separate
+   account. Adding it gives a more accurate picture of your
+   total earnings and can significantly improve your score."
+UPI Statement
+#        Field Name        UI Element        Input Format        Mandatory
+16        UPI Platform        Dropdown selector        PhonePe / Google Pay / Paytm / BHIM / Other        ⬜ Optional
+17        UPI Statement        PDF file picker        PDF export from UPI app        ⬜ Optional
+What Is Extracted After Step 3 Submission
+text
+IFSC API        → RBI IFSC API confirms bank name and branch
+Bank Statement  → PDF parsed, every transaction extracted with:
+                    Date, amount (credit/debit), description,
+                    balance, transaction mode (UPI/NEFT/ATM/CASH)
+                  Each transaction tagged with category:
+                    INCOME_SALARY / INCOME_GIG / INCOME_UPI /
+                    INCOME_CASH / EMI / UTILITY / RENT /
+                    FOOD / FUEL / ATM / TRANSFER / OTHER
+Secondary Bank  → Merged with primary, deduplicated
+                  (same date ±1 day + same amount ±₹5 = removed)
+UPI Statement   → Cross-validates UPI credits in bank statement
+Step 3 Total Inputs: 17 | Mandatory: 6 | Optional: 11
+
+
+STEP 4 — UTILITY BILL VERIFICATION
+Purpose
+Evaluate payment discipline and financial consistency through 6 months of regular household bill payments. Bills are cross-referenced against the bank statement to confirm actual payment rather than just possession of the bill.
+
+
+How This Step Is Presented
+Three mandatory bill sections displayed as expandable accordion panels — Electricity, LPG/Gas, and Mobile. Each panel contains a 6-slot upload grid labelled by month. Below the mandatory panels sit two optional panels for additional utility types and one conditional panel for rent.
+
+
+Electricity Bills — Mandatory
+#        Field Name        UI Element        Input Format        Count        Mandatory
+1–6        Electricity Bill — Month 1 through Month 6        6-slot upload grid with month labels        JPG, PNG, or PDF per bill        6 bills        ✅ Yes
+text
+Slot labels shown: most recent month first (Month 6 = latest)
+User uploads one bill per slot.
+Slots are clearly labelled with month-year guidance.
+OCR extracts per bill: consumer number, service address,
+  bill month, units consumed, amount due, due date,
+  payment status (if printed on bill).
+Consumer number must be identical across all 6 bills.
+LPG / Gas Bills — Mandatory
+#        Field Name        UI Element        Input Format        Count        Mandatory
+7–12        LPG Bill — Month 1 through Month 6        6-slot upload grid        JPG, PNG, or PDF per bill        6 bills        ✅ Yes
+text
+Accepted providers: Indane (Indian Oil), HP Gas (Hindustan Petroleum),
+  Bharat Gas
+OCR extracts per bill: consumer number, distributor name,
+  booking/delivery month, number of cylinders, amount paid.
+Consumer number must be identical across all 6 bills.
+Mobile / Phone Bills — Mandatory
+#        Field Name        UI Element        Input Format        Count        Mandatory
+13–18        Mobile Bill — Month 1 through Month 6        6-slot upload grid        JPG, PNG, or PDF per bill        6 bills        ✅ Yes
+text
+Accepted: postpaid monthly bills or prepaid recharge receipts
+Accepted providers: Jio, Airtel, Vi (Vodafone Idea), BSNL, MTNL
+OCR extracts per bill: mobile number, provider name, bill month,
+  plan type, amount due/paid.
+Mobile number must be identical across all 6 bills.
+Rent Proof — Conditional
+The rent section is shown only if the user's current and permanent addresses indicate rental accommodation, or if the user manually indicates they are a renter. If the user owns their home, this section is hidden entirely.
+
+
+When shown, the user selects one of three proof options using a radio selector:
+
+
+#        Option        UI Element        Input Format        Count        Mandatory
+19        Option A — Rental Agreement        PDF or image file picker        PDF or JPG/PNG        1 document        ⬜ Conditional
+20        Option B — Monthly Rent Receipts        6-slot upload grid        JPG, PNG, or PDF per receipt        6 receipts        ⬜ Conditional
+21        Option C — Bank Auto-Detection        Auto-selected if RENT keyword found in bank        No upload needed        Automatic        ⬜ Conditional
+text
+Only one option needs to be completed.
+Option C is pre-selected automatically if the bank statement
+  parser detected recurring debits with RENT / HOUSE RENT /
+  HRA / LANDLORD in the narration.
+If Option C is pre-selected, the user sees a confirmation
+  message: "We found rent payments in your bank statement.
+  No upload needed — your rent history is already confirmed."
+Optional Utilities
+#        Field Name        UI Element        Input Format        Count        Mandatory
+22        WiFi / Broadband Bills        Expandable section, multi-file picker        JPG, PNG, or PDF        Up to 6        ⬜ Optional
+23        OTT Subscription Receipts        Expandable section, multi-file picker        Screenshot or PDF        Any        ⬜ Optional
+text
+UI tip shown near optional sections:
+  "Adding broadband or subscription bills can improve
+   your Payment Discipline score by up to 8 points."
+What Is Extracted After Step 4 Submission
+text
+Per bill OCR  → consumer number, month, amount, due date
+Cross-checks  → bill amount found as debit in bank statement
+              → due date vs actual payment date (on-time flag)
+              → consumer/mobile number consistency across 6 bills
+Rent          → 6 months of rent confirmed via chosen option
+Step 4 Total Inputs: 18 mandatory bills + 0–13 optional | Mandatory: 18 | Optional: up to 13
+
+
+STEP 5 — GIG WORK PROOF (DYNAMICALLY CONFIGURED)
+Purpose
+Verify the user's occupation, work history, and work-specific income sources. This step is entirely reconfigured based on the Work Type selected in Step 1. The screen title, instructions, upload cards, and all fields are unique to each work type.
+
+
+How Dynamic Configuration Works
+text
+When user reaches Step 5, the system reads the
+Work Type stored from Step 1 and renders one of
+four completely different screen layouts:
+
+
+  Work Type = Platform Worker    → Render Layout 5A
+  Work Type = Vendor / Seller    → Render Layout 5B
+  Work Type = Tradesperson       → Render Layout 5C
+  Work Type = Freelancer         → Render Layout 5D
+
+
+No work type sees another work type's inputs.
+Features not applicable to a work type are set to
+structural zero during feature engineering —
+they are absent by design, not by missing data.
+STEP 5A — Platform Worker
+Screen Title: "Verify Your Delivery / Ride Partner Profile"
+
+
+Screen Description shown to user: "Upload your vehicle documents and earnings screenshots from your platform app to verify your work history."
+
+
+Section 1 — Vehicle Documents
+#        Field Name        UI Element        Input Format        Count        Mandatory
+1        Vehicle Registration Number        Single-line text field, uppercase        Alphanumeric (TN09AB1234 format)        1 entry        ✅ Yes
+2        RC Book — Front Page        Image upload card with guide overlay        JPG or PNG        1 image        ✅ Yes
+3        Driving Licence — Front Side        Image upload card with guide overlay        JPG or PNG        1 image        ✅ Yes
+4        Driving Licence — Back Side        Image upload card with guide overlay        JPG or PNG        1 image        ✅ Yes
+5        Vehicle Insurance Certificate        Image or PDF upload card        JPG, PNG, or PDF        1 document        ✅ Yes
+text
+Why both DL sides are required:
+  Front: licence number, name, date of birth, photo
+  Back:  vehicle classes authorised, validity dates
+  Vehicle class on DL must match vehicle class on RC book.
+  DL name must match Aadhaar name from Step 2.
+  RC vehicle number must match Vehicle Insurance policy.
+Section 2 — Platform Earning Screenshots
+Three individual upload cards displayed in sequence, each labelled by month. The user uploads one screenshot per card from their platform app showing that month's earnings summary.
+
+
+#        Field Name        UI Element        Input Format        Count        Mandatory
+6        Platform Earning Screenshot — Most Recent Month        Single image upload card        Screenshot (JPG or PNG)        1 image        ✅ Yes
+7        Platform Earning Screenshot — 2 Months Ago        Single image upload card        Screenshot (JPG or PNG)        1 image        ✅ Yes
+8        Platform Earning Screenshot — 3 Months Ago        Single image upload card        Screenshot (JPG or PNG)        1 image        ✅ Yes
+9        Second Platform App Screenshot (if registered on 2 apps)        Single image upload card        Screenshot (JPG or PNG)        1 image        ⬜ Optional
+10        Third Platform App Screenshot (if registered on 3+ apps)        Single image upload card        Screenshot (JPG or PNG)        1 image        ⬜ Optional
+text
+Accepted platform apps for screenshots:
+  Swiggy Delivery Partner app earnings screen
+  Zomato Delivery Partner app earnings screen
+  Ola Driver app earnings screen
+  Uber Driver app earnings screen
+  Dunzo Agent app earnings screen
+  Porter Captain app earnings screen
+  Blinkit Delivery Partner app earnings screen
+  Rapido Captain app earnings screen
+
+
+Screen guidance shown to user:
+  "Open your delivery app → Go to Earnings →
+   Select the month → Take a screenshot showing
+   total earnings, number of trips/orders, and
+   your account name."
+
+
+What OCR extracts from each screenshot:
+  Monthly earnings total in ₹
+  Number of trips or deliveries that month
+  Platform rating (1.0 to 5.0)
+  Account holder name (cross-matched with Aadhaar)
+  Joined / member since date (tenure computed)
+  Platform badge or level if visible
+
+
+What API verification runs:
+  Transport Department API:
+    RC validity confirmed
+    DL validity confirmed
+    DL vehicle class vs RC vehicle class match
+
+
+Cross-checks that run automatically:
+  RC vehicle number must match vehicle insurance policy
+  DL name must match Aadhaar name exactly
+  Platform account name must match Step 1 full name
+  Platform monthly earnings must approximately match
+    bank credits for same months (±30% tolerance)
+  All 3 screenshots must be from same platform account
+Step 5A Total Inputs: 10 | Mandatory: 8 | Optional: 2
+
+
+STEP 5B — Vendor / Seller
+Screen Title: "Verify Your Vending / Seller Business"
+
+
+Screen Description shown to user: "Upload your SVANidhi scheme documents and trade licence to verify your business."
+
+
+Section 1 — SVANidhi Scheme Documents
+#        Field Name        UI Element        Input Format        Count        Mandatory
+1        PM SVANidhi Application ID        Single-line text field        Alphanumeric (SVN12345678 format)        1 entry        ✅ Yes
+2        SVANidhi Approval Letter        Image or PDF upload card        JPG, PNG, or PDF        1 document        ✅ Yes
+text
+What OCR extracts from SVANidhi approval letter:
+  Application ID, approval date, loan amount sanctioned,
+  beneficiary name, issuing bank or MFI name.
+Cross-checks:
+  Beneficiary name must match Aadhaar name from Step 2.
+  SVANidhi loan disbursement amount found in bank credits.
+  SVANidhi monthly repayment debits found in bank statement.
+Section 2 — Business Licence
+#        Field Name        UI Element        Input Format        Count        Mandatory
+3        Municipal Trade Licence        Image or PDF upload card        JPG, PNG, or PDF        1 document        ✅ Yes
+text
+What OCR extracts from trade licence:
+  Licence number, validity date, business type,
+  issuing municipality name, registered business address.
+Cross-checks:
+  Issuing municipality address cross-matched against
+    Aadhaar back address at state level.
+  Licence holder name must match Aadhaar name.
+Section 3 — Optional Supporting Documents
+#        Field Name        UI Element        Input Format        Count        Mandatory
+4        Bank No-Due Certificate        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+5        Vendor Association Membership        Image upload card        JPG or PNG        1 document        ⬜ Optional
+6        Market Allotment Letter        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+7        GST Registration Certificate (if registered)        PDF upload card        PDF        1 document        ⬜ Optional
+text
+UI tip shown near optional section:
+  "Adding a trade licence and GST registration can improve
+   your Work Identity score by up to 20 points."
+Step 5B Total Inputs: 7 | Mandatory: 3 | Optional: 4
+
+
+STEP 5C — Skilled Tradesperson
+Screen Title: "Verify Your Trade Skills and Work History"
+
+
+Screen Description shown to user: "Upload your NSDC skill certificate and a recent work order to verify your trade."
+
+
+Section 1 — Skill Certification
+#        Field Name        UI Element        Input Format        Count        Mandatory
+1        Skill Certificate ID        Single-line text field, uppercase        Alphanumeric (NSDC-2023-457892 format)        1 entry        ✅ Yes
+2        NSDC / NSQF Skill Certificate        Image or PDF upload card        JPG, PNG, or PDF        1 document        ✅ Yes
+text
+What OCR extracts from NSDC certificate:
+  Certificate number, skill domain (e.g. Electrician),
+  NSQF level (1 through 8), issue date, issuing body name.
+API verification:
+  Skill India / NSDC API:
+    Certificate ID submitted → returns active / invalid / expired
+    NSQF level confirmed from API response
+Cross-checks:
+  Certificate holder name must match Aadhaar name.
+Section 2 — Work Proof
+#        Field Name        UI Element        Input Format        Count        Mandatory
+3        Work Order Letter        Image or PDF upload card        JPG, PNG, or PDF        1 document        ✅ Yes
+text
+What OCR extracts from work order letter:
+  Client or contractor name, type of work performed,
+  work value in ₹, completion date, authorised signature.
+Cross-checks:
+  Work value payment found in bank credits (±30% tolerance).
+  Completion date cross-referenced with bank credit date.
+Section 3 — Optional Supporting Documents
+#        Field Name        UI Element        Input Format        Count        Mandatory
+4        Experience Certificate from Employer        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+5        Additional NSDC / Skill Certificates        Multi-file upload card        JPG, PNG, or PDF        Up to 3        ⬜ Optional
+6        GST Registration Certificate (if applicable)        PDF upload card        PDF        1 document        ⬜ Optional
+Step 5C Total Inputs: 6 | Mandatory: 3 | Optional: 3
+
+
+STEP 5D — Freelancer
+Screen Title: "Verify Your Freelance Work Profile"
+
+
+Screen Description shown to user: "Upload a screenshot of your freelance platform profile and at least one client invoice to verify your work."
+
+
+Section 1 — Platform Profile
+#        Field Name        UI Element        Input Format        Count        Mandatory
+1        Freelance Platform Profile Screenshot        Single image upload card with guide        Screenshot (JPG or PNG)        1 image        ✅ Yes
+2        Second Platform Profile Screenshot (if on 2 platforms)        Single image upload card        Screenshot (JPG or PNG)        1 image        ⬜ Optional
+text
+Accepted freelance platforms for screenshots:
+  Upwork, Fiverr, Toptal, Freelancer.com,
+  PeoplePerHour, 99designs, Guru, Contra, Kwork
+
+
+Screen guidance shown to user:
+  "Open your freelance platform → Go to your Profile
+   or Dashboard → Take a screenshot showing your
+   name, rating, total earnings, and member since date."
+
+
+What OCR extracts from platform screenshot:
+  Account holder name (cross-matched with Aadhaar)
+  Overall platform rating (out of 5.0)
+  Total lifetime earnings displayed on platform
+  Member since date (tenure computed in months)
+  Badge or level if visible (Top Rated, Pro, Rising Talent)
+Section 2 — Client Invoices
+#        Field Name        UI Element        Input Format        Count        Mandatory
+3        Client Invoice — Sample 1        Image or PDF upload card        JPG, PNG, or PDF        1 document        ✅ Yes (minimum 1)
+4        Client Invoice — Sample 2        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+5        Client Invoice — Sample 3        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+6        Client Invoice — Sample 4        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+7        Client Invoice — Sample 5        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+text
+What OCR extracts from each invoice:
+  Client name, service description, invoice amount (₹),
+  invoice date, payment due date, payment status,
+  GST number if applicable.
+Cross-checks:
+  Invoice amounts found as credits in bank statement (±30%).
+  Invoice dates cross-referenced with bank credit dates.
+  Platform account name must match Step 1 full name.
+Section 3 — Optional Supporting Documents
+#        Field Name        UI Element        Input Format        Count        Mandatory
+8        Portfolio or Project Completion Proof        Image or PDF upload card        Screenshot, JPG, PNG, or PDF        Any        ⬜ Optional
+9        GST Registration Certificate (if applicable)        PDF upload card        PDF        1 document        ⬜ Optional
+Step 5D Total Inputs: 9 | Mandatory: 2 | Optional: 7
+
+
+STEP 6 — GOVERNMENT SCHEME PARTICIPATION
+Purpose
+Capture voluntary participation in Indian government welfare, credit, and social security schemes. Scheme participation signals formal financial engagement and is scored under the P7 Social Accountability pillar. Scheme contributions are cross-verified against bank statement debits automatically.
+
+
+How This Step Is Presented
+A checklist screen showing five scheme cards. Each card shows the scheme name, a brief description, and an expand button. The user selects the schemes they are enrolled in by tapping the card, which expands to reveal the input fields and upload area for that scheme. Unselected schemes remain collapsed and are skipped. The entire step is optional — the user may skip all schemes or select any combination.
+
+
+Step-level message shown to user:
+"Each government scheme you are enrolled in adds to your Social Accountability score. Even 1–2 verified schemes can improve your final credit score by 15 to 30 points."
+
+
+Scheme 1 — eShram Registration
+#        Field Name        UI Element        Input Format        Count        Mandatory
+1        UAN Number        Single-line text field        12-digit numeric        1 entry        ⬜ Optional
+2        eShram Card        Image upload card        JPG or PNG        1 image        ⬜ Optional
+text
+What OCR extracts: UAN number, worker name,
+  registration date, worker category.
+Scheme 2 — PM-SYM Pension Scheme
+#        Field Name        UI Element        Input Format        Count        Mandatory
+3        Pension Account Number        Single-line text field        Alphanumeric        1 entry        ⬜ Optional
+4        Pension Card or Registration Certificate        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+text
+What OCR extracts: Subscriber ID, contribution amount,
+  last contribution date.
+Bank cross-check: monthly contribution debit found in bank,
+  gap between consecutive debits must be ≤ 35 days.
+Scheme 3 — PMJJBY Life Insurance
+#        Field Name        UI Element        Input Format        Count        Mandatory
+5        PMJJBY Insurance Certificate        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+text
+What OCR extracts: policy number, insured name,
+  sum assured (₹2 lakh), validity date.
+Bank cross-check: annual premium debit (₹436/year)
+  found in bank statement.
+Scheme 4 — PMMY MUDRA Loan
+#        Field Name        UI Element        Input Format        Count        Mandatory
+6        Loan Account Number        Single-line text field        Alphanumeric        1 entry        ⬜ Optional
+7        Loan Acknowledgement Receipt        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+8        Bank No-Due Certificate        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+text
+What OCR extracts: Loan ID, sanctioned amount,
+  disbursement date, closure date.
+Bank cross-check: monthly repayment EMI debits found
+  in bank statement + closure date confirmed.
+Scheme 5 — Public Provident Fund (PPF)
+#        Field Name        UI Element        Input Format        Count        Mandatory
+9        PPF Account Number        Single-line text field        Alphanumeric        1 entry        ⬜ Optional
+10        PPF Passbook — First Page        Image upload card        JPG or PNG        1 image        ⬜ Optional
+text
+What OCR extracts: account number, bank name,
+  account holder name, annual contribution amount.
+Bank cross-check: quarterly or annual PPF deposit
+  debit found in bank statement.
+Step 6 Total Inputs: 10 (text + upload pairs) | All Optional
+
+
+STEP 7 — INSURANCE COVERAGE
+Purpose
+Capture insurance documents as evidence of financial resilience and risk management. Insurance coverage signals the user's ability to withstand unexpected financial shocks and is scored under the P6 Financial Resilience pillar.
+
+
+How This Step Is Presented
+Three insurance cards displayed vertically. Each card shows the insurance type, a brief description of what it covers, and the estimated score impact. The user uploads documents for the insurance types they hold. Vehicle insurance card mandatory status is dynamically set based on Vehicle Ownership from Step 1.
+
+
+Health Insurance
+#        Field Name        UI Element        Input Format        Count        Mandatory
+1        Health Insurance Policy Document        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+text
+Score impact shown on card: "Can add up to 18 points"
+What OCR extracts: policy number, insurer name,
+  sum insured (₹), validity date, plan type
+  (individual / family floater).
+Vehicle Insurance
+#        Field Name        UI Element        Input Format        Count        Mandatory
+2        Vehicle Insurance Policy        Image or PDF upload card        JPG, PNG, or PDF        1 document        ✅ If Vehicle = Yes
+text
+Dynamic behaviour:
+  Vehicle Ownership = Yes in Step 1 → card shows
+    "Required" badge, mandatory upload
+  Vehicle Ownership = No in Step 1 → card shows
+    "Optional" badge, optional upload or hidden
+
+
+Score impact shown on card: "Can add up to 12 points"
+What OCR extracts: policy number, vehicle registration
+  number, validity date, insurer name, coverage type.
+Cross-check: vehicle registration number must match
+  RC book submitted in Step 5A (Platform Worker only).
+Life Insurance
+#        Field Name        UI Element        Input Format        Count        Mandatory
+3        Life Insurance Policy Bond or Premium Receipt        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+text
+Score impact shown on card: "Can add up to 10 points"
+What OCR extracts: policy number, sum assured (₹),
+  annual premium amount, insurer name, policy holder name.
+Step 7 Total Inputs: 3 | Mandatory: 0–1 (conditional) | Optional: 2–3
+
+
+STEP 8 — ITR AND GST RECORDS
+Purpose
+Collect formal income declaration and tax compliance records. ITR and GST documents independently verify the income reported in the bank statement and declared in Step 1. These are the strongest formal income signals in the system and improve confidence scores across P1, P4, P6, and the meta-learner.
+
+
+How This Step Is Presented
+Two separate sections on one screen — ITR section on top and GST section below. Both sections are optional and collapsed by default. A clear message at the top of the screen explains the score benefit of submitting. GST section is visually emphasised for Vendor and Freelancer work types.
+
+
+Step-level message shown to user:
+"ITR and GST records are the strongest proof of income. Submitting them can improve your score by up to 22 points across multiple pillars."
+
+
+Section A — Income Tax Return (ITR)
+#        Field Name        UI Element        Input Format        Count        Mandatory
+1        ITR Acknowledgement Receipt (Form V)        Image or PDF upload card        JPG, PNG, or PDF        1 document        ⬜ Optional
+2        Form 26AS        PDF upload card        PDF only        1 document        ⬜ Optional
+text
+What OCR extracts from ITR Form V:
+  Acknowledgement number, PAN number,
+  assessment year, total income declared (₹),
+  filing date.
+What OCR extracts from Form 26AS:
+  Total TDS amount, total income from all sources,
+  employer or client TAN details if present.
+API verification:
+  Income Tax API confirms ITR filing status
+  for the latest assessment year using PAN
+  number from Step 2.
+Features produced:
+  itr_filed_binary            → P6 resilience + meta-learner
+  declared_income_ratio       → ITR annual ÷ 12 ÷ bank monthly avg
+  itr_to_bank_ratio           → income consistency cross-check
+Section B — GST Records
+The GST section is displayed prominently (expanded by default) for Vendor and Freelancer work types. For Platform Worker and Tradesperson it is displayed collapsed with an expand option.
+
+
+#        Field Name        UI Element        Input Format        Count        Mandatory
+3        GSTIN Number        Single-line text field, uppercase        15-character alphanumeric        1 entry        ⬜ Optional
+4        GSTR-3B Monthly Returns        Multi-file PDF upload        PDF per return        Up to 6 files        ⬜ Optional
+text
+What OCR extracts from GSTR-3B returns:
+  GSTIN, business legal name, return filing month,
+  outward taxable supplies (monthly turnover ₹),
+  filing date per return.
+API verification:
+  GST Portal API:
+    GSTIN active status confirmed
+    Return filing consistency confirmed (months filed ÷ 6)
+Features produced:
+  gst_registered_binary        → P7 schemes score
+  gst_filing_consistency       → months filed ÷ 6
+  gst_monthly_turnover_norm    → avg turnover ÷ income anchor
+                                  (significant for Vendors
+                                   and Freelancers in P1)
+Step 8 Total Inputs: 4 | All Optional
+
+
+DYNAMIC CONFIGURATION REFERENCE
+Work Type → Step 5 Layout
+text
+WORK TYPE SELECTED       STEP 5 LAYOUT RENDERED
+IN STEP 1                IN STEP 5
+──────────────────────────────────────────────────────────
+Platform Worker          Layout 5A
+                         Fields: Vehicle number, RC book,
+                         DL front + back, vehicle insurance,
+                         3 platform earning screenshots
+                         Mandatory: 8 inputs
+
+
+Vendor / Seller          Layout 5B
+                         Fields: SVANidhi ID + letter,
+                         municipal trade licence
+                         Mandatory: 3 inputs
+
+
+Skilled Tradesperson     Layout 5C
+                         Fields: Skill certificate ID +
+                         document, work order letter
+                         Mandatory: 3 inputs
+
+
+Freelancer               Layout 5D
+                         Fields: Platform profile screenshot,
+                         minimum 1 client invoice
+                         Mandatory: 2 inputs
+Vehicle Ownership → Step 7 Impact
+text
+VEHICLE OWNERSHIP        STEP 7 VEHICLE INSURANCE
+IN STEP 1                STATUS IN STEP 7
+──────────────────────────────────────────────────────────
+Yes                      Card shows REQUIRED badge
+                         Upload is mandatory
+                         Missing = incomplete step
+
+
+No                       Card shows OPTIONAL badge
+                         Upload not required
+                         Skipping has no penalty
+GST Section → Step 8 Visibility
+text
+WORK TYPE SELECTED       GST SECTION IN STEP 8
+──────────────────────────────────────────────────────────
+Vendor / Seller          Expanded by default, visually
+                         prominent, tip shown:
+                         "GST registration shows formal
+                          business operation"
+
+
+Freelancer               Expanded by default, tip shown:
+                         "GST registration confirms
+                          professional income"
+
+
+Platform Worker          Collapsed, expandable, low emphasis
+
+
+Skilled Tradesperson     Collapsed, expandable, low emphasis
+COMPLETE INPUT COUNT SUMMARY
+text
+STEP   SECTION                       MANDATORY   OPTIONAL   TOTAL
+───────────────────────────────────────────────────────────────────
+ 1     Basic Profile                 11          1          12
+ 2     Identity Verification         6           0          6
+ 3     Bank Verification             6           11         17
+ 4     Utility Bills                 18          13         31
+ 5A    Platform Worker               8           2          10
+ 5B    Vendor / Seller               3           4          7
+ 5C    Skilled Tradesperson          3           3          6
+ 5D    Freelancer                    2           7          9
+ 6     Government Schemes            0           10         10
+ 7     Insurance Coverage            0–1         2–3        3
+ 8     ITR + GST                     0           4          4
+───────────────────────────────────────────────────────────────────
+TOTAL (Steps 1–4 + one work type + Steps 6–8)
+  Minimum mandatory inputs          ~54
+  Maximum with all optional         ~105
+  Average realistic submission      ~65–75
+
+
+ALL INPUTS PRODUCE:
+  89 features → 7 pillars → 1 final credit score (300–900)
+INPUT TO FEATURE TO PILLAR MAPPING
+text
+INPUT SOURCE                FEATURES PRODUCED        PILLAR
+───────────────────────────────────────────────────────────
+Step 1 — Basic Info         work_type_encoded,       P5, all
+                            profession_tenure_norm,
+                            age_suitability,
+                            state_median_anchor
+
+
+Step 2 — Identity           face_similarity_score,   P5
+                            kyc_completeness,
+                            itr_filed (from PAN API)
+
+
+Step 3 — Bank Statements    26 income features       P1
+                            15 discipline features   P2
+                            9 debt features          P3
+                            10 savings features      P4
+
+
+Step 4 — Utility Bills      utility_ontime_ratio,    P2
+                            utility_bank_match,
+                            provider_type_encoded,
+                            consistency scores
+
+
+Step 5A — Platform Docs     dl_valid, rc_active,     P1, P5
+                            platform_tenure,
+                            platform_earnings,
+                            trips_per_month,
+                            bank_to_platform_ratio
+
+
+Step 5B — Vendor Docs       svanidhi_verified,       P1, P3, P5
+                            trade_licence_verified,
+                            svanidhi_loan_norm,
+                            vendor_tenure_norm
+
+
+Step 5C — Tradesperson Docs nsdc_certified,          P1, P5
+                            nsqf_level_norm,
+                            work_order_verified,
+                            work_order_value_norm
+
+
+Step 5D — Freelancer Docs   client_invoice_verified, P1, P5
+                            invoice_total_norm,
+                            platform_rating_norm,
+                            freelance_tenure_norm
+
+
+Step 6 — Gov. Schemes       eshram_active,           P7, P2, P3
+                            pmsym_active,
+                            pmjjby_active,
+                            ppf_active,
+                            mudra_completed,
+                            scheme_consistency
+
+
+Step 7 — Insurance          health_insurance_active, P6
+                            vehicle_insurance_wt,
+                            life_insurance_active,
+                            insurance_composite,
+                            sum_insured_ratio
+
+
+Step 8 — ITR + GST          itr_filed_binary,        P1, P6, P7
+                            declared_income_ratio,
+                            itr_to_bank_ratio,
+                            gst_registered_binary,
+                            gst_filing_consistency,
+                            gst_turnover_norm

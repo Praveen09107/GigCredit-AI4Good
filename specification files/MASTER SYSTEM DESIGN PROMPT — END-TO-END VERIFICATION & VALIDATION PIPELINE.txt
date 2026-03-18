@@ -1,0 +1,657 @@
+﻿MASTER SYSTEM DESIGN PROMPT — END-TO-END VERIFICATION & VALIDATION PIPELINE
+
+
+SYSTEM CONTEXT
+
+
+The GigCredit application verifies gig workers’ financial credibility using a multi-layer verification system.
+The system collects user inputs and documents across multiple steps and performs structured validation before generating a credit score.
+
+
+The system architecture combines:
+
+
+• On-device validation and OCR processing
+• Backend verification APIs (FastAPI simulation)
+• MongoDB verification datasets
+• Cross-step identity validation
+• Structured financial transaction analysis
+
+
+The core rule of the system:
+
+
+ONLY VERIFIED DATA PROCEEDS TO SCORING.
+
+
+Any data failing validation is rejected and excluded from the scoring model.
+
+
+---
+
+
+SYSTEM ARCHITECTURE OVERVIEW
+
+
+The verification pipeline consists of the following steps:
+
+
+Step-1
+Basic Profile Information
+
+
+Step-2
+Identity Verification
+(Aadhaar + PAN)
+
+
+Step-3
+Bank Account Verification
+(Bank statement extraction)
+
+
+Step-4
+Utility Bill Verification
+
+
+Step-5
+Occupation Proof Verification
+
+
+Step-6
+Government Scheme Verification
+
+
+Step-7
+Insurance Verification
+
+
+Step-8
+Income Tax Return Verification
+
+
+Step-9
+Existing EMI Detection
+
+
+Each step contributes verified features to a global verification profile.
+
+
+---
+
+
+CORE VALIDATION TYPES
+
+
+The system uses three types of validation.
+
+
+1. INDIVIDUAL VALIDATION
+
+
+Validation performed on a single input field.
+
+
+Examples
+
+
+PAN format validation
+IFSC code format validation
+Policy number validation
+
+
+This validation happens on the user device.
+
+
+---
+
+
+2. CROSS-INTERNAL VALIDATION
+
+
+Validation between fields inside the same step.
+
+
+Example
+
+
+Bank statement OCR fields
+
+
+Bank Name
+Account Holder Name
+IFSC Code
+Account Number
+
+
+All must match.
+
+
+---
+
+
+3. GLOBAL VALIDATION (CROSS-STEP)
+
+
+Data from one step is verified against previously validated data.
+
+
+Example
+
+
+Bank account holder name ↔ PAN name
+Insurance holder name ↔ Aadhaar identity
+ITR PAN ↔ PAN verification step
+
+
+This ensures identity consistency across all steps.
+
+
+---
+
+
+GLOBAL PROFILE OBJECT
+
+
+The system maintains a global verification object stored locally during the verification process.
+
+
+Example structure
+
+
+verified_profile = {
+
+
+"name": "Ravi Kumar",
+
+
+"pan_verified": true,
+
+
+"aadhaar_verified": true,
+
+
+"bank_verified": true,
+
+
+"utility_verified": true,
+
+
+"work_proof_verified": true,
+
+
+"government_schemes_verified": true,
+
+
+"insurance_verified": true,
+
+
+"itr_verified": true,
+
+
+"emi_analysis_complete": true
+
+
+}
+
+
+This object is updated after every step.
+
+
+---
+
+
+OCR PROCESSING PIPELINE
+
+
+All documents uploaded by the user are processed using an on-device OCR engine.
+
+
+Example OCR engine
+
+
+PaddleOCR Lite
+
+
+OCR Processing Flow
+
+
+User uploads document
+↓
+Image preprocessing
+↓
+Text extraction using OCR
+↓
+Full document text stored locally
+↓
+Regex and pattern matching extract required fields
+↓
+Validation checks performed
+
+
+Two outputs are produced
+
+
+1. Full OCR text
+2. Extracted structured fields
+
+
+Example structured output
+
+
+{
+"name": "Ravi Kumar",
+"pan": "ABCDE1234F",
+"policy_number": "LIC7828392"
+}
+
+
+Full OCR text is retained for future verification.
+
+
+---
+
+
+BACKEND VERIFICATION LAYER
+
+
+Some fields require verification using simulated government or financial APIs.
+
+
+The backend server is implemented using
+
+
+FastAPI + MongoDB.
+
+
+Each verification service has a dedicated database collection.
+
+
+Example collections
+
+
+aadhaar_db
+pan_db
+ifsc_db
+bank_accounts_db
+vehicle_rc_db
+insurance_db
+eshram_db
+itr_filings_db
+loan_accounts_db
+
+
+Example API verification flow
+
+
+User enters PAN number
+↓
+Frontend sends request to backend
+
+
+POST /gov/pan/verify
+
+
+↓
+Backend queries pan_db collection
+↓
+Matching record returned
+↓
+Response sent to device
+↓
+Device performs cross validation
+
+
+---
+
+
+BANK STATEMENT PROCESSING
+
+
+Bank statements uploaded in Step-3 are processed using OCR.
+
+
+OCR extracts
+
+
+Bank Name
+Account Holder Name
+IFSC Code
+Account Number
+Statement Period
+Transaction Table
+
+
+The transaction table is converted into a structured dataset.
+
+
+Example CSV dataset
+
+
+transaction_date,description,amount,type,balance
+
+
+2025-09-05,HDFC LOAN EMI,8500,DEBIT,42000
+2025-09-10,UPI CREDIT SWIGGY,1500,CREDIT,43500
+2025-09-15,TNEB BILL PAYMENT,1200,DEBIT,42300
+
+
+This dataset becomes the primary financial data source for later steps.
+
+
+The dataset is stored locally as
+
+
+bank_transactions.csv
+
+
+---
+
+
+TRANSACTION DATA USAGE
+
+
+This dataset is used for multiple validations.
+
+
+Utility bill verification
+
+
+Check if electricity bill payment exists.
+
+
+Filter example
+
+
+description contains "TNEB"
+amount ≈ bill amount
+date ≈ bill date
+
+
+Insurance premium verification
+
+
+Check policy premium payment in bank transactions.
+
+
+EMI detection
+
+
+Identify recurring loan payments.
+
+
+---
+
+
+UTILITY BILL VALIDATION
+
+
+Example
+
+
+Electricity bill
+
+
+OCR extracts
+
+
+service_number
+bill_amount
+bill_date
+
+
+System searches transaction dataset
+
+
+Find debit transaction
+
+
+amount ≈ bill_amount
+date ≈ bill_date
+
+
+If transaction exists → bill verified.
+
+
+---
+
+
+OCCUPATION VERIFICATION
+
+
+Occupation proofs differ by work type.
+
+
+Examples
+
+
+Platform driver
+
+
+Vehicle RC verification
+Vehicle insurance verification
+Platform earnings screenshots
+
+
+Vendor
+
+
+PM SVANidhi verification
+Loan repayment certificate
+
+
+Skilled worker
+
+
+Skill India certificate verification
+
+
+Each document undergoes
+
+
+OCR extraction
+API verification
+Cross validation with identity
+
+
+---
+
+
+INSURANCE VERIFICATION
+
+
+Insurance policies are verified using:
+
+
+OCR field extraction
+Insurance verification API
+Bank premium payment matching
+
+
+Example
+
+
+policy_number
+policy_holder_name
+premium_amount
+
+
+Premium payment is verified using bank statement transaction dataset.
+
+
+---
+
+
+ITR VERIFICATION
+
+
+The ITR acknowledgement document is verified using:
+
+
+PAN number
+Acknowledgement number
+Assessment year
+
+
+Backend verification API
+
+
+POST /gov/income-tax/itr/verify
+
+
+Backend checks itr_filings_db collection.
+
+
+Additional consistency check
+
+
+Declared income ↔ bank deposits.
+
+
+---
+
+
+EMI DETECTION
+
+
+Existing EMIs are detected from bank statement transactions.
+
+
+Example transactions
+
+
+HDFC LOAN EMI → ₹11,102
+BAJAJ FINSERV EMI → ₹5,523
+
+
+The system identifies recurring debit patterns.
+
+
+Validation rules
+
+
+Same amount
+Monthly recurrence
+Loan related description
+
+
+Detected EMIs are stored in an EMI profile object.
+
+
+Example
+
+
+{
+"active_loans": 3,
+"total_monthly_emi": 18504
+}
+
+
+---
+
+
+DATA FLOW RULE
+
+
+The system follows a strict rule.
+
+
+Only validated data moves forward.
+
+
+Example pipeline
+
+
+User uploads document
+↓
+OCR extraction
+↓
+Individual validation
+↓
+Cross internal validation
+↓
+Global validation
+↓
+Verification API confirmation
+↓
+Data accepted
+
+
+If validation fails
+
+
+Data rejected.
+
+
+Rejected data is not used in scoring.
+
+
+---
+
+
+FINAL DATA PACKAGE FOR SCORING MODEL
+
+
+After all steps complete, the system sends only verified structured data to the scoring model.
+
+
+Example dataset
+
+
+{
+"monthly_income": 42000,
+"bank_transaction_stability": 0.84,
+"active_emi_count": 2,
+"insurance_active": true,
+"government_scheme_participation": true,
+"occupation_verified": true
+}
+
+
+Raw OCR text and unverified inputs are excluded.
+
+
+---
+
+
+FINAL WORKFLOW SUMMARY
+
+
+User installs application
+↓
+Documents processed using on-device OCR
+↓
+Validation performed locally
+↓
+Backend APIs verify official records
+↓
+Cross-step identity validation performed
+↓
+Bank transactions converted to structured dataset
+↓
+Utility payments and EMI obligations detected
+↓
+Only verified fields retained
+↓
+Structured verified dataset sent to scoring model
+
+
+---
+
+
+OUTPUT
+
+
+Final verified dataset is passed to
+
+
+Credit Scoring Engine
+
+
+The engine generates
+
+
+Credit score
+Risk band
+Loan eligibility
+Explanation report

@@ -1,0 +1,1801 @@
+GIGCREDIT — FINALIZED INPUT FIELD SPECIFICATION
+Complete OCR Extraction Master Document | All Steps | All Documents
+Version 2.0 — All Gaps Fixed | Zero Assumptions | Fully Grounded
+
+DOCUMENT CONVENTIONS
+text
+FIELD STATUS LEGEND:
+  [CORE]     — Always extracted, required for scoring
+  [ADDED]    — New field added in this finalization
+  [OPTIONAL] — Extracted if present, scoring degrades gracefully if absent
+  [META]     — Extracted for display/identity only, NOT passed to model
+  [BLOCKED]  — Extracted but legally blocked from model input
+
+FEATURE PILLAR LEGEND:
+  P1 = Income Stability        P5 = Work & Identity
+  P2 = Payment Discipline      P6 = Financial Resilience
+  P3 = Debt Management         P7 = Social Accountability
+  P4 = Savings Behaviour       P8 = Tax Compliance
+  ID = Identity cross-check    API = Triggers external API call
+
+STEP 2 — IDENTITY DOCUMENTS
+
+2A. AADHAAR CARD (Front Side)
+text
+DOCUMENT TYPE    : Government ID
+WORK TYPE        : ALL
+MANDATORY        : YES — scoring blocked without this
+OCR MODE         : Front face of physical card / DigiLocker PDF
+#FieldData TypeStatusFeature UsePillar1Full NameString[CORE]Cross-check Step 1 nameID2Date of BirthDate (DD/MM/YYYY)[CORE]age_suitability computationP53GenderString (Male/Female/Other)[CORE]Profile metadataMETA4Aadhaar NumberString (12 digits)[CORE]UIDAI API verificationAPI5PhotoImage[CORE]MobileFaceNet ? face_similarity_scoreP52B. AADHAAR CARD (Back Side)
+text
+DOCUMENT TYPE    : Government ID (reverse)
+OCR MODE         : Back face of physical card / DigiLocker PDF
+#FieldData TypeStatusFeature UsePillar6Address Line 1String[ADDED]Step 1 address cross-checkID7Address Line 2String[ADDED]Step 1 address cross-checkID8City / DistrictString[ADDED]Geographic contextMETA9StateString[ADDED]Normalisation anchor lookupP110PIN CodeString (6 digits)[ADDED]State median income selectionP1text
+NORMALISATION ANCHOR NOTE:
+  State extracted here drives the state_median_income anchor
+  used to normalise ALL monetary features in P1 and P4.
+  If State is unavailable from Aadhaar back, fallback to
+  State from Step 1 declared address.
+
+2C. PAN CARD
+text
+DOCUMENT TYPE    : Government Tax ID
+WORK TYPE        : ALL
+MANDATORY        : YES — scoring blocked without this
+OCR MODE         : Physical card scan / DigiLocker PDF
+#FieldData TypeStatusFeature UsePillar1Full NameString[CORE]Cross-check Aadhaar + Step 1ID2Father's NameString[CORE]Secondary identity anchorID3Date of BirthDate (DD/MM/YYYY)[CORE]Cross-check Aadhaar DOBID4PAN NumberString (10 alphanumeric)[CORE]Income Tax Dept APIAPI5PhotoImage[CORE]Secondary face match supportP5text
+KYC COMPLETENESS:
+  kyc_completeness = (aadhaar_verified + pan_verified) ÷ 2
+  Both verified ? 1.0 | Only one ? 0.5 | Neither ? 0.0
+
+STEP 3 — BANK STATEMENT
+
+3A. PRIMARY BANK STATEMENT
+text
+DOCUMENT TYPE    : Financial Statement
+WORK TYPE        : ALL
+MANDATORY        : YES — minimum 6 months coverage required
+OCR MODE         : PDF bank statement (Google Cloud Vision)
+COVERAGE RULE    : Statement must end within 30 days of submission date
+HEADER FIELDS
+#FieldData TypeStatusFeature UsePillar1Bank NameString[CORE]API cross-checkID2Account Holder NameString[CORE]Cross-check Step 1 nameID3Account NumberString[CORE]API cross-checkID4IFSC CodeString (11 chars)[CORE]RBI API branch verifyAPI5MICR CodeString (9 digits)[CORE]Cross-check typed inputID6Statement From DateDate[CORE]Period validation startID7Statement To DateDate[CORE]Period validation endID8Account TypeString[CORE]Savings / Current / Jan DhanMETATRANSACTION TABLE (one row per transaction)
+#FieldData TypeStatusFeature UsePillar9Transaction DateDate (per row)[CORE]All 6-month computationsP1–P410Transaction DescriptionString (per row)[CORE]Narration ? categorisation engineP1–P411Credit AmountFloat (per row)[CORE]Income feature computationP112Debit AmountFloat (per row)[CORE]Expense/EMI/savings featuresP2–P413Running BalanceFloat (per row)[CORE]Closing balance per monthP414Transaction ModeString (per row)[CORE]UPI/NEFT/IMPS/ATM/CASH/CHEQUEP2text
+TRANSACTION CATEGORISATION ENGINE:
+  Every Description string is tagged using keyword matching:
+
+  TAG: GIG_INCOME
+    Keywords: SWIGGY, ZOMATO, OLA, UBER, RAPIDO, DUNZO,
+              BLINKIT, URBAN COMPANY, PORTER
+
+  TAG: PLATFORM_PAYOUT
+    Keywords: PAYONEER, WISE, UPWORK PAYMENT, FIVERR
+
+  TAG: SALARY
+    Keywords: SALARY, SAL, WAGES, STIPEND
+
+  TAG: EMI_DEBIT
+    Keywords: EMI, LOAN, INSTALLMENT, HDFC LOAN, SBI LOAN,
+              BAJAJ FINANCE, ICICI EMI
+
+  TAG: UTILITY_DEBIT
+    Keywords: BESCOM, TNEB, TATA POWER, ADANI ELECTRIC,
+              AIRTEL, JIO, BSNL, VODAFONE,
+              INDANE, HPCL, BHARAT GAS
+
+  TAG: INSURANCE_DEBIT
+    Keywords: LIC, HDFC LIFE, SBI LIFE, MAX LIFE,
+              STAR HEALTH, NEW INDIA, BAJAJ ALLIANZ,
+              PMJJBY, PMSYM
+
+  TAG: SAVINGS_CREDIT
+    Keywords: SIP, RD, PPF, RECURRING DEPOSIT
+
+  TAG: GOVERNMENT_CREDIT
+    Keywords: PM KISAN, DBT, SUBSIDY, GOVT
+
+  TAG: CASH_DEPOSIT
+    Keywords: CASH DEPOSIT, CDM, ATM DEPOSIT
+3B. SECONDARY BANK STATEMENT
+text
+DOCUMENT TYPE    : Secondary Financial Statement
+WORK TYPE        : ALL
+MANDATORY        : NO (optional — boosts P1 confidence by +0.10)
+OCR MODE         : Same as primary
+PROCESSING       : Merged with primary after deduplication
+DEDUPLICATION    : Transactions matching date + amount + mode within
+                   48 hours window are treated as duplicates and removed
+text
+ALL FIELDS : Identical to 3A Primary Bank Statement
+ADDITIONAL FIELD:
+  secondary_bank_name       : String — cross-check with typed input
+  is_jan_dhan_account       : Boolean — if Account Type = Jan Dhan
+                              jan_dhan_binary = 1.0 ? P7 feature
+
+STEP 4 — UTILITY BILLS AND RESIDENCE PROOF
+
+4A. ELECTRICITY (EB) BILL
+text
+DOCUMENT TYPE    : Utility Bill
+WORK TYPE        : ALL
+MANDATORY        : YES — 6 consecutive monthly bills required
+OCR MODE         : Bill image / PDF (Google Cloud Vision)
+CONSISTENCY RULE : All 6 S.C. Numbers must be identical
+#FieldData TypeStatusFeature UsePillar1NameString[CORE]Cross-check Step 1ID2S.C. NumberString[CORE]Consistency across 6 billsP23Bill MonthString (MMM YYYY)[ADDED]6-consecutive-month verificationP24Due DateDate (DD/MM/YYYY)[ADDED]utility_ontime_ratio computationP25Payment DateDate (DD/MM/YYYY)[CORE]On-time check vs Due DateP26Receipt NumberString[CORE]Proof of payment per billP27Amount PaidFloat (?)[CORE]Bill amount consistency across 6P28Payment ModeString[CORE]digital_payment_ratio computationP29Units ConsumedFloat (kWh)[ADDED]consumption_consistency (optional)P2text
+ON-TIME COMPUTATION:
+  on_time = Payment Date ? Due Date ? 1 else 0
+  utility_ontime_ratio = sum(on_time across all 18 utility bills) ÷ 18
+  WITHOUT Due Date this formula is impossible to compute.
+  Due Date is CRITICAL — request reupload if not extractable.
+
+PAYMENT MODE ENCODING:
+  BHARAT BILL PAYMENT SYSTEM ? digital
+  UPI                        ? digital
+  Net Banking                ? digital
+  Cheque                     ? semi-digital
+  Cash                       ? cash
+
+4B. LPG / GAS BILL
+text
+DOCUMENT TYPE    : Utility Bill
+WORK TYPE        : ALL
+MANDATORY        : YES — 6 consecutive monthly bills required
+OCR MODE         : Tax Invoice image (Google Cloud Vision)
+PROVIDERS        : Indane / HP Gas / Bharat Gas / IGL
+#FieldData TypeStatusFeature UsePillar1Customer NameString[CORE]Cross-check Step 1ID2AddressString[CORE]Step 1 address cross-checkID3Consumer No.String[CORE]Consistency across 6 billsP24Bill MonthString (MMM YYYY)[ADDED]6-consecutive-month verificationP25Order DateDate (DD/MM/YYYY)[CORE]Monthly usage patternP26Tax Invoice DateDate (DD/MM/YYYY)[CORE]Bill dateP27Connection TypeString[CORE]Domestic usage signalMETA8Consumer CategoryString[CORE]Residential proof confirmedMETA9Order StatusString[CORE]Delivery confirmationP210Order TypeString[CORE]Refill = regular usage patternP211Amount PaidFloat (?)[CORE]Amount consistency across 6P212Payment MethodString[ADDED]lpg_cash_payment_binaryP213Relationship IDString[CORE]IndianOil account IDID14Provider NameString[CORE]Indane/HP Gas/Bharat GasMETAtext
+PAYMENT METHOD HANDLING:
+  LPG is predominantly cash — this does NOT penalise the user.
+  lpg_cash_payment_binary = 1.0 (cash paid)
+    ? bank cross-match skipped
+    ? utility_bank_match_ratio calculation:
+       cash bills excluded from denominator (not counted as mismatch)
+       only digital payment bills are attempted for bank cross-match
+
+AMOUNT FORMAT PARSING:
+  "?868.5 (Cash)" must be parsed as:
+    Amount Paid = 868.5
+    Payment Method = Cash
+  Parser must split currency symbol, amount, and payment method.
+
+4C. WIFI / BROADBAND BILL
+text
+DOCUMENT TYPE    : Utility Bill
+WORK TYPE        : ALL
+MANDATORY        : NO (optional utility — counted in optional_utility_count_norm)
+OCR MODE         : Bill image / PDF (supports Hathway, Jio, Airtel, ACT formats)
+CONSISTENCY RULE : All 6 Account Numbers must be identical
+#FieldData TypeStatusFeature UsePillar1NameString[CORE]Cross-check Step 1ID2Account NumberString[CORE]Consistency across 6 billsP23Bill NumberString[CORE]Proof of billP24Bill DateDate[CORE]Monthly patternP25Bill Due DateDate[CORE]utility_ontime_ratioP26Total Amount DueFloat (?)[CORE]Amount consistency across 6P27Tariff PlanString[CORE]Active subscription proofP28ProviderString[CORE]Broadband provider identityMETA9Payment StatusString[ADDED]payment_confirmed_binaryP210Bill MonthString (MMM YYYY)[ADDED]6-consecutive-month checkP2text
+PROVIDER-SPECIFIC PARSING:
+  Hathway format  ? Bill Date field label: "Bill Date"
+  Jio format      ? Equivalent field label: "Billing Cycle Date"
+  Jio format      ? "Total Payable: NIL" = payment_confirmed = 1.0
+  Hathway format  ? Explicit "Total Amount Due" field
+
+  Normalise all providers to standard field names listed above.
+
+4D. MOBILE BILL
+text
+DOCUMENT TYPE    : Utility Bill
+WORK TYPE        : ALL
+MANDATORY        : YES — 6 consecutive monthly bills required
+OCR MODE         : PDF bill (supports Airtel, Jio, Vi, BSNL formats)
+CONSISTENCY RULE : All 6 Mobile Numbers must be identical
+#FieldData TypeStatusFeature UsePillar1NameString[CORE]Cross-check Step 1ID2Mobile NumberString (10 digits)[CORE]Consistency across 6 billsP23Bill MonthString (MMM YYYY)[ADDED]6-consecutive-month verificationP24Statement DateDate[CORE]Bill generation dateP25Statement PeriodString[CORE]Coverage period (from–to)P26Due DateDate[CORE]utility_ontime_ratioP27Total Amount PayableFloat (?)[CORE]Amount consistency across 6P28PlanString[CORE]Active subscription proofMETA9Payment Made (prev month)Float (?)[CORE]Confirmed payment last cycleP2
+4E. RENTAL AGREEMENT
+text
+DOCUMENT TYPE    : Residence Proof
+WORK TYPE        : ALL (users without owned property)
+MANDATORY        : NO (alternative to owned address proof)
+OCR MODE         : Stamp paper scan / PDF
+#FieldData TypeStatusFeature UsePillar1Tenant NameString[CORE]Cross-check Step 1ID2Landlord NameString[CORE]Rent proof identityID3Lease Property AddressString[CORE]Step 1 address cross-checkID4Agreement DateDate[CORE]Recency check (< 2 years)ID5Property TypeString[CORE]Residency type metadataMETA6Stamp Paper ValueFloat (?)[CORE]Document authenticity signalID7StateString[CORE]Jurisdiction confirmationMETA8Notary/Stamp NumberString[CORE]Document registrationID
+4F. RENT RECEIPT (6 monthly receipts)
+text
+DOCUMENT TYPE    : Payment Proof
+WORK TYPE        : ALL (renters)
+MANDATORY        : NO (supplements rental agreement)
+OCR MODE         : Printed/handwritten receipt scan
+CONSISTENCY RULE : All 6 Landlord Names must be identical
+#FieldData TypeStatusFeature UsePillar1Tenant NameString[CORE]Cross-check Step 1ID2Receipt NumberString[CORE]Uniqueness across 6 receiptsP23DateDate[CORE]Monthly payment patternP24Rent AmountFloat (?)[CORE]Consistency across 6 receiptsP25Rental PeriodString[CORE]Monthly coverage confirmationP26Property AddressString[CORE]Step 1 address cross-checkID7Payment MethodString[CORE]Digital vs cash detectionP28Landlord NameString[CORE]Consistency across all 6P2
+STEP 5A — PLATFORM WORKER DOCUMENTS
+
+5A-1. VEHICLE RC BOOK
+text
+DOCUMENT TYPE    : Vehicle Registration Certificate
+WORK TYPE        : Platform Worker (delivery/ride)
+MANDATORY        : YES for platform workers
+OCR MODE         : RC book scan / DigiLocker (Parivahan API preferred)
+#FieldData TypeStatusFeature UsePillar1Owner NameString[CORE]Cross-check Step 1ID2Registration NumberString[CORE]Transport Dept APIAPI3Date of RegistrationDate[CORE]vehicle_age_normP54Registration ValidityDate[CORE]rc_active_binaryP55Chassis NumberString[CORE]Vehicle identityID6Engine NumberString[CORE]Vehicle identityID7Owner SerialInteger[ADDED]first_owner_binary ? P5P58Card Issue DateDate[ADDED]Document recency checkMETAtext
+FEATURE COMPUTATIONS:
+  rc_active_binary       = Registration Validity > current_date ? 1.0
+  vehicle_age_norm       = (current_year ? registration_year) ÷ 15
+  first_owner_binary     = Owner Serial == 1 ? 1.0 else 0.0
+
+5A-2. VEHICLE INSURANCE POLICY
+text
+DOCUMENT TYPE    : Insurance Policy
+WORK TYPE        : Platform Worker (mandatory), Others (optional)
+MANDATORY        : YES for platform workers
+OCR MODE         : Policy document scan / PDF
+#FieldData TypeStatusFeature UsePillar1Policy NumberString[CORE]Insurance API verificationAPI2InsurerString[CORE]Provider identityMETA3Policy TypeString[CORE]Vehicle type classificationP54Period of InsuranceString[CORE]Active period checkP65Policy Issued OnDate[CORE]Issue dateMETA6Cover Note NoString[CORE]Cross-referenceID7RTO LocationString[CORE]Vehicle registration stateMETA8Vehicle MakeString[CORE]Vehicle identityMETA9Registration NumberString[CORE]RC cross-check — REQUIREDID10Chassis NumberString[CORE]RC Book cross-checkID11Engine NumberString[CORE]RC Book cross-checkID12Manufacturing YearInteger[CORE]vehicle_age_normP513Vehicle IDVFloat (?)[ADDED]vehicle_idv_norm ? P6P614Total Premium PayableFloat (?)[CORE]Bank debit cross-checkP615Bonus PercentFloat (%)[ADDED]no_claim_bonus_binary ? P6P6text
+FEATURE COMPUTATIONS:
+  vehicle_insurance_active   = insurance end date > current_date ? 1.0
+  no_claim_bonus_binary      = Bonus Percent > 0 ? 1.0 else 0.0
+  vehicle_idv_norm           = IDV ÷ (state_median_income × 12)
+  vehicle_age_norm           = (current_year ? Manufacturing Year) ÷ 15
+
+REGISTRATION NUMBER RULE:
+  If Registration Number is partially visible or unreadable:
+    OCR confidence < 0.85 ? flag for reupload
+    RC cross-check cannot run without this field
+    Display: "Unable to read vehicle registration number.
+              Please reupload a clearer image."
+
+5A-3. PLATFORM SCREENSHOTS — Screen 1 (Earnings Dashboard)
+text
+PLATFORMS SUPPORTED : Rapido, Swiggy, Zomato, Ola, Uber, Dunzo, Blinkit
+PLATFORM DETECTION  : Logo in header ? extract platform_name tag
+MANDATORY           : YES — minimum 3 screens required across different dates
+#FieldData TypeStatusFeature UsePillar1Platform Name (from logo)String[CORE]platform_type encodedP52Date ShownDate[CORE]Recency / activity dateP53Total RidesInteger[CORE]Platform work volumeP54KM TravelledFloat[CORE]Physical activity signalP55Hours ActiveFloat[CORE]Active hours per dayP56Daily EarningsFloat (?)[CORE]P1 income signalP17Bank DepositedFloat (?)[CORE]bank_to_platform_ratio ? P1P18Platform RatingFloat[CORE]platform_rating_norm ? P5P59Acceptance RateFloat (%)[CORE]acceptance_rate_norm ? P5P5
+5A-4. PLATFORM SCREENSHOTS — Screen 2 (Orders Summary)
+#FieldData TypeStatusFeature UsePillar1DateDate[CORE]Activity dateP52Today's EarningsFloat (?)[CORE]P1 income signalP13Cash CollectedFloat (?)[CORE]cash_collection_ratio ? P1P14Total OrdersInteger[CORE]trips_per_month_norm ? P1P15Total KMsFloat[CORE]Activity metricP56Total HoursFloat[CORE]Active hoursP57Avg RatingFloat[CORE]P5 platform qualityP58Rejected OrdersInteger[CORE]acceptance_rate_normP59Missed OrdersInteger[CORE]reliability signalP5
+5A-5. PLATFORM SCREENSHOTS — Screen 3 (Redeem / Payout)
+#FieldData TypeStatusFeature UsePillar1Redeem AmountFloat (?)[CORE]Payout verificationP12Bank NameString[CORE]Cross-check Step 3 bankID3Bank AccountString (partial)[CORE]Cross-check Step 3 accountID4Payment StatusString[CORE]platform_income_verifiedP15Payment DateDate[CORE]Bank credit timing matchP1
+5A-6. PLATFORM SCREENSHOTS — Screen 4 (Home / ON DUTY)
+#FieldData TypeStatusFeature UsePillar1Duty StatusString[CORE]platform_active_binary ? P5P52Today's EarningsFloat (?)[CORE]Current activity incomeP13Redeem AmountFloat (?)[CORE]Payout signalP1
+5A-7. PLATFORM SCREENSHOTS — Screen 5 (Monthly Summary) [ADDED]
+text
+NOTE: This screen is the most reliable income source.
+      Request this screen specifically before any other.
+      All other screens supplement this one.
+#FieldData TypeStatusFeature UsePillar1MonthString (MMM YYYY)[ADDED]Month identificationP12Total Monthly EarningsFloat (?)[ADDED]platform_monthly_earnings_norm ? P1P13Total Monthly Trips/OrdersInteger[ADDED]trips_per_month_norm ? P1P14Total Monthly KMsFloat[ADDED]Monthly activityP5text
+CASH COLLECTION RATIO:
+  cash_collection_ratio = Cash Collected ÷ Total Earnings
+  High cash ratio = income underreported in bank
+  ? bank_to_platform_ratio adjusted accordingly
+  ? P1 confidence reduced if cash_collection_ratio > 0.40
+
+MULTI-PLATFORM DETECTION:
+  If screenshots from 2+ different platforms detected:
+    multi_platform_binary = 1.0 ? P5 bonus + P6 resilience boost
+
+PLATFORM TYPE ENCODING (P5 feature):
+  Ride Hailing (Rapido/Ola/Uber) ? platform_type_encoded = 1.0
+  Food Delivery (Swiggy/Zomato)  ? platform_type_encoded = 0.75
+  Hyperlocal (Blinkit/Dunzo)     ? platform_type_encoded = 0.50
+
+STEP 5B — VENDOR / SELLER DOCUMENTS
+
+5B-1. SVANIDHI LETTER OF RECOMMENDATION
+text
+DOCUMENT TYPE    : Government Street Vendor Certificate
+WORK TYPE        : Vendor/Seller
+MANDATORY        : YES for vendors
+OCR MODE         : Certificate scan (Google Cloud Vision)
+#FieldData TypeStatusFeature UsePillar1Certificate/Registration NoString[CORE]SVANidhi API verificationAPI2NameString[CORE]Cross-check Step 1ID3S/D/W/H ofString[CORE]Supporting identityID4DOBDate[CORE]Cross-check Aadhaar DOBID5GenderString[META]Profile metadataMETA6Category of VendingString[CORE]vendor_type_encoded ? P5P57Nature/Product of VendingString[CORE]Business type ? P5P58Site/Place of VendingString[CORE]Business locationMETA9StateString[CORE]Location contextMETA10Name of Urban Local BodyString[CORE]Issuing authorityMETA11Loan Amount SanctionedFloat (?)[ADDED]svanidhi_loan_amount_norm ? P1P112Loan Disbursement DateDate[ADDED]Bank credit cross-check ? P3P313PhotoImage[CORE]Supporting identity checkP5text
+VENDOR TYPE ENCODING:
+  Fixed Location  ? vendor_type_encoded = 1.0
+  Mobile Vending  ? vendor_type_encoded = 0.60
+  Hawker/Seasonal ? vendor_type_encoded = 0.35
+
+SVANIDHI LOAN VERIFICATION:
+  Loan Disbursement Date ? find corresponding bank credit in Step 3
+  If found: svanidhi_repaid_binary starts tracking from that date
+  Bank cross-check for repayment debits (tagged EMI_DEBIT)
+
+5B-2. NO-DUE CERTIFICATE
+text
+DOCUMENT TYPE    : Loan Closure Proof
+WORK TYPE        : Vendor/Seller (SVANidhi loan)
+MANDATORY        : NO (optional — strong positive P3 signal)
+#FieldData TypeStatusFeature UsePillar1Document TypeString[CORE]loan_repaid_binary = 1.0P32Loan Agreement NumberString[CORE]Unique loan referenceP33Borrower NameString[CORE]Cross-check Step 1ID4DateDate[CORE]Certificate recency (< 3 years)P35Issuing BankString[CORE]Bank identityID6Key StatementString[CORE]Semantic confirmation of repaymentP3text
+KEY STATEMENT PARSING:
+  Semantic check: must contain keywords:
+  "no outstanding" OR "loan closed" OR "full repayment" OR "NIL dues"
+  If keywords absent ? document flagged for manual review
+  ? loan_repaid_binary = 0.5 (uncertain)
+
+5B-3. FSSAI REGISTRATION CERTIFICATE
+text
+DOCUMENT TYPE    : Food Safety Registration
+WORK TYPE        : Vendor/Seller (food/distribution businesses)
+MANDATORY        : NO (optional — adds to vendor legitimacy score)
+#FieldData TypeStatusFeature UsePillar1Registration NumberString[CORE]FSSAI API verificationAPI2Kind of BusinessString[CORE]Vendor type classificationP53Photo Identity Card UsedString[CORE]Step 2 cross-referenceID4PlaceString[CORE]Business locationMETA5Date of IssueDate[CORE]Certificate age calculationP56Period of ValidityString[CORE]Duration string (1 year / 5 years)P57Validity Expiry DateDate[ADDED]fssai_active_binary ? P5P58Registration PeriodString[CORE]Renewal frequency signalP59PhotoImage[CORE]Supporting identity checkIDtext
+FSSAI ACTIVE CHECK:
+  fssai_active_binary = Validity Expiry Date > current_date ? 1.0
+  If expiry is within 30 days: flag as "expiring soon" in report
+  If already expired: fssai_active_binary = 0.0
+
+STEP 5C — SKILLED TRADESPERSON DOCUMENTS
+
+5C-1. NSDC / SKILL INDIA CERTIFICATE
+text
+DOCUMENT TYPE    : Vocational Training Certificate
+WORK TYPE        : Skilled Tradesperson
+MANDATORY        : YES for tradespeople
+OCR MODE         : Certificate scan (Google Cloud Vision)
+#FieldData TypeStatusFeature UsePillar1Candidate NameString[CORE]Cross-check Step 1ID2S/O/D/OString[CORE]Supporting identityID3Certificate ID (NSDC format)String[ADDED]NSDC API — PRIMARY verification keyAPI4Enrollment NumberString[CORE]Secondary referenceID5Course / TradeString[CORE]Skill type ? P5 scoringP56NSQF LevelInteger (1–8)[CORE]nsqf_level_norm ? P5P57Training InstituteString[CORE]Issuing body legitimacyP58DurationString[CORE]Training durationMETA9GradeString[CORE]grade_encoded ? P5P510Course PeriodString[CORE]certificate_recency checkP511Date of IssueDate[CORE]certificate_recency_norm ? P5P512Issuing BodyString[CORE]Authority validationP5text
+GRADE ENCODING (normalised 0.0–1.0):
+  A+ ? grade_encoded = 1.00
+  A  ? grade_encoded = 0.85
+  B  ? grade_encoded = 0.65
+  C  ? grade_encoded = 0.45
+  D  ? grade_encoded = 0.25
+  No Grade / Pass only ? grade_encoded = 0.40
+
+NSQF LEVEL ENCODING:
+  nsqf_level_norm = NSQF Level ÷ 8
+  (Levels 1–8, higher = more advanced certification)
+
+CERTIFICATE RECENCY:
+  certificate_recency_norm = 1.0 ? ((current_year ? issue_year) ÷ 10)
+  Capped at [0.0, 1.0]
+  Certificate older than 10 years ? 0.0
+
+5C-2. SHOPS & ESTABLISHMENTS REGISTRATION
+text
+DOCUMENT TYPE    : Trade Licence / Business Registration
+WORK TYPE        : Skilled Tradesperson, Vendor
+MANDATORY        : YES for tradespeople operating businesses
+OCR MODE         : Registration certificate scan
+#FieldData TypeStatusFeature UsePillar1Application No.String[CORE]Licence verificationP52ClassificationString[CORE]Business type classificationP53CategoryString[CORE]Business categoryMETA4Shop/Establishment NameString[CORE]Business identityP55AddressString[CORE]Step 1 address cross-checkID6DistrictString[CORE]LocationMETA7Employer/Director NameString[CORE]Cross-check Step 1ID8DesignationString[CORE]Role in businessMETA9MobileString[CORE]Step 1 phone cross-checkID10Validity/Expiry DateDate[ADDED]trade_licence_active_binary ? P5P511Date of Issue / Registration DateDate[ADDED]business_tenure_norm ? P5P5text
+TRADE LICENCE ACTIVE:
+  trade_licence_active_binary = Expiry Date > current_date ? 1.0
+
+BUSINESS TENURE:
+  business_tenure_norm = months_since_registration ÷ 60
+  (5-year anchor for normalisation)
+
+STEP 5D — FREELANCER DOCUMENTS
+
+5D-1. UPWORK PROFILE SCREENSHOT (Screen 1 — Profile Page)
+text
+PLATFORMS SUPPORTED : Upwork, Fiverr, Toptal, Freelancer.com, PeoplePerHour
+PLATFORM DETECTION  : Logo in header ? extract platform_name tag
+MANDATORY           : YES for freelancers
+OCR MODE            : Screenshot image (Google Cloud Vision)
+#FieldData TypeStatusFeature UsePillar1Freelancer NameString[CORE]Cross-check Step 1ID2Profile TitleString[CORE]Work type contextMETA3Hourly RateFloat (USD or ?)[CORE]hourly_rate_norm ? P5P54Job Success ScoreFloat (%)[CORE]job_success_norm ? P5P55BadgeString[CORE]badge_tier_norm ? P5P56Total EarningsString (tier label)[CORE]earnings_tier ? P5P57Total Jobs CompletedInteger[CORE]total_jobs_norm ? P5P58Total HoursFloat[CORE]Work volume signalP59Hours/WeekString[CORE]active_freelancer_binaryP510ID VerifiedBoolean[CORE]id_verified_on_platform ? P5P511Member Since (Join Date)Date[ADDED]freelance_tenure_norm ? P5P512Total Reviews CountInteger[ADDED]review_count_norm ? P5P513LocationString[META]Geographic metadataMETA14Platform Name (from logo)String[CORE]Platform type encodingP5
+5D-2. UPWORK TRANSACTION HISTORY SCREENSHOT (Screen 2 — 3 months)
+text
+NOTE: Request 3 separate transaction history screenshots,
+      one per month. This is the primary income source for P1.
+      Profile-level "Total Earnings" is a career total — NOT monthly.
+#FieldData TypeStatusFeature UsePillar1Statement PeriodString[CORE]Month identificationP12Transaction DateDate (per row)[CORE]Monthly income aggregationP13Transaction TypeString (per row)[CORE]Fixed Price / Hourly / BonusP14Transaction AmountFloat (per row)[CORE]Income per transactionP15Transaction DirectionString (per row)[CORE]Credit (+) vs Debit (?)P16Net Income This PeriodFloat[CORE]platform_monthly_earnings_norm ? P1P17Platform CurrencyString[CORE]fx_conversion_applied flagP18BalanceFloat[CORE]Withdrawal behaviourP4text
+FIELDS EXPLICITLY NOT EXTRACTED (privacy / irrelevance):
+  ? Client names in transactions     — privacy
+  ? Project/contract titles          — not needed
+  ? Transaction reference IDs        — not needed
+  ? Escrow movement detail rows      — not needed
+  ? Profile bio text                 — not needed
+
+CURRENCY CONVERSION:
+  If Platform Currency = USD:
+    fx_conversion_applied = 1.0
+    platform_income_inr = Net Income × RBI_reference_rate_on_period_end_date
+  If Platform Currency = INR (Urban Company, Toptal India, etc.):
+    fx_conversion_applied = 0.0
+    platform_income_inr = Net Income directly
+
+BANK CROSS-CHECK FOR INTERNATIONAL PLATFORMS:
+  Search bank narrations for:
+    "PAYONEER", "WISE", "UPWORK PAYMENT", "FIVERR REVENUE"
+  If found and amount within 10% of platform payout:
+    bank_to_platform_ratio = 1.0 (confirmed bank receipt)
+
+BADGE TIER ENCODING (corrected from 2.0 scale to 0.0–1.0):
+  "Top Rated Plus" ? badge_tier_norm = 1.00
+  "Top Rated"      ? badge_tier_norm = 0.65
+  "Rising Talent"  ? badge_tier_norm = 0.35
+  None             ? badge_tier_norm = 0.00
+
+STEP 6 — GOVERNMENT SCHEMES
+
+6A. ESHRAM CARD
+text
+DOCUMENT TYPE    : Unorganised Worker Registration
+WORK TYPE        : ALL gig workers
+MANDATORY        : NO (strong P7 positive signal)
+#FieldData TypeStatusFeature UsePillar1NameString[CORE]Cross-check Step 1ID2Father's NameString[CORE]Supporting identityID3DOBDate[CORE]Aadhaar DOB cross-checkID4GenderString[META]Profile metadataMETA5UAN NumberString[CORE]eShram API verificationAPI6Primary OccupationString[CORE]Work type classification checkP77Aadhaar Number (masked)String[CORE]Step 2 cross-referenceID8Date of RegistrationDate[ADDED]eshram_tenure_norm ? P7P79PhotoImage[CORE]Supporting identity checkP5text
+ESHRAM TENURE:
+  eshram_tenure_norm = months_since_registration ÷ 36
+  (3-year anchor for normalisation)
+
+6B. PM-SYM CARD
+text
+DOCUMENT TYPE    : Pension Scheme Card
+WORK TYPE        : ALL gig workers
+MANDATORY        : NO (P7 positive signal)
+#FieldData TypeStatusFeature UsePillar1NameString[CORE]Cross-check Step 1ID2Pension Account NumberString[CORE]PM-SYM APIAPI3Date of BirthDate[CORE]Aadhaar DOB cross-checkID4GenderString[META]Profile metadataMETA5Date of Joining SchemeDate[CORE]pmsym_tenure_norm ? P7P76Monthly Individual ContributionFloat (?)[CORE]Bank debit cross-checkP77Monthly Government ContributionFloat (?)[CORE]Active scheme confirmationP78Pension Starting DateDate[CORE]Scheme validity confirmationP7text
+PMSYM BANK CROSS-CHECK:
+  Search bank debits for: "PMSYM", "PM-SYM", "PENSION CONTRIBUTION"
+  Amount should match Monthly Individual Contribution within ?5
+  If found every month: pmsym_contribution_consistency = 1.0
+  If gaps > 35 days between debits: pmsym_contribution_consistency drops
+
+6C. PMJJBY CERTIFICATE OF INSURANCE
+text
+DOCUMENT TYPE    : Government Life Insurance Certificate
+WORK TYPE        : ALL
+MANDATORY        : NO (P6 + P7 positive signal)
+NOTE             : This is LIFE insurance (not health). Sum Assured
+                   = ?2,00,000 death benefit. Map to life coverage only.
+Page 1
+#FieldData TypeStatusFeature UsePillar1Name of MemberString[CORE]Cross-check Step 1ID2Master Policy NumberString[CORE]PMJJBY verificationAPI3Unique Reference NumberString[CORE]API verificationAPI4Date of BirthDate[CORE]Cross-check AadhaarID5Bank Account NumberString[CORE]Step 3 bank account matchID6Name of BankString[CORE]Bank identity matchID7Date of CommencementDate[CORE]Policy active startP68Cover End DateDate[CORE]pmjjby_active_binaryP69InsurerString[CORE]Provider identityMETAPage 2
+#FieldData TypeStatusFeature UsePillar10Sum AssuredFloat (?)[CORE]govt_life_coverage_norm ? P6P611Premium Amount PaidFloat (?)[CORE]Bank debit cross-checkP612Annual Renewal DateString[CORE]Bank debit timing checkP6text
+PMJJBY ACTIVE CHECK:
+  pmjjby_active_binary = Cover End Date > current_date ? 1.0
+
+IMPORTANT MAPPING RULE:
+  PMJJBY Sum Assured ? govt_life_insurance_coverage (NOT health)
+  Do NOT add to health_insurance sum_insured
+  Separate feature: pmjjby_active_binary (P7) +
+                    govt_life_coverage_norm (P6)
+
+6D. MUDRA LOAN ACKNOWLEDGEMENT LETTER
+text
+DOCUMENT TYPE    : Government Loan Approval
+WORK TYPE        : Vendor / Tradesperson
+MANDATORY        : NO (P3 positive signal)
+#FieldData TypeStatusFeature UsePillar1Applicant NameString[CORE]Cross-check Step 1ID2Loan AmountFloat (?)[CORE]loan_amount_norm ? P3P33Loan Account NumberString[CORE]Unique referenceP34Bank NameString[CORE]Bank identityID5Loan Approval DateDate[CORE]Recency checkP36Loan Closure StatusString[CORE]mudra_loan_repaid ? P3P37Loan TypeString[ADDED]mudra_tier_encoded ? P3P3text
+MUDRA LOAN TYPE ENCODING:
+  Shishu  (up to ?50,000)   ? mudra_tier_encoded = 0.33
+  Kishor  (?50K–?5L)        ? mudra_tier_encoded = 0.66
+  Tarun   (?5L–?10L)        ? mudra_tier_encoded = 1.00
+
+MUDRA REPAYMENT VERIFICATION:
+  Loan Closure Status contains "Closed" / "Repaid" ? mudra_loan_repaid = 1.0
+  Bank statement cross-check:
+    Find bank credit matching loan amount near Approval Date
+    Track monthly EMI debits tagged EMI_DEBIT thereafter
+
+6E. PPF PASSBOOK
+text
+DOCUMENT TYPE    : Savings Passbook
+WORK TYPE        : ALL
+MANDATORY        : NO (P4 strong positive signal)
+OCR MODE         : Passbook scan (multiple pages required)
+Account Information Page
+#FieldData TypeStatusFeature UsePillar1Customer NameString[CORE]Cross-check Step 1ID2Account NumberString[CORE]PPF account identityP43CIF NumberString[CORE]Bank customer IDID4BankString[CORE]Bank identityMETA5BranchString[CORE]Branch locationMETA6Date of IssueDate[CORE]ppf_tenure_years ? P4P47IFSC CodeString[CORE]Branch verificationID8MOPString[CORE]Single/Joint ownership typeMETA9Mem. Reg. No.String[CORE]Membership registrationIDTransaction Table (ADDED — was entirely missing)
+#FieldData TypeStatusFeature UsePillar10Financial Year LabelString[ADDED]Period identificationP411Contribution Date (list)Date list[ADDED]ppf_deposit_regularity ? P4P412Amount Deposited (list)Float list[ADDED]ppf_contribution_norm ? P4P413Running Balance (list)Float list[ADDED]ppf_balance_norm ? P4P4text
+PPF FEATURE COMPUTATIONS:
+  ppf_tenure_years        = current_year ? Date of Issue year
+  ppf_contribution_norm   = avg(Amount Deposited list) ÷ state_median_income
+  ppf_deposit_regularity  = count(contributions in last 12 months) ÷ 4
+                            (PPF allows 1–12 deposits per year)
+  ppf_balance_norm        = latest Running Balance ÷ (state_median_income × 12)
+
+  All 4 features are ZERO if transaction table is not submitted.
+  ppf_active_binary = account exists and at least 1 deposit in
+  last 12 months ? 1.0 else 0.5
+
+STEP 7 — INSURANCE DOCUMENTS
+
+7A. HEALTH INSURANCE POLICY
+text
+DOCUMENT TYPE    : Health Insurance
+WORK TYPE        : ALL
+MANDATORY        : NO (P6 strong signal)
+#FieldData TypeStatusFeature UsePillar1Proposer's NameString[CORE]Cross-check Step 1ID2Policy NumberString[CORE]Insurance APIAPI3Date of InceptionDate[CORE]Policy start dateP64Period of InsuranceString[CORE]Active period checkP65Total PremiumFloat (?)[CORE]Bank debit cross-checkP66Receipt DateDate[CORE]Payment dateP67Basic Floater Sum InsuredFloat (?)[CORE]sum_insured_to_income ? P6P68Scheme DescriptionString[ADDED]family_coverage_binary ? P6P69InsurerString[CORE]Provider identityMETA10Renewal YearString[CORE]New vs renewal cycleP611Policy Expiry DateDate[ADDED]health_insurance_active_binaryP6text
+HEALTH INSURANCE ACTIVE:
+  health_insurance_active_binary = Policy Expiry Date > current_date ? 1.0
+
+FAMILY COVERAGE ENCODING:
+  "2 Adults + 1 Child" / "Family Floater" ? family_coverage_binary = 1.0
+  "Individual"                             ? family_coverage_binary = 0.0
+  Family coverage = stronger financial responsibility signal
+
+SUM INSURED FEATURE:
+  sum_insured_to_annual_income:
+    health_sum_insured ÷ (state_median_income × 12)
+    Higher ratio = more comprehensive coverage ? P6 boost
+
+7B. LIFE INSURANCE PREMIUM CERTIFICATE
+text
+DOCUMENT TYPE    : Life Insurance Proof
+WORK TYPE        : ALL
+MANDATORY        : NO (P6 signal — separate from PMJJBY)
+#FieldData TypeStatusFeature UsePillar1Policyholder NameString[CORE]Cross-check Step 1ID2Policy NumberString[CORE]Insurance APIAPI3Policy Issue DateDate[CORE]Policy start dateP64Certificate DateDate[CORE]Document dateMETA5Payment ModeString[CORE]premium_frequency_encoded ? P2P26Coverage NameString[CORE]Policy typeMETA7Sum AssuredFloat (?)[CORE]life_sum_assured_norm ? P6P68Modal PremiumFloat (?)[CORE]Base premium amountP69Total Premium Received PeriodString[CORE]Active period confirmationP610Total Premium PaidFloat (?)[CORE]Bank debit cross-checkP611Coverage StatusString[CORE]Policy active confirmationP612Policy Expiry / Maturity DateDate[ADDED]life_insurance_active_binaryP6text
+PAYMENT MODE ENCODING (premium_frequency_encoded):
+  Monthly       ? 1.00  (highest discipline signal)
+  Quarterly     ? 0.75
+  Half-yearly   ? 0.50
+  Yearly        ? 0.25
+
+LIFE INSURANCE ACTIVE:
+  life_insurance_active_binary:
+    Coverage Status = "Premium Paying" OR
+    Total Premium Received Period end > current_date ? 1.0
+
+STEP 8 — TAX AND COMPLIANCE DOCUMENTS
+
+8A. ITR ACKNOWLEDGEMENT
+text
+DOCUMENT TYPE    : Income Tax Return
+WORK TYPE        : ALL (especially Freelancers, Vendors with GST)
+MANDATORY        : NO (P1 + P8 strong signal)
+OCR MODE         : Acknowledgement PDF (TRACES portal format)
+#FieldData TypeStatusFeature UsePillar1Assessment YearString[CORE]Tax year identificationP82Form NumberString[CORE]itr_form_type encodedP83StatusString[CORE]Individual taxpayer confirmationMETA4Filing TypeString[CORE]on_time_itr_filing_binary ? P2P25e-Filing Acknowledgement No.String[CORE]TRACES API verificationAPI6Gross Total IncomeFloat (?)[ADDED]gross_to_net_itr_ratio ? P1P17Total IncomeFloat (?)[CORE]itr_declared_income ? P1P18Taxes PaidFloat (?)[CORE]Tax compliance signalP89Tax RefundableFloat (?)[CORE]itr_overpaid_binary ? P8P810Submission DateDate[CORE]itr_recency + on-time checkP2text
+ITR FEATURE COMPUTATIONS:
+  on_time_itr_filing_binary:
+    Filing Type = "139(1)" ? 1.0 (filed before due date)
+    Filing Type = "139(4)" ? 0.5 (belated return)
+    Filing Type = "139(5)" ? 0.75 (revised return)
+
+  itr_recency_binary:
+    Assessment Year >= (current_year ? 1) ? 1.0 (recent)
+    Assessment Year == (current_year ? 2) ? 0.5 (one year old)
+    Assessment Year < (current_year ? 2)  ? 0.0 (outdated)
+
+  itr_to_bank_ratio:
+    (Total Income ÷ 12) ÷ avg_monthly_credit_from_bank
+    Ratio close to 1.0 = income declared matches bank inflows
+    Ratio << 1.0 = underdeclared income (common in India)
+    Ratio > 1.5 = bank inflow less than declared (multiple income)
+
+  gross_to_net_itr_ratio:
+    Gross Total Income ÷ Total Income
+    Ratio > 1.3 = significant deductions claimed
+    (indicates tax-savvy, financially aware user ? P8 positive)
+
+  itr_overpaid_binary:
+    Tax Refundable > 0 ? 1.0 (paid taxes proactively ? P8 positive)
+
+8B. UDYAM REGISTRATION CERTIFICATE
+text
+DOCUMENT TYPE    : MSME Registration
+WORK TYPE        : Vendor/Seller, Freelancer (business owners)
+MANDATORY        : NO (P5 strong signal for business owners)
+OCR MODE         : Certificate scan / Udyam portal PDF
+#FieldData TypeStatusFeature UsePillar1Udyam Registration NumberString[CORE]MSME API verificationAPI2Enterprise NameString[CORE]Cross-check Step 1ID3Enterprise TypeString[CORE]business_size_encoded ? P5P54Major ActivityString[CORE]Work type cross-checkMETA5Social CategoryString[BLOCKED]Display only — NEVER model inputMETA6Official AddressString[CORE]Step 1 address cross-checkID7StateString[CORE]Location contextMETA8Date of IncorporationDate[CORE]business_age_norm ? P5P59Date of CommencementDate[CORE]Operations start dateP510Date of Udyam RegistrationDate[ADDED]udyam_tenure_norm ? P5P511NIC CodesString[CORE]Industry classificationMETA12Investment in Plant & EquipmentFloat (?)[ADDED]business_asset_norm ? P5P5text
+?? LEGAL BLOCK — SOCIAL CATEGORY:
+  Social Category (OBC/SC/ST/General) must NEVER be passed
+  to any ML model feature vector. Extract for display and
+  profile record only. Set blocked = true in schema.
+  Violation of this rule creates discriminatory lending bias
+  and is legally actionable under RBI Fair Practices Code.
+
+ENTERPRISE TYPE ENCODING:
+  Micro  ? business_size_encoded = 0.33
+  Small  ? business_size_encoded = 0.66
+  Medium ? business_size_encoded = 1.00
+
+FEATURE COMPUTATIONS:
+  business_age_norm      = months_since_incorporation ÷ 60
+  udyam_tenure_norm      = months_since_registration ÷ 36
+  business_asset_norm    = investment_in_plant ÷ (state_median_income × 12)
+
+8C. GST RETURN SUMMARY (GSTR-3B / GSTR-1)
+text
+DOCUMENT TYPE    : GST Compliance Return
+WORK TYPE        : Vendor/Seller, Freelancer (GST registered)
+MANDATORY        : NO (P1 + P8 strong signal for GST-registered users)
+OCR MODE         : GST portal downloaded summary PDF
+#FieldData TypeStatusFeature UsePillar1GSTINString (15 chars)[CORE]GST API verificationAPI2Legal Name of TaxpayerString[CORE]Cross-check Step 1 nameID3Return TypeString[CORE]GSTR-1 / GSTR-3B classificationMETA4Return PeriodString (MMM YYYY)[CORE]Month identificationP85Date of FilingDate[CORE]gst_on_time_filing ? P2P26Taxable TurnoverFloat (?)[CORE]gst_monthly_turnover_norm ? P1P17Total Tax PaidFloat (?)[CORE]GST compliance signalP88CGST PaidFloat (?)[CORE]Tax breakdownP89SGST PaidFloat (?)[CORE]Tax breakdownP810IGST PaidFloat (?)[OPTIONAL]For interstate transactionsP811Nil Return FiledBoolean[CORE]nil_return_binary (zero turnover month)P812StatusString[CORE]Filed / Not Filed / LateP2text
+GST FEATURE COMPUTATIONS:
+  gst_filing_consistency:
+    count(months filed) ÷ 6 (across 6 months of returns)
+    All 6 filed = 1.0 | 4 filed = 0.67 | 2 filed = 0.33
+
+  gst_on_time_filing:
+    GSTR-3B due date = 20th of following month
+    Date of Filing ? due date ? on_time = 1.0
+
+  gst_monthly_turnover_norm:
+    avg(Taxable Turnover across 6 months) ÷ state_median_income
+
+  gst_to_bank_ratio:
+    avg_gst_turnover ÷ avg_monthly_credit_from_bank
+    Ratio ? 1.0 = GST turnover matches bank deposits
+    Ratio >> 1.0 = bank deposits less than turnover (possible under-banking)
+
+  nil_return_ratio:
+    count(Nil Return months) ÷ 6
+    High nil returns = seasonal or declining business
+
+EMI DOCUMENTS (Supplementary, Step 3 Cross-Check)
+
+EMI-1. EMI PAYMENT SCREENSHOT
+text
+DOCUMENT TYPE    : Loan/EMI Proof (supplementary)
+WORK TYPE        : ALL
+MANDATORY        : NO — bank EMI auto-detection is primary
+                   These screenshots BOOST P3 confidence when present
+#FieldData TypeStatusFeature UsePillar1MerchantString[CORE]Purchase contextP32Transaction AmountFloat (?)[CORE]Total purchase amountP33EMI DurationInteger (months)[CORE]emi_loan_tenor_norm ? P3P34Monthly EMI AmountFloat (?/month)[CORE]emi_to_income_ratio ? P3P35Payment MethodString[CORE]credit_card_emi_detected ? P3P3
+EMI-2. EMI LOAN SCHEDULE SCREENSHOT
+#FieldData TypeStatusFeature UsePillar1Loan AmountFloat (?)[CORE]loan_amount_norm ? P3P32Interest RateFloat (%)[CORE]interest_rate_norm ? P3P33Period (Months)Integer[CORE]emi_loan_tenor_norm ? P3P34Monthly EMIFloat (?)[CORE]emi_to_income_ratio ? P3P35Total InterestFloat (?)[CORE]Debt burden contextP36Processing FeesFloat (?)[OPTIONAL]One-time cost signalP37Total PaymentFloat (?)[CORE]total_debt_obligation_normP3
+COMPLETE FIELD COUNT SUMMARY
+text
+??????????????????????????????????????????????????????????????????????????????
+? Document                             ? CORE   ? ADDED  ? OPTIONAL?  TOTAL  ?
+??????????????????????????????????????????????????????????????????????????????
+? Aadhaar Front + Back                 ?   5    ?   5    ?    0    ?   10    ?
+? PAN Card                             ?   5    ?   0    ?    0    ?    5    ?
+? Bank Statement (per statement)       ?   8    ?   0    ?    0    ?   14    ?
+? EB Bill (×6)                         ?   6    ?   3    ?    0    ?    9    ?
+? LPG Bill (×6)                        ?  12    ?   2    ?    0    ?   14    ?
+? WiFi Bill (×6)                       ?   8    ?   2    ?    0    ?   10    ?
+? Mobile Bill (×6)                     ?   8    ?   1    ?    0    ?    9    ?
+? Rental Agreement                     ?   8    ?   0    ?    0    ?    8    ?
+? Rent Receipt (×6)                    ?   8    ?   0    ?    0    ?    8    ?
+? RC Book                              ?   6    ?   2    ?    0    ?    8    ?
+? Vehicle Insurance                    ?  12    ?   3    ?    0    ?   15    ?
+? Platform Screenshots (5 screens)     ?  25    ?   4    ?    0    ?   29    ?
+? SVANidhi Letter                      ?  11    ?   2    ?    0    ?   13    ?
+? No-Due Certificate                   ?   6    ?   0    ?    0    ?    6    ?
+? FSSAI Certificate                    ?   8    ?   1    ?    0    ?    9    ?
+? NSDC Certificate                     ?  11    ?   1    ?    0    ?   12    ?
+? Shops & Establishments               ?   9    ?   2    ?    0    ?   11    ?
+? Upwork Profile (Screen 1)            ?  12    ?   2    ?    0    ?   14    ?
+? Upwork Transactions (Screen 2)       ?   8    ?   0    ?    0    ?    8    ?
+? eShram Card                          ?   8    ?   1    ?    0    ?    9    ?
+? PM-SYM Card                          ?   8    ?   0    ?    0    ?    8    ?
+? PMJJBY Certificate                   ?  12    ?   0    ?    0    ?   12    ?
+? MUDRA Loan Letter                    ?   6    ?   1    ?    0    ?    7    ?
+? PPF Passbook                         ?   9    ?   4    ?    0    ?   13    ?
+? Health Insurance                     ?  10    ?   2    ?    0    ?   12    ?
+? Life Insurance Certificate           ?  11    ?   1    ?    0    ?   12    ?
+? ITR Acknowledgement                  ?   9    ?   1    ?    0    ?   10    ?
+? Udyam Certificate                    ?  11    ?   2    ?    0    ?   13    ?
+? GST Return                           ?   11   ?   0    ?    1    ?   12    ?
+? EMI Screenshots (2 docs)             ?  11    ?   0    ?    1    ?   12    ?
+??????????????????????????????????????????????????????????????????????????????
+? TOTAL                                ?  297   ?   42   ?    2    ?  341    ?
+??????????????????????????????????????????????????????????????????????????????
+
+ASSUMPTIONS REMAINING : 0
+BLOCKED FIELDS        : 1 (Social Category — display only)
+FEATURE PILLARS COVERED:
+  P1 Income        : 26 confirmed source fields
+  P2 Discipline    : 18 confirmed source fields
+  P3 Debt          : 14 confirmed source fields
+  P4 Savings       : 10 confirmed source fields
+  P5 Identity/Work : 31 confirmed source fields
+  P6 Resilience    : 17 confirmed source fields
+  P7 Schemes       : 9  confirmed source fields
+  P8 Tax Compliance: 11 confirmed source fields
+
+????????????????????????????????????????????????????????????????????????????????????
+?           GIGCREDIT — FINALIZED INPUT FIELD SPECIFICATION                      ?
+?           Complete OCR Extraction Master Document | All Steps | All Documents  ?
+?           Version 2.0 | Zero Assumptions | Fully Grounded | Production Ready   ?
+????????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT CONVENTIONS
+????????????????????????????????????????????????????????????????????????????????
+
+FIELD STATUS:
+  [CORE]     — Always extracted, required for scoring
+  [ADDED]    — New field added in finalization (was missing before)
+  [OPTIONAL] — Extracted if present, scoring degrades gracefully if absent
+  [META]     — Extracted for display/identity only, NOT passed to model
+  [BLOCKED]  — Extracted but legally blocked from model input
+
+FEATURE PILLAR:
+  P1 = Income Stability        P5 = Work & Identity
+  P2 = Payment Discipline      P6 = Financial Resilience
+  P3 = Debt Management         P7 = Social Accountability
+  P4 = Savings Behaviour       P8 = Tax Compliance
+  ID = Identity cross-check    API = Triggers external API call
+
+
+????????????????????????????????????????????????????????????????????????????????
+STEP 2 — IDENTITY DOCUMENTS
+????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+2A. AADHAAR CARD — FRONT SIDE
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE : Government ID
+WORK TYPE     : ALL
+MANDATORY     : YES — scoring blocked without this
+OCR MODE      : Front face of physical card / DigiLocker PDF
+
+#  | Field               | Data Type              | Status  | Feature Use                        | Pillar
+---|---------------------|------------------------|---------|------------------------------------|-------
+1  | Full Name           | String                 | [CORE]  | Cross-check Step 1 name            | ID
+2  | Date of Birth       | Date (DD/MM/YYYY)      | [CORE]  | age_suitability computation        | P5
+3  | Gender              | String                 | [CORE]  | Profile metadata                   | META
+4  | Aadhaar Number      | String (12 digits)     | [CORE]  | UIDAI API verification             | API
+5  | Photo               | Image                  | [CORE]  | MobileFaceNet ? face_similarity    | P5
+
+????????????????????????????????????????????????????????????????????????????????
+2B. AADHAAR CARD — BACK SIDE
+????????????????????????????????????????????????????????????????????????????????
+OCR MODE      : Back face of physical card / DigiLocker PDF
+
+#  | Field               | Data Type              | Status  | Feature Use                        | Pillar
+---|---------------------|------------------------|---------|------------------------------------|-------
+6  | Address Line 1      | String                 | [ADDED] | Step 1 address cross-check         | ID
+7  | Address Line 2      | String                 | [ADDED] | Step 1 address cross-check         | ID
+8  | City / District     | String                 | [ADDED] | Geographic context                 | META
+9  | State               | String                 | [ADDED] | Normalisation anchor lookup        | P1
+10 | PIN Code            | String (6 digits)      | [ADDED] | State median income selection      | P1
+
+NOTE: State from Aadhaar back drives the state_median_income anchor used to
+normalise ALL monetary features in P1 and P4. Fallback to State from Step 1
+declared address if Aadhaar back is unavailable.
+KYC COMPLETENESS: kyc_completeness = (aadhaar_verified + pan_verified) ÷ 2
+
+????????????????????????????????????????????????????????????????????????????????
+2C. PAN CARD
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE : Government Tax ID
+WORK TYPE     : ALL
+MANDATORY     : YES — scoring blocked without this
+OCR MODE      : Physical card scan / DigiLocker PDF
+
+#  | Field               | Data Type              | Status  | Feature Use                        | Pillar
+---|---------------------|------------------------|---------|------------------------------------|-------
+1  | Full Name           | String                 | [CORE]  | Cross-check Aadhaar + Step 1       | ID
+2  | Father's Name       | String                 | [CORE]  | Secondary identity anchor          | ID
+3  | Date of Birth       | Date (DD/MM/YYYY)      | [CORE]  | Cross-check Aadhaar DOB            | ID
+4  | PAN Number          | String (10 alphanumeric)| [CORE] | Income Tax Dept API                | API
+5  | Photo               | Image                  | [CORE]  | Secondary face match support       | P5
+
+
+????????????????????????????????????????????????????????????????????????????????
+STEP 3 — BANK STATEMENT
+????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+3A. PRIMARY BANK STATEMENT
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE  : Financial Statement
+WORK TYPE      : ALL
+MANDATORY      : YES — minimum 6 months coverage required
+OCR MODE       : PDF bank statement (Google Cloud Vision)
+COVERAGE RULE  : Statement must end within 30 days of submission date
+
+HEADER FIELDS:
+#  | Field                  | Data Type         | Status  | Feature Use                   | Pillar
+---|------------------------|-------------------|---------|-------------------------------|-------
+1  | Bank Name              | String            | [CORE]  | API cross-check               | ID
+2  | Account Holder Name    | String            | [CORE]  | Cross-check Step 1 name       | ID
+3  | Account Number         | String            | [CORE]  | API cross-check               | ID
+4  | IFSC Code              | String (11 chars) | [CORE]  | RBI API branch verify         | API
+5  | MICR Code              | String (9 digits) | [CORE]  | Cross-check typed input       | ID
+6  | Statement From Date    | Date              | [CORE]  | Period validation start       | ID
+7  | Statement To Date      | Date              | [CORE]  | Period validation end         | ID
+8  | Account Type           | String            | [CORE]  | Savings/Current/Jan Dhan      | META
+
+TRANSACTION TABLE (one row per transaction):
+#  | Field                  | Data Type         | Status  | Feature Use                   | Pillar
+---|------------------------|-------------------|---------|-------------------------------|-------
+9  | Transaction Date       | Date (per row)    | [CORE]  | All 6-month computations      | P1–P4
+10 | Transaction Description| String (per row)  | [CORE]  | Narration ? categorisation    | P1–P4
+11 | Credit Amount          | Float (per row)   | [CORE]  | Income feature computation    | P1
+12 | Debit Amount           | Float (per row)   | [CORE]  | Expense/EMI/savings features  | P2–P4
+13 | Running Balance        | Float (per row)   | [CORE]  | Closing balance per month     | P4
+14 | Transaction Mode       | String (per row)  | [CORE]  | UPI/NEFT/IMPS/ATM/CASH/CHEQUE | P2
+
+TRANSACTION CATEGORISATION ENGINE (keyword tagging on Description field):
+  TAG: GIG_INCOME       ? SWIGGY, ZOMATO, OLA, UBER, RAPIDO, DUNZO,
+                           BLINKIT, URBAN COMPANY, PORTER
+  TAG: PLATFORM_PAYOUT  ? PAYONEER, WISE, UPWORK PAYMENT, FIVERR
+  TAG: SALARY           ? SALARY, SAL, WAGES, STIPEND
+  TAG: EMI_DEBIT        ? EMI, LOAN, INSTALLMENT, HDFC LOAN, SBI LOAN,
+                           BAJAJ FINANCE, ICICI EMI
+  TAG: UTILITY_DEBIT    ? BESCOM, TNEB, TATA POWER, ADANI ELECTRIC,
+                           AIRTEL, JIO, BSNL, VODAFONE,
+                           INDANE, HPCL, BHARAT GAS
+  TAG: INSURANCE_DEBIT  ? LIC, HDFC LIFE, SBI LIFE, MAX LIFE,
+                           STAR HEALTH, NEW INDIA, BAJAJ ALLIANZ,
+                           PMJJBY, PMSYM
+  TAG: SAVINGS_CREDIT   ? SIP, RD, PPF, RECURRING DEPOSIT
+  TAG: GOVERNMENT_CREDIT? PM KISAN, DBT, SUBSIDY, GOVT
+  TAG: CASH_DEPOSIT     ? CASH DEPOSIT, CDM, ATM DEPOSIT
+
+????????????????????????????????????????????????????????????????????????????????
+3B. SECONDARY BANK STATEMENT
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE  : Secondary Financial Statement
+WORK TYPE      : ALL
+MANDATORY      : NO — optional, boosts P1 confidence by +0.10
+PROCESSING     : Merged with primary after deduplication
+DEDUPLICATION  : Transactions matching date + amount + mode within 48-hour
+                 window treated as duplicates and removed
+
+ALL FIELDS     : Identical to 3A Primary Bank Statement
+ADDITIONAL:
+  secondary_bank_name    : String — cross-check with typed input
+  is_jan_dhan_account    : Boolean — jan_dhan_binary = 1.0 ? P7 feature
+
+
+????????????????????????????????????????????????????????????????????????????????
+STEP 4 — UTILITY BILLS AND RESIDENCE PROOF
+????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+4A. ELECTRICITY (EB) BILL
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Utility Bill
+WORK TYPE        : ALL
+MANDATORY        : YES — 6 consecutive monthly bills required
+OCR MODE         : Bill image / PDF (Google Cloud Vision)
+CONSISTENCY RULE : All 6 S.C. Numbers must be identical
+
+#  | Field           | Data Type           | Status  | Feature Use                        | Pillar
+---|-----------------|---------------------|---------|------------------------------------|-------
+1  | Name            | String              | [CORE]  | Cross-check Step 1                 | ID
+2  | S.C. Number     | String              | [CORE]  | Consistency across 6 bills         | P2
+3  | Bill Month      | String (MMM YYYY)   | [ADDED] | 6-consecutive-month verification   | P2
+4  | Due Date        | Date (DD/MM/YYYY)   | [ADDED] | utility_ontime_ratio computation   | P2
+5  | Payment Date    | Date (DD/MM/YYYY)   | [CORE]  | On-time check vs Due Date          | P2
+6  | Receipt Number  | String              | [CORE]  | Proof of payment per bill          | P2
+7  | Amount Paid     | Float (?)           | [CORE]  | Amount consistency across 6        | P2
+8  | Payment Mode    | String              | [CORE]  | digital_payment_ratio              | P2
+9  | Units Consumed  | Float (kWh)         | [ADDED] | consumption_consistency (optional) | P2
+
+ON-TIME COMPUTATION:
+  on_time = Payment Date ? Due Date ? 1 else 0
+  utility_ontime_ratio = sum(on_time across all 18 utility bills) ÷ 18
+  Due Date is CRITICAL — request reupload if not extractable.
+
+PAYMENT MODE ENCODING:
+  BHARAT BILL PAYMENT SYSTEM ? digital
+  UPI                        ? digital
+  Net Banking                ? digital
+  Cheque                     ? semi-digital
+  Cash                       ? cash
+
+????????????????????????????????????????????????????????????????????????????????
+4B. LPG / GAS BILL
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Utility Bill
+WORK TYPE        : ALL
+MANDATORY        : YES — 6 consecutive monthly bills required
+OCR MODE         : Tax Invoice image (Google Cloud Vision)
+PROVIDERS        : Indane / HP Gas / Bharat Gas / IGL
+
+#  | Field              | Data Type         | Status  | Feature Use                        | Pillar
+---|--------------------|--------------------|---------|-----------------------------------|-------
+1  | Customer Name      | String            | [CORE]  | Cross-check Step 1                 | ID
+2  | Address            | String            | [CORE]  | Step 1 address cross-check         | ID
+3  | Consumer No.       | String            | [CORE]  | Consistency across 6 bills         | P2
+4  | Bill Month         | String (MMM YYYY) | [ADDED] | 6-consecutive-month verification   | P2
+5  | Order Date         | Date              | [CORE]  | Monthly usage pattern              | P2
+6  | Tax Invoice Date   | Date              | [CORE]  | Bill date                          | P2
+7  | Connection Type    | String            | [CORE]  | Domestic usage signal              | META
+8  | Consumer Category  | String            | [CORE]  | Residential proof confirmed        | META
+9  | Order Status       | String            | [CORE]  | Delivery confirmation              | P2
+10 | Order Type         | String            | [CORE]  | Refill = regular usage pattern     | P2
+11 | Amount Paid        | Float (?)         | [CORE]  | Amount consistency across 6        | P2
+12 | Payment Method     | String            | [ADDED] | lpg_cash_payment_binary            | P2
+13 | Relationship ID    | String            | [CORE]  | IndianOil account ID               | ID
+14 | Provider Name      | String            | [CORE]  | Indane/HP Gas/Bharat Gas           | META
+
+PAYMENT METHOD HANDLING:
+  LPG cash payment does NOT penalise the user.
+  lpg_cash_payment_binary = 1.0 ? bank cross-match skipped
+  Cash bills excluded from utility_bank_match_ratio denominator.
+  Amount format "?868.5 (Cash)" must parse to:
+    Amount Paid = 868.5  |  Payment Method = Cash
+
+????????????????????????????????????????????????????????????????????????????????
+4C. WIFI / BROADBAND BILL
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Utility Bill
+WORK TYPE        : ALL
+MANDATORY        : NO — optional utility
+OCR MODE         : Bill image/PDF (supports Hathway, Jio, Airtel, ACT)
+CONSISTENCY RULE : All 6 Account Numbers must be identical
+
+#  | Field              | Data Type         | Status  | Feature Use                        | Pillar
+---|--------------------|--------------------|---------|-----------------------------------|-------
+1  | Name               | String            | [CORE]  | Cross-check Step 1                 | ID
+2  | Account Number     | String            | [CORE]  | Consistency across 6 bills         | P2
+3  | Bill Number        | String            | [CORE]  | Proof of bill                      | P2
+4  | Bill Date          | Date              | [CORE]  | Monthly pattern                    | P2
+5  | Bill Due Date      | Date              | [CORE]  | utility_ontime_ratio               | P2
+6  | Total Amount Due   | Float (?)         | [CORE]  | Amount consistency across 6        | P2
+7  | Tariff Plan        | String            | [CORE]  | Active subscription proof          | P2
+8  | Provider           | String            | [CORE]  | Broadband provider identity        | META
+9  | Payment Status     | String            | [ADDED] | payment_confirmed_binary           | P2
+10 | Bill Month         | String (MMM YYYY) | [ADDED] | 6-consecutive-month check          | P2
+
+PROVIDER-SPECIFIC PARSING:
+  Hathway ? Bill Date field label: "Bill Date"
+  Jio     ? Equivalent: "Billing Cycle Date"
+  Jio     ? "Total Payable: NIL" = payment_confirmed = 1.0
+  Normalise all to standard field names above.
+
+????????????????????????????????????????????????????????????????????????????????
+4D. MOBILE BILL
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Utility Bill
+WORK TYPE        : ALL
+MANDATORY        : YES — 6 consecutive monthly bills required
+OCR MODE         : PDF bill (supports Airtel, Jio, Vi, BSNL)
+CONSISTENCY RULE : All 6 Mobile Numbers must be identical
+
+#  | Field                      | Data Type         | Status  | Feature Use                  | Pillar
+---|----------------------------|-------------------|---------|------------------------------|-------
+1  | Name                       | String            | [CORE]  | Cross-check Step 1           | ID
+2  | Mobile Number              | String (10 digits)| [CORE]  | Consistency across 6 bills   | P2
+3  | Bill Month                 | String (MMM YYYY) | [ADDED] | 6-consecutive-month verify   | P2
+4  | Statement Date             | Date              | [CORE]  | Bill generation date         | P2
+5  | Statement Period           | String            | [CORE]  | Coverage period (from–to)    | P2
+6  | Due Date                   | Date              | [CORE]  | utility_ontime_ratio         | P2
+7  | Total Amount Payable       | Float (?)         | [CORE]  | Amount consistency across 6  | P2
+8  | Plan                       | String            | [CORE]  | Active subscription proof    | META
+9  | Payment Made (prev month)  | Float (?)         | [CORE]  | Confirmed payment last cycle | P2
+
+????????????????????????????????????????????????????????????????????????????????
+4E. RENTAL AGREEMENT
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Residence Proof
+WORK TYPE        : ALL (users without owned property)
+MANDATORY        : NO (alternative to owned address proof)
+OCR MODE         : Stamp paper scan / PDF
+
+#  | Field                   | Data Type | Status  | Feature Use                        | Pillar
+---|-------------------------|-----------|---------|-----------------------------------|-------
+1  | Tenant Name             | String    | [CORE]  | Cross-check Step 1                 | ID
+2  | Landlord Name           | String    | [CORE]  | Rent proof identity                | ID
+3  | Lease Property Address  | String    | [CORE]  | Step 1 address cross-check         | ID
+4  | Agreement Date          | Date      | [CORE]  | Recency check (< 2 years)          | ID
+5  | Property Type           | String    | [CORE]  | Residency type metadata            | META
+6  | Stamp Paper Value       | Float (?) | [CORE]  | Document authenticity signal       | ID
+7  | State                   | String    | [CORE]  | Jurisdiction confirmation          | META
+8  | Notary/Stamp Number     | String    | [CORE]  | Document registration              | ID
+
+????????????????????????????????????????????????????????????????????????????????
+4F. RENT RECEIPT (6 monthly receipts)
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Payment Proof
+WORK TYPE        : ALL (renters)
+MANDATORY        : NO (supplements rental agreement)
+OCR MODE         : Printed/handwritten receipt scan
+CONSISTENCY RULE : All 6 Landlord Names must be identical
+
+#  | Field            | Data Type | Status  | Feature Use                        | Pillar
+---|------------------|-----------|---------|-----------------------------------|-------
+1  | Tenant Name      | String    | [CORE]  | Cross-check Step 1                 | ID
+2  | Receipt Number   | String    | [CORE]  | Uniqueness across 6 receipts       | P2
+3  | Date             | Date      | [CORE]  | Monthly payment pattern            | P2
+4  | Rent Amount      | Float (?) | [CORE]  | Consistency across 6 receipts      | P2
+5  | Rental Period    | String    | [CORE]  | Monthly coverage confirmation      | P2
+6  | Property Address | String    | [CORE]  | Step 1 address cross-check         | ID
+7  | Payment Method   | String    | [CORE]  | Digital vs cash detection          | P2
+8  | Landlord Name    | String    | [CORE]  | Consistency across all 6           | P2
+
+
+????????????????????????????????????????????????????????????????????????????????
+STEP 5A — PLATFORM WORKER DOCUMENTS
+????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+5A-1. VEHICLE RC BOOK
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Vehicle Registration Certificate
+WORK TYPE        : Platform Worker (delivery/ride)
+MANDATORY        : YES for platform workers
+OCR MODE         : RC book scan / DigiLocker (Parivahan API preferred)
+
+#  | Field                  | Data Type  | Status  | Feature Use                   | Pillar
+---|------------------------|------------|---------|-------------------------------|-------
+1  | Owner Name             | String     | [CORE]  | Cross-check Step 1            | ID
+2  | Registration Number    | String     | [CORE]  | Transport Dept API            | API
+3  | Date of Registration   | Date       | [CORE]  | vehicle_age_norm              | P5
+4  | Registration Validity  | Date       | [CORE]  | rc_active_binary              | P5
+5  | Chassis Number         | String     | [CORE]  | Vehicle identity              | ID
+6  | Engine Number          | String     | [CORE]  | Vehicle identity              | ID
+7  | Owner Serial           | Integer    | [ADDED] | first_owner_binary ? P5       | P5
+8  | Card Issue Date        | Date       | [ADDED] | Document recency check        | META
+
+FEATURE COMPUTATIONS:
+  rc_active_binary   = Registration Validity > current_date ? 1.0
+  vehicle_age_norm   = (current_year ? registration_year) ÷ 15
+  first_owner_binary = Owner Serial == 1 ? 1.0 else 0.0
+
+????????????????????????????????????????????????????????????????????????????????
+5A-2. VEHICLE INSURANCE POLICY
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Insurance Policy
+WORK TYPE        : Platform Worker (mandatory), Others (optional)
+MANDATORY        : YES for platform workers
+OCR MODE         : Policy document scan / PDF
+
+#  | Field                  | Data Type  | Status  | Feature Use                   | Pillar
+---|------------------------|------------|---------|-------------------------------|-------
+1  | Policy Number          | String     | [CORE]  | Insurance API verification    | API
+2  | Insurer                | String     | [CORE]  | Provider identity             | META
+3  | Policy Type            | String     | [CORE]  | Vehicle type classification   | P5
+4  | Period of Insurance    | String     | [CORE]  | Active period check           | P6
+5  | Policy Issued On       | Date       | [CORE]  | Issue date                    | META
+6  | Cover Note No          | String     | [CORE]  | Cross-reference               | ID
+7  | RTO Location           | String     | [CORE]  | Vehicle registration state    | META
+8  | Vehicle Make           | String     | [CORE]  | Vehicle identity              | META
+9  | Registration Number    | String     | [CORE]  | RC Book cross-check REQUIRED  | ID
+10 | Chassis Number         | String     | [CORE]  | RC Book cross-check           | ID
+11 | Engine Number          | String     | [CORE]  | RC Book cross-check           | ID
+12 | Manufacturing Year     | Integer    | [CORE]  | vehicle_age_norm              | P5
+13 | Vehicle IDV            | Float (?)  | [ADDED] | vehicle_idv_norm ? P6         | P6
+14 | Total Premium Payable  | Float (?)  | [CORE]  | Bank debit cross-check        | P6
+15 | Bonus Percent          | Float (%)  | [ADDED] | no_claim_bonus_binary ? P6    | P6
+
+FEATURE COMPUTATIONS:
+  vehicle_insurance_active = insurance end date > current_date ? 1.0
+  no_claim_bonus_binary    = Bonus Percent > 0 ? 1.0 else 0.0
+  vehicle_idv_norm         = IDV ÷ (state_median_income × 12)
+  vehicle_age_norm         = (current_year ? Manufacturing Year) ÷ 15
+
+REGISTRATION NUMBER RULE:
+  OCR confidence < 0.85 ? flag for reupload
+  Display: "Unable to read vehicle registration number.
+            Please reupload a clearer image."
+
+????????????????????????????????????????????????????????????????????????????????
+5A-3. PLATFORM SCREENSHOTS — Screen 1 (Earnings Dashboard)
+????????????????????????????????????????????????????????????????????????????????
+PLATFORMS   : Rapido, Swiggy, Zomato, Ola, Uber, Dunzo, Blinkit
+DETECTION   : Logo in header ? extract platform_name tag
+MANDATORY   : YES — minimum 3 screens required across different dates
+
+#  | Field                      | Data Type   | Status  | Feature Use                    | Pillar
+---|----------------------------|-------------|---------|--------------------------------|-------
+1  | Platform Name (from logo)  | String      | [CORE]  | platform_type encoded          | P5
+2  | Date Shown                 | Date        | [CORE]  | Recency / activity date        | P5
+3  | Total Rides                | Integer     | [CORE]  | Platform work volume           | P5
+4  | KM Travelled               | Float       | [CORE]  | Physical activity signal       | P5
+5  | Hours Active               | Float       | [CORE]  | Active hours per day           | P5
+6  | Daily Earnings             | Float (?)   | [CORE]  | P1 income signal               | P1
+7  | Bank Deposited             | Float (?)   | [CORE]  | bank_to_platform_ratio ? P1    | P1
+8  | Platform Rating            | Float       | [CORE]  | platform_rating_norm ? P5      | P5
+9  | Acceptance Rate            | Float (%)   | [CORE]  | acceptance_rate_norm ? P5      | P5
+
+????????????????????????????????????????????????????????????????????????????????
+5A-4. PLATFORM SCREENSHOTS — Screen 2 (Orders Summary)
+????????????????????????????????????????????????????????????????????????????????
+#  | Field            | Data Type  | Status  | Feature Use                    | Pillar
+---|------------------|------------|---------|--------------------------------|-------
+1  | Date             | Date       | [CORE]  | Activity date                  | P5
+2  | Today's Earnings | Float (?)  | [CORE]  | P1 income signal               | P1
+3  | Cash Collected   | Float (?)  | [CORE]  | cash_collection_ratio ? P1     | P1
+4  | Total Orders     | Integer    | [CORE]  | trips_per_month_norm ? P1      | P1
+5  | Total KMs        | Float      | [CORE]  | Activity metric                | P5
+6  | Total Hours      | Float      | [CORE]  | Active hours                   | P5
+7  | Avg Rating       | Float      | [CORE]  | P5 platform quality            | P5
+8  | Rejected Orders  | Integer    | [CORE]  | acceptance_rate_norm           | P5
+9  | Missed Orders    | Integer    | [CORE]  | Reliability signal             | P5
+
+????????????????????????????????????????????????????????????????????????????????
+5A-5. PLATFORM SCREENSHOTS — Screen 3 (Redeem / Payout)
+????????????????????????????????????????????????????????????????????????????????
+#  | Field            | Data Type         | Status  | Feature Use                 | Pillar
+---|------------------|-------------------|---------|-----------------------------|-------
+1  | Redeem Amount    | Float (?)         | [CORE]  | Payout verification         | P1
+2  | Bank Name        | String            | [CORE]  | Cross-check Step 3 bank     | ID
+3  | Bank Account     | String (partial)  | [CORE]  | Cross-check Step 3 account  | ID
+4  | Payment Status   | String            | [CORE]  | platform_income_verified    | P1
+5  | Payment Date     | Date              | [CORE]  | Bank credit timing match    | P1
+
+????????????????????????????????????????????????????????????????????????????????
+5A-6. PLATFORM SCREENSHOTS — Screen 4 (Home / ON DUTY)
+????????????????????????????????????????????????????????????????????????????????
+#  | Field              | Data Type  | Status  | Feature Use                   | Pillar
+---|--------------------|-----------|---------|------------------------------ |-------
+1  | Duty Status        | String     | [CORE]  | platform_active_binary ? P5   | P5
+2  | Today's Earnings   | Float (?)  | [CORE]  | Current activity income       | P1
+3  | Redeem Amount      | Float (?)  | [CORE]  | Payout signal                 | P1
+
+????????????????????????????????????????????????????????????????????????????????
+5A-7. PLATFORM SCREENSHOTS — Screen 5 (Monthly Summary) [ADDED — PREFERRED]
+????????????????????????????????????????????????????????????????????????????????
+NOTE: This screen is the most reliable income source for P1.
+      Request this screen first before all others.
+
+#  | Field                       | Data Type         | Status  | Feature Use                    | Pillar
+---|-----------------------------|--------------------|---------|-------------------------------|-------
+1  | Month                       | String (MMM YYYY) | [ADDED] | Month identification           | P1
+2  | Total Monthly Earnings      | Float (?)         | [ADDED] | platform_monthly_earnings_norm | P1
+3  | Total Monthly Trips/Orders  | Integer           | [ADDED] | trips_per_month_norm ? P1      | P1
+4  | Total Monthly KMs           | Float             | [ADDED] | Monthly activity signal        | P5
+
+PLATFORM ENCODING RULES:
+  cash_collection_ratio = Cash Collected ÷ Total Earnings
+  If cash_collection_ratio > 0.40 ? P1 confidence reduced
+
+  PLATFORM TYPE ENCODING (P5 feature):
+    Ride Hailing (Rapido/Ola/Uber)   ? platform_type_encoded = 1.00
+    Food Delivery (Swiggy/Zomato)    ? platform_type_encoded = 0.75
+    Hyperlocal (Blinkit/Dunzo)       ? platform_type_encoded = 0.50
+
+  MULTI-PLATFORM:
+    Screenshots from 2+ different platforms detected:
+    multi_platform_binary = 1.0 ? P5 bonus + P6 resilience boost
+
+
+????????????????????????????????????????????????????????????????????????????????
+STEP 5B — VENDOR / SELLER DOCUMENTS
+????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+5B-1. SVANIDHI LETTER OF RECOMMENDATION
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Government Street Vendor Certificate
+WORK TYPE        : Vendor/Seller
+MANDATORY        : YES for vendors
+OCR MODE         : Certificate scan (Google Cloud Vision)
+
+#  | Field                     | Data Type  | Status  | Feature Use                        | Pillar
+---|---------------------------|------------|---------|------------------------------------|-------
+1  | Certificate/Registration No| String    | [CORE]  | SVANidhi API verification          | API
+2  | Name                      | String     | [CORE]  | Cross-check Step 1                 | ID
+3  | S/D/W/H of                | String     | [CORE]  | Supporting identity                | ID
+4  | DOB                       | Date       | [CORE]  | Cross-check Aadhaar DOB            | ID
+5  | Gender                    | String     | [META]  | Profile metadata                   | META
+6  | Category of Vending       | String     | [CORE]  | vendor_type_encoded ? P5           | P5
+7  | Nature/Product of Vending | String     | [CORE]  | Business type ? P5                 | P5
+8  | Site/Place of Vending     | String     | [CORE]  | Business location                  | META
+9  | State                     | String     | [CORE]  | Location context                   | META
+10 | Name of Urban Local Body  | String     | [CORE]  | Issuing authority                  | META
+11 | Loan Amount Sanctioned    | Float (?)  | [ADDED] | svanidhi_loan_amount_norm ? P1     | P1
+12 | Loan Disbursement Date    | Date       | [ADDED] | Bank credit cross-check ? P3       | P3
+13 | Photo                     | Image      | [CORE]  | Supporting identity check          | P5
+
+VENDOR TYPE ENCODING:
+  Fixed Location  ? vendor_type_encoded = 1.00
+  Mobile Vending  ? vendor_type_encoded = 0.60
+  Hawker/Seasonal ? vendor_type_encoded = 0.35
+
+????????????????????????????????????????????????????????????????????????????????
+5B-2. NO-DUE CERTIFICATE
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Loan Closure Proof
+WORK TYPE        : Vendor/Seller
+MANDATORY        : NO — optional, strong P3 positive signal
+
+#  | Field               | Data Type | Status  | Feature Use                        | Pillar
+---|---------------------|-----------|---------|-----------------------------------|-------
+1  | Document Type       | String    | [CORE]  | loan_repaid_binary = 1.0           | P3
+2  | Loan Agreement No   | String    | [CORE]  | Unique loan reference              | P3
+3  | Borrower Name       | String    | [CORE]  | Cross-check Step 1                 | ID
+4  | Date                | Date      | [CORE]  | Certificate recency (< 3 years)    | P3
+5  | Issuing Bank        | String    | [CORE]  | Bank identity                      | ID
+6  | Key Statement       | String    | [CORE]  | Semantic repayment confirmation    | P3
+
+KEY STATEMENT PARSING:
+  Must contain: "no outstanding" OR "loan closed" OR
+                "full repayment" OR "NIL dues"
+  If absent ? loan_repaid_binary = 0.5 (uncertain, manual review)
+
+????????????????????????????????????????????????????????????????????????????????
+5B-3. FSSAI REGISTRATION CERTIFICATE
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Food Safety Registration
+WORK TYPE        : Vendor/Seller (food/distribution)
+MANDATORY        : NO — optional vendor legitimacy signal
+
+#  | Field                  | Data Type | Status  | Feature Use                   | Pillar
+---|------------------------|-----------|---------|-------------------------------|-------
+1  | Registration Number    | String    | [CORE]  | FSSAI API verification        | API
+2  | Kind of Business       | String    | [CORE]  | Vendor type classification    | P5
+3  | Photo Identity Used    | String    | [CORE]  | Step 2 cross-reference        | ID
+4  | Place                  | String    | [CORE]  | Business location             | META
+5  | Date of Issue          | Date      | [CORE]  | Certificate age calculation   | P5
+6  | Period of Validity     | String    | [CORE]  | Duration string               | P5
+7  | Validity Expiry Date   | Date      | [ADDED] | fssai_active_binary ? P5      | P5
+8  | Registration Period    | String    | [CORE]  | Renewal frequency signal      | P5
+9  | Photo                  | Image     | [CORE]  | Supporting identity check     | ID
+
+FSSAI ACTIVE CHECK:
+  fssai_active_binary = Validity Expiry Date > current_date ? 1.0
+  Expiry within 30 days ? flag "expiring soon" in report
+
+
+????????????????????????????????????????????????????????????????????????????????
+STEP 5C — SKILLED TRADESPERSON DOCUMENTS
+????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+5C-1. NSDC / SKILL INDIA CERTIFICATE
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Vocational Training Certificate
+WORK TYPE        : Skilled Tradesperson
+MANDATORY        : YES for tradespeople
+OCR MODE         : Certificate scan (Google Cloud Vision)
+
+#  | Field                        | Data Type     | Status  | Feature Use                  | Pillar
+---|------------------------------|---------------|---------|-----------------------------|-------
+1  | Candidate Name               | String        | [CORE]  | Cross-check Step 1           | ID
+2  | S/O/D/O                      | String        | [CORE]  | Supporting identity          | ID
+3  | Certificate ID (NSDC format) | String        | [ADDED] | NSDC API — PRIMARY key       | API
+4  | Enrollment Number            | String        | [CORE]  | Secondary reference          | ID
+5  | Course / Trade               | String        | [CORE]  | Skill type ? P5              | P5
+6  | NSQF Level                   | Integer (1–8) | [CORE]  | nsqf_level_norm ? P5         | P5
+7  | Training Institute           | String        | [CORE]  | Issuing body legitimacy      | P5
+8  | Duration                     | String        | [CORE]  | Training duration            | META
+9  | Grade                        | String        | [CORE]  | grade_encoded ? P5           | P5
+10 | Course Period                 | String        | [CORE]  | certificate_recency check    | P5
+11 | Date of Issue                 | Date          | [CORE]  | certificate_recency_norm     | P5
+12 | Issuing Body                  | String        | [CORE]  | Authority validation         | P5
+
+GRADE ENCODING (normalised 0.0–1.0):
+  A+ ? 1.00 | A ? 0.85 | B ? 0.65 | C ? 0.45 | D ? 0.25
+  Pass only / No Grade ? 0.40
+
+NSQF ENCODING:
+  nsqf_level_norm = NSQF Level ÷ 8
+
+CERTIFICATE RECENCY:
+  certificate_recency_norm = 1.0 ? ((current_year ? issue_year) ÷ 10)
+  Capped at [0.0, 1.0]
+
+????????????????????????????????????????????????????????????????????????????????
+5C-2. SHOPS & ESTABLISHMENTS REGISTRATION
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Trade Licence / Business Registration
+WORK TYPE        : Skilled Tradesperson, Vendor
+MANDATORY        : YES for tradespeople operating businesses
+OCR MODE         : Registration certificate scan
+
+#  | Field                         | Data Type | Status  | Feature Use                   | Pillar
+---|-------------------------------|-----------|---------|-------------------------------|-------
+1  | Application No.               | String    | [CORE]  | Licence verification          | P5
+2  | Classification                | String    | [CORE]  | Business type                 | P5
+3  | Category                      | String    | [CORE]  | Business category             | META
+4  | Shop/Establishment Name       | String    | [CORE]  | Business identity             | P5
+5  | Address                       | String    | [CORE]  | Step 1 address cross-check    | ID
+6  | District                      | String    | [CORE]  | Location                      | META
+7  | Employer/Director Name        | String    | [CORE]  | Cross-check Step 1            | ID
+8  | Designation                   | String    | [CORE]  | Role in business              | META
+9  | Mobile                        | String    | [CORE]  | Step 1 phone cross-check      | ID
+10 | Validity/Expiry Date          | Date      | [ADDED] | trade_licence_active_binary   | P5
+11 | Date of Issue/Registration    | Date      | [ADDED] | business_tenure_norm ? P5     | P5
+
+FEATURE COMPUTATIONS:
+  trade_licence_active_binary = Expiry Date > current_date ? 1.0
+  business_tenure_norm        = months_since_registration ÷ 60
+
+
+????????????????????????????????????????????????????????????????????????????????
+STEP 5D — FREELANCER DOCUMENTS
+????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+5D-1. FREELANCER PROFILE SCREENSHOT — Screen 1 (Profile Page)
+????????????????????????????????????????????????????????????????????????????????
+PLATFORMS   : Upwork, Fiverr, Toptal, Freelancer.com, PeoplePerHour
+DETECTION   : Logo in header ? extract platform_name tag
+MANDATORY   : YES for freelancers
+
+#  | Field                     | Data Type    | Status  | Feature Use                    | Pillar
+---|---------------------------|-------------|---------|--------------------------------|-------
+1  | Freelancer Name           | String       | [CORE]  | Cross-check Step 1             | ID
+2  | Profile Title             | String       | [CORE]  | Work type context              | META
+3  | Hourly Rate               | Float        | [CORE]  | hourly_rate_norm ? P5          | P5
+4  | Job Success Score         | Float (%)    | [CORE]  | job_success_norm ? P5          | P5
+5  | Badge                     | String       | [CORE]  | badge_tier_norm ? P5           | P5
+6  | Total Earnings            | String (tier)| [CORE]  | earnings_tier ? P5             | P5
+7  | Total Jobs Completed      | Integer      | [CORE]  | total_jobs_norm ? P5           | P5
+8  | Total Hours               | Float        | [CORE]  | Work volume signal             | P5
+9  | Hours/Week                | String       | [CORE]  | active_freelancer_binary       | P5
+10 | ID Verified               | Boolean      | [CORE]  | id_verified_on_platform ? P5   | P5
+11 | Member Since (Join Date)  | Date         | [ADDED] | freelance_tenure_norm ? P5     | P5
+12 | Total Reviews Count       | Integer      | [ADDED] | review_count_norm ? P5         | P5
+13 | Location                  | String       | [META]  | Geographic metadata            | META
+14 | Platform Name (from logo) | String       | [CORE]  | Platform type encoding         | P5
+
+BADGE TIER ENCODING (normalised 0.0–1.0 — corrected):
+  "Top Rated Plus" ? badge_tier_norm = 1.00
+  "Top Rated"      ? badge_tier_norm = 0.65
+  "Rising Talent"  ? badge_tier_norm = 0.35
+  None             ? badge_tier_norm = 0.00
+
+????????????????????????????????????????????????????????????????????????????????
+5D-2. FREELANCER TRANSACTION HISTORY SCREENSHOT — Screen 2 (3 months)
+????????????????????????????????????????????????????????????????????????????????
+NOTE: Request 3 separate screenshots, one per month.
+      This is the PRIMARY income source for P1 — NOT profile total earnings.
+      Profile "Total Earnings" is career total, not monthly income.
+
+#  | Field                     | Data Type        | Status  | Feature Use                  | Pillar
+---|---------------------------|------------------|---------|------------------------------|-------
+1  | Statement Period          | String           | [CORE]  | Month identification         | P1
+2  | Transaction Date          | Date (per row)   | [CORE]  | Monthly income aggregation   | P1
+3  | Transaction Type          | String (per row) | [CORE]  | Fixed Price / Hourly / Bonus | P1
+4  | Transaction Amount        | Float (per row)  | [CORE]  | Income per transaction       | P1
+5  | Transaction Direction     | String (per row) | [CORE]  | Credit (+) vs Debit (?)      | P1
+6  | Net Income This Period    | Float            | [CORE]  | platform_monthly_earnings    | P1
+7  | Platform Currency         | String           | [CORE]  | fx_conversion_applied flag   | P1
+8  | Balance                   | Float            | [CORE]  | Withdrawal behaviour         | P4
+
+FIELDS NOT EXTRACTED (privacy / irrelevance):
+  ? Client names in transactions
+  ? Project/contract titles
+  ? Transaction reference IDs
+  ? Escrow movement detail rows
+  ? Profile bio text
+
+CURRENCY CONVERSION:
+  If Platform Currency = USD:
+    fx_conversion_applied = 1.0
+    platform_income_inr = Net Income × RBI_reference_rate_on_period_end_date
+  If Platform Currency = INR:
+    fx_conversion_applied = 0.0
+    platform_income_inr = Net Income directly
+
+BANK CROSS-CHECK FOR INTERNATIONAL PLATFORMS:
+  Search bank narrations for: "PAYONEER", "WISE", "UPWORK PAYMENT", "FIVERR"
+  Amount within 10% of platform payout ? bank_to_platform_ratio = 1.0
+
+
+????????????????????????????????????????????????????????????????????????????????
+STEP 6 — GOVERNMENT SCHEMES
+????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+6A. ESHRAM CARD
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Unorganised Worker Registration
+WORK TYPE        : ALL gig workers
+MANDATORY        : NO — strong P7 positive signal
+
+#  | Field                    | Data Type | Status  | Feature Use                        | Pillar
+---|--------------------------|-----------|---------|-----------------------------------|-------
+1  | Name                     | String    | [CORE]  | Cross-check Step 1                 | ID
+2  | Father's Name            | String    | [CORE]  | Supporting identity                | ID
+3  | DOB                      | Date      | [CORE]  | Aadhaar DOB cross-check            | ID
+4  | Gender                   | String    | [META]  | Profile metadata                   | META
+5  | UAN Number               | String    | [CORE]  | eShram API verification            | API
+6  | Primary Occupation       | String    | [CORE]  | Work type classification check     | P7
+7  | Aadhaar Number (masked)  | String    | [CORE]  | Step 2 cross-reference             | ID
+8  | Date of Registration     | Date      | [ADDED] | eshram_tenure_norm ? P7            | P7
+9  | Photo                    | Image     | [CORE]  | Supporting identity check          | P5
+
+ESHRAM TENURE:
+  eshram_tenure_norm = months_since_registration ÷ 36
+
+????????????????????????????????????????????????????????????????????????????????
+6B. PM-SYM CARD
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Pension Scheme Card
+WORK TYPE        : ALL
+MANDATORY        : NO — P7 positive signal
+
+#  | Field                           | Data Type | Status  | Feature Use                  | Pillar
+---|----------------------------------|-----------|---------|------------------------------|-------
+1  | Name                            | String    | [CORE]  | Cross-check Step 1           | ID
+2  | Pension Account Number          | String    | [CORE]  | PM-SYM API                   | API
+3  | Date of Birth                   | Date      | [CORE]  | Aadhaar DOB cross-check      | ID
+4  | Gender                          | String    | [META]  | Profile metadata             | META
+5  | Date of Joining Scheme          | Date      | [CORE]  | pmsym_tenure_norm ? P7       | P7
+6  | Monthly Individual Contribution | Float (?) | [CORE]  | Bank debit cross-check       | P7
+7  | Monthly Government Contribution | Float (?) | [CORE]  | Active scheme confirmation   | P7
+8  | Pension Starting Date           | Date      | [CORE]  | Scheme validity              | P7
+
+BANK CROSS-CHECK:
+  Search bank debits for: "PMSYM", "PM-SYM", "PENSION CONTRIBUTION"
+  Amount matches Monthly Individual Contribution within ?5:
+    All months found ? pmsym_contribution_consistency = 1.0
+    Gaps > 35 days between debits ? score drops proportionally
+
+????????????????????????????????????????????????????????????????????????????????
+6C. PMJJBY CERTIFICATE OF INSURANCE
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Government Life Insurance Certificate
+WORK TYPE        : ALL
+MANDATORY        : NO — P6 + P7 positive signal
+IMPORTANT NOTE   : PMJJBY = LIFE insurance (?2L death benefit)
+                   NOT health insurance. Map only to life coverage.
+
+Page 1:
+#  | Field                     | Data Type | Status  | Feature Use                  | Pillar
+---|---------------------------|-----------|---------|------------------------------|-------
+1  | Name of Member            | String    | [CORE]  | Cross-check Step 1           | ID
+2  | Master Policy Number      | String    | [CORE]  | PMJJBY verification          | API
+3  | Unique Reference Number   | String    | [CORE]  | API verification             | API
+4  | Date of Birth             | Date      | [CORE]  | Cross-check Aadhaar          | ID
+5  | Bank Account Number       | String    | [CORE]  | Step 3 bank account match    | ID
+6  | Name of Bank              | String    | [CORE]  | Bank identity match          | ID
+7  | Date of Commencement      | Date      | [CORE]  | Policy active start          | P6
+8  | Cover End Date            | Date      | [CORE]  | pmjjby_active_binary         | P6
+9  | Insurer                   | String    | [CORE]  | Provider identity            | META
+
+Page 2:
+#  | Field                     | Data Type | Status  | Feature Use                  | Pillar
+---|---------------------------|-----------|---------|------------------------------|-------
+10 | Sum Assured               | Float (?) | [CORE]  | govt_life_coverage_norm ? P6 | P6
+11 | Premium Amount Paid       | Float (?) | [CORE]  | Bank debit cross-check       | P6
+12 | Annual Renewal Date       | String    | [CORE]  | Bank debit timing check      | P6
+
+MAPPING RULE:
+  PMJJBY Sum Assured ? govt_life_insurance_coverage ONLY
+  DO NOT add to health_insurance sum_insured
+  Separate features: pmjjby_active_binary (P7) + govt_life_coverage_norm (P6)
+
+????????????????????????????????????????????????????????????????????????????????
+6D. MUDRA LOAN ACKNOWLEDGEMENT LETTER
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Government Loan Approval
+WORK TYPE        : Vendor / Tradesperson
+MANDATORY        : NO — P3 positive signal
+
+#  | Field                | Data Type | Status  | Feature Use                        | Pillar
+---|----------------------|-----------|---------|-----------------------------------|-------
+1  | Applicant Name       | String    | [CORE]  | Cross-check Step 1                 | ID
+2  | Loan Amount          | Float (?) | [CORE]  | loan_amount_norm ? P3              | P3
+3  | Loan Account Number  | String    | [CORE]  | Unique reference                   | P3
+4  | Bank Name            | String    | [CORE]  | Bank identity                      | ID
+5  | Loan Approval Date   | Date      | [CORE]  | Recency check                      | P3
+6  | Loan Closure Status  | String    | [CORE]  | mudra_loan_repaid ? P3             | P3
+7  | Loan Type            | String    | [ADDED] | mudra_tier_encoded ? P3            | P3
+
+MUDRA LOAN TYPE ENCODING:
+  Shishu  (up to ?50,000) ? mudra_tier_encoded = 0.33
+  Kishor  (?50K–?5L)      ? mudra_tier_encoded = 0.66
+  Tarun   (?5L–?10L)      ? mudra_tier_encoded = 1.00
+
+REPAYMENT:
+  "Closed" / "Repaid" in Loan Closure Status ? mudra_loan_repaid = 1.0
+
+????????????????????????????????????????????????????????????????????????????????
+6E. PPF PASSBOOK
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Savings Passbook
+WORK TYPE        : ALL
+MANDATORY        : NO — P4 strong positive signal
+OCR MODE         : Passbook scan (multiple pages required for transaction table)
+
+Account Information Page:
+#  | Field              | Data Type | Status  | Feature Use                        | Pillar
+---|--------------------|-----------|---------|------------------------------------|-------
+1  | Customer Name      | String    | [CORE]  | Cross-check Step 1                 | ID
+2  | Account Number     | String    | [CORE]  | PPF account identity               | P4
+3  | CIF Number         | String    | [CORE]  | Bank customer ID                   | ID
+4  | Bank               | String    | [CORE]  | Bank identity                      | META
+5  | Branch             | String    | [CORE]  | Branch location                    | META
+6  | Date of Issue      | Date      | [CORE]  | ppf_tenure_years ? P4              | P4
+7  | IFSC Code          | String    | [CORE]  | Branch verification                | ID
+8  | MOP                | String    | [CORE]  | Single/Joint ownership type        | META
+9  | Mem. Reg. No.      | String    | [CORE]  | Membership registration            | ID
+
+Transaction Table (ADDED — was entirely missing):
+#  | Field                      | Data Type   | Status  | Feature Use                  | Pillar
+---|----------------------------|-------------|---------|------------------------------|-------
+10 | Financial Year Label       | String      | [ADDED] | Period identification        | P4
+11 | Contribution Date (list)   | Date list   | [ADDED] | ppf_deposit_regularity ? P4  | P4
+12 | Amount Deposited (list)    | Float list  | [ADDED] | ppf_contribution_norm ? P4   | P4
+13 | Running Balance (list)     | Float list  | [ADDED] | ppf_balance_norm ? P4        | P4
+
+FEATURE COMPUTATIONS:
+  ppf_tenure_years        = current_year ? Date of Issue year
+  ppf_contribution_norm   = avg(Amount Deposited list) ÷ state_median_income
+  ppf_deposit_regularity  = count(contributions in last 12 months) ÷ 4
+  ppf_balance_norm        = latest Running Balance ÷ (state_median_income × 12)
+  ppf_active_binary       = account exists + ?1 deposit in last 12 months ? 1.0
+
+  All 4 features = ZERO if transaction table is not submitted.
+
+
+????????????????????????????????????????????????????????????????????????????????
+STEP 7 — INSURANCE DOCUMENTS
+????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+7A. HEALTH INSURANCE POLICY
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Health Insurance
+WORK TYPE        : ALL
+MANDATORY        : NO — P6 strong signal
+
+#  | Field                      | Data Type | Status  | Feature Use                      | Pillar
+---|----------------------------|-----------|---------|---------------------------------|-------
+1  | Proposer's Name            | String    | [CORE]  | Cross-check Step 1               | ID
+2  | Policy Number              | String    | [CORE]  | Insurance API                    | API
+3  | Date of Inception          | Date      | [CORE]  | Policy start date                | P6
+4  | Period of Insurance        | String    | [CORE]  | Active period check              | P6
+5  | Total Premium              | Float (?) | [CORE]  | Bank debit cross-check           | P6
+6  | Receipt Date               | Date      | [CORE]  | Payment date                     | P6
+7  | Basic Floater Sum Insured  | Float (?) | [CORE]  | sum_insured_to_income ? P6       | P6
+8  | Scheme Description         | String    | [ADDED] | family_coverage_binary ? P6      | P6
+9  | Insurer                    | String    | [CORE]  | Provider identity                | META
+10 | Renewal Year               | String    | [CORE]  | New vs renewal cycle             | P6
+11 | Policy Expiry Date         | Date      | [ADDED] | health_insurance_active_binary   | P6
+
+FAMILY COVERAGE:
+  "2 Adults + 1 Child" / "Family Floater" ? family_coverage_binary = 1.0
+  "Individual"                             ? family_coverage_binary = 0.0
+
+SUM INSURED:
+  sum_insured_to_annual_income = health_sum_insured ÷ (state_median_income × 12)
+
+ACTIVE CHECK:
+  health_insurance_active_binary = Policy Expiry Date > current_date ? 1.0
+
+????????????????????????????????????????????????????????????????????????????????
+7B. LIFE INSURANCE PREMIUM CERTIFICATE
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Life Insurance Proof
+WORK TYPE        : ALL
+MANDATORY        : NO — P6 signal, separate from PMJJBY
+
+#  | Field                          | Data Type | Status  | Feature Use                   | Pillar
+---|--------------------------------|-----------|---------|------------------------------ |-------
+1  | Policyholder Name              | String    | [CORE]  | Cross-check Step 1            | ID
+2  | Policy Number                  | String    | [CORE]  | Insurance API                 | API
+3  | Policy Issue Date              | Date      | [CORE]  | Policy start date             | P6
+4  | Certificate Date               | Date      | [CORE]  | Document date                 | META
+5  | Payment Mode                   | String    | [CORE]  | premium_frequency_encoded ? P2| P2
+6  | Coverage Name                  | String    | [CORE]  | Policy type                   | META
+7  | Sum Assured                    | Float (?) | [CORE]  | life_sum_assured_norm ? P6    | P6
+8  | Modal Premium                  | Float (?) | [CORE]  | Base premium amount           | P6
+9  | Total Premium Received Period  | String    | [CORE]  | Active period confirmation    | P6
+10 | Total Premium Paid             | Float (?) | [CORE]  | Bank debit cross-check        | P6
+11 | Coverage Status                | String    | [CORE]  | Policy active confirmation    | P6
+12 | Policy Expiry / Maturity Date  | Date      | [ADDED] | life_insurance_active_binary  | P6
+
+PAYMENT MODE ENCODING (premium_frequency_encoded):
+  Monthly     ? 1.00   (highest discipline signal)
+  Quarterly   ? 0.75
+  Half-yearly ? 0.50
+  Yearly      ? 0.25
+
+ACTIVE CHECK:
+  Coverage Status = "Premium Paying" OR maturity date > current_date ? 1.0
+
+
+????????????????????????????????????????????????????????????????????????????????
+STEP 8 — TAX AND COMPLIANCE DOCUMENTS
+????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+8A. ITR ACKNOWLEDGEMENT
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Income Tax Return
+WORK TYPE        : ALL
+MANDATORY        : NO — P1 + P8 strong signal
+OCR MODE         : Acknowledgement PDF (TRACES portal format)
+
+#  | Field                      | Data Type | Status  | Feature Use                      | Pillar
+---|----------------------------|-----------|---------|---------------------------------|-------
+1  | Assessment Year            | String    | [CORE]  | Tax year identification          | P8
+2  | Form Number                | String    | [CORE]  | itr_form_type encoded            | P8
+3  | Status                     | String    | [CORE]  | Individual taxpayer confirm      | META
+4  | Filing Type                | String    | [CORE]  | on_time_itr_filing_binary ? P2   | P2
+5  | e-Filing Acknowledgement No| String    | [CORE]  | TRACES API verification          | API
+6  | Gross Total Income         | Float (?) | [ADDED] | gross_to_net_itr_ratio ? P1      | P1
+7  | Total Income               | Float (?) | [CORE]  | itr_declared_income ? P1         | P1
+8  | Taxes Paid                 | Float (?) | [CORE]  | Tax compliance signal            | P8
+9  | Tax Refundable             | Float (?) | [CORE]  | itr_overpaid_binary ? P8         | P8
+10 | Submission Date            | Date      | [CORE]  | itr_recency + on-time check      | P2
+
+FEATURE COMPUTATIONS:
+  on_time_itr_filing_binary:
+    Filing Type = "139(1)" ? 1.0 (on time)
+    Filing Type = "139(4)" ? 0.5 (belated)
+    Filing Type = "139(5)" ? 0.75 (revised)
+
+  itr_recency_binary:
+    Assessment Year >= (current_year ? 1) ? 1.0
+    Assessment Year == (current_year ? 2) ? 0.5
+    Assessment Year < (current_year ? 2)  ? 0.0
+
+  itr_to_bank_ratio:
+    (Total Income ÷ 12) ÷ avg_monthly_credit_from_bank
+    Ratio ? 1.0 = income matches bank | << 1.0 = underdeclared
+
+  gross_to_net_itr_ratio:
+    Gross Total Income ÷ Total Income
+    Ratio > 1.3 = significant deductions (tax-savvy user ? P8 positive)
+
+  itr_overpaid_binary:
+    Tax Refundable > 0 ? 1.0 (proactive tax payment ? P8 positive)
+
+????????????????????????????????????????????????????????????????????????????????
+8B. UDYAM REGISTRATION CERTIFICATE
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : MSME Registration
+WORK TYPE        : Vendor/Seller, Freelancer (business owners)
+MANDATORY        : NO — P5 strong signal for business owners
+OCR MODE         : Certificate scan / Udyam portal PDF
+
+#  | Field                          | Data Type | Status    | Feature Use                  | Pillar
+---|--------------------------------|-----------|-----------|------------------------------|-------
+1  | Udyam Registration Number      | String    | [CORE]    | MSME API verification        | API
+2  | Enterprise Name                | String    | [CORE]    | Cross-check Step 1           | ID
+3  | Enterprise Type                | String    | [CORE]    | business_size_encoded ? P5   | P5
+4  | Major Activity                 | String    | [CORE]    | Work type cross-check        | META
+5  | Social Category                | String    | [BLOCKED] | Display only — NEVER model   | META
+6  | Official Address               | String    | [CORE]    | Step 1 address cross-check   | ID
+7  | State                          | String    | [CORE]    | Location context             | META
+8  | Date of Incorporation          | Date      | [CORE]    | business_age_norm ? P5       | P5
+9  | Date of Commencement           | Date      | [CORE]    | Operations start date        | P5
+10 | Date of Udyam Registration     | Date      | [ADDED]   | udyam_tenure_norm ? P5       | P5
+11 | NIC Codes                      | String    | [CORE]    | Industry classification      | META
+12 | Investment in Plant/Equipment  | Float (?) | [ADDED]   | business_asset_norm ? P5     | P5
+
+?? LEGAL BLOCK — SOCIAL CATEGORY:
+  NEVER pass Social Category (OBC/SC/ST/General) to any ML model.
+  Extract for display and record only. Set blocked = true in schema.
+  Violates RBI Fair Practices Code if used in scoring.
+
+ENTERPRISE TYPE ENCODING:
+  Micro  ? business_size_encoded = 0.33
+  Small  ? business_size_encoded = 0.66
+  Medium ? business_size_encoded = 1.00
+
+FEATURE COMPUTATIONS:
+  business_age_norm   = months_since_incorporation ÷ 60
+  udyam_tenure_norm   = months_since_registration ÷ 36
+  business_asset_norm = investment_in_plant ÷ (state_median_income × 12)
+
+????????????????????????????????????????????????????????????????????????????????
+8C. GST RETURN SUMMARY (GSTR-3B / GSTR-1)
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : GST Compliance Return
+WORK TYPE        : Vendor/Seller, Freelancer (GST registered)
+MANDATORY        : NO — P1 + P8 strong signal for GST-registered users
+OCR MODE         : GST portal downloaded summary PDF
+
+#  | Field                     | Data Type         | Status     | Feature Use                    | Pillar
+---|---------------------------|-------------------|------------|-------------------------------|-------
+1  | GSTIN                     | String (15 chars) | [CORE]     | GST API verification           | API
+2  | Legal Name of Taxpayer    | String            | [CORE]     | Cross-check Step 1             | ID
+3  | Return Type               | String            | [CORE]     | GSTR-1 / GSTR-3B               | META
+4  | Return Period             | String (MMM YYYY) | [CORE]     | Month identification           | P8
+5  | Date of Filing            | Date              | [CORE]     | gst_on_time_filing ? P2        | P2
+6  | Taxable Turnover          | Float (?)         | [CORE]     | gst_monthly_turnover_norm ? P1 | P1
+7  | Total Tax Paid            | Float (?)         | [CORE]     | GST compliance signal          | P8
+8  | CGST Paid                 | Float (?)         | [CORE]     | Tax breakdown                  | P8
+9  | SGST Paid                 | Float (?)         | [CORE]     | Tax breakdown                  | P8
+10 | IGST Paid                 | Float (?)         | [OPTIONAL] | Interstate transactions        | P8
+11 | Nil Return Filed          | Boolean           | [CORE]     | nil_return_binary              | P8
+12 | Status                    | String            | [CORE]     | Filed / Not Filed / Late       | P2
+
+FEATURE COMPUTATIONS:
+  gst_filing_consistency:
+    count(months filed) ÷ 6
+    All 6 = 1.0 | 4 = 0.67 | 2 = 0.33
+
+  gst_on_time_filing:
+    GSTR-3B due = 20th of following month
+    Date of Filing ? due date ? on_time = 1.0
+
+  gst_monthly_turnover_norm:
+    avg(Taxable Turnover across 6 months) ÷ state_median_income
+
+  gst_to_bank_ratio:
+    avg_gst_turnover ÷ avg_monthly_credit_from_bank
+    Ratio ? 1.0 = GST turnover matches bank deposits
+
+  nil_return_ratio:
+    count(Nil Return months) ÷ 6
+    High nil returns = seasonal or declining business
+
+
+????????????????????????????????????????????????????????????????????????????????
+EMI DOCUMENTS — SUPPLEMENTARY (Step 3 Cross-Check)
+????????????????????????????????????????????????????????????????????????????????
+
+????????????????????????????????????????????????????????????????????????????????
+EMI-1. EMI PAYMENT SCREENSHOT
+????????????????????????????????????????????????????????????????????????????????
+DOCUMENT TYPE    : Loan/EMI Proof (supplementary)
+WORK TYPE        : ALL
+MANDATORY        : NO — bank auto-detection is primary
+                   These screenshots BOOST P3 confidence when present
+
+#  | Field                | Data Type    | Status  | Feature Use                  | Pillar
+---|----------------------|-------------|---------|------------------------------|-------
+1  | Merchant             | String       | [CORE]  | Purchase context             | P3
+2  | Transaction Amount   | Float (?)    | [CORE]  | Total purchase amount        | P3
+3  | EMI Duration         | Integer (mo) | [CORE]  | emi_loan_tenor_norm ? P3     | P3
+4  | Monthly EMI Amount   | Float (?/mo) | [CORE]  | emi_to_income_ratio ? P3     | P3
+5  | Payment Method       | String       | [CORE]  | credit_card_emi_detected     | P3
+
+????????????????????????????????????????????????????????????????????????????????
+EMI-2. EMI LOAN SCHEDULE SCREENSHOT
+????????????????????????????????????????????????????????????????????????????????
+#  | Field                | Data Type   | Status     | Feature Use                 | Pillar
+---|----------------------|------------|------------|------------------------------|-------
+1  | Loan Amount          | Float (?)   | [CORE]     | loan_amount_norm ? P3        | P3
+2  | Interest Rate        | Float (%)   | [CORE]     | interest_rate_norm ? P3      | P3
+3  | Period (Months)      | Integer     | [CORE]     | emi_loan_tenor_norm ? P3     | P3
+4  | Monthly EMI          | Float (?)   | [CORE]     | emi_to_income_ratio ? P3     | P3
+5  | Total Interest       | Float (?)   | [CORE]     | Debt burden context          | P3
+6  | Processing Fees      | Float (?)   | [OPTIONAL] | One-time cost signal         | P3
+7  | Total Payment        | Float (?)   | [CORE]     | total_debt_obligation_norm   | P3
+
+
+????????????????????????????????????????????????????????????????????????????????
+GLOBAL PROCESSING RULES
+????????????????????????????????????????????????????????????????????????????????
+
+ABSENT DATA HIERARCHY:
+  LEVEL 1 — Step not submitted:
+    All features for that step = 0.0
+    Confidence contribution = 0.0
+    Score pulled fully toward NEUTRAL_BASELINE = 0.50
+
+  LEVEL 2 — Step submitted, document rejected by validation:
+    Same treatment as Level 1
+
+  LEVEL 3 — Step submitted, OCR partial failure:
+    VERIFIED fields ? use normally
+    PARTIAL fields  ? use with 50% confidence weight
+    FAILED fields   ? 0.0
+
+  LEVEL 4 — Feature mathematically undefined:
+    income_recovery_speed (no gaps) ? 1.0 (no gaps = perfect)
+    max_to_avg_ratio (avg = 0)      ? 1.0 (default neutral)
+    balance_growth_slope (1 month)  ? 0.0 (insufficient history)
+
+MINIMUM SCORING REQUIREMENTS (refuse to score if any fail):
+  ? Primary bank statement absent (P1 confidence < 0.35)
+  ? Aadhaar not verified
+  ? Face similarity < 0.70
+
+NaN / INFINITY RULE:
+  Any NaN or Infinity result ? replace with 0.0 immediately
+  Flag in meta.computation_warnings list
+  NEVER propagate NaN into float arrays
+
+DIVISION BY ZERO:
+  All division operations check denominator > 0 before computing
+  If denominator = 0 ? apply Level 4 default values
+
+BLOCKED FIELD RULE:
+  Social Category (Udyam field #5) must NEVER be passed to
+  any feature vector, model input, or scoring function.
+  Extract only for display_only = true profile record.
+
+
+????????????????????????????????????????????????????????????????????????????????
+COMPLETE FIELD COUNT SUMMARY
+????????????????????????????????????????????????????????????????????????????????
+
+Document                               | CORE | ADDED | OPTIONAL | TOTAL
+---------------------------------------|------|-------|----------|------
+Aadhaar Front + Back                   |   5  |   5   |    0     |  10
+PAN Card                               |   5  |   0   |    0     |   5
+Bank Statement (per statement)         |  14  |   0   |    0     |  14
+EB Bill (×6)                           |   6  |   3   |    0     |   9
+LPG Bill (×6)                          |  12  |   2   |    0     |  14
+WiFi Bill (×6)                         |   8  |   2   |    0     |  10
+Mobile Bill (×6)                       |   8  |   1   |    0     |   9
+Rental Agreement                       |   8  |   0   |    0     |   8
+Rent Receipt (×6)                      |   8  |   0   |    0     |   8
+RC Book                                |   6  |   2   |    0     |   8
+Vehicle Insurance                      |  12  |   3   |    0     |  15
+Platform Screenshots (5 screens)       |  25  |   4   |    0     |  29
+SVANidhi Letter                        |  11  |   2   |    0     |  13
+No-Due Certificate                     |   6  |   0   |    0     |   6
+FSSAI Certificate                      |   8  |   1   |    0     |   9
+NSDC / Skill India Certificate         |  11  |   1   |    0     |  12
+Shops & Establishments Registration    |   9  |   2   |    0     |  11
+Upwork Profile Screenshot (Screen 1)   |  12  |   2   |    0     |  14
+Upwork Transactions (Screen 2)         |   8  |   0   |    0     |   8
+eShram Card                            |   8  |   1   |    0     |   9
+PM-SYM Card                            |   8  |   0   |    0     |   8
+PMJJBY Certificate                     |  12  |   0   |    0     |  12
+MUDRA Loan Letter                      |   6  |   1   |    0     |   7
+PPF Passbook                           |   9  |   4   |    0     |  13
+Health Insurance Policy                |  10  |   2   |    0     |  12
+Life Insurance Certificate             |  11  |   1   |    0     |  12
+ITR Acknowledgement                    |   9  |   1   |    0     |  10
+Udyam Registration Certificate         |  11  |   2   |    0     |  13
+GST Return Summary                     |  11  |   0   |    1     |  12
+EMI Screenshots (2 documents)          |  11  |   0   |    1     |  12
+---------------------------------------|------|-------|----------|------
+TOTAL                                  | 297  |  42   |    2     | 341
+
+ASSUMPTIONS REMAINING  : 0
+BLOCKED FIELDS         : 1  (Udyam Social Category)
+DOCUMENTS COVERED      : 30
+WORK TYPES COVERED     : Platform Worker, Vendor/Seller,
+                         Skilled Tradesperson, Freelancer
+
+PILLAR FIELD COVERAGE:
+  P1 Income Stability    : 26 confirmed source fields
+  P2 Payment Discipline  : 18 confirmed source fields
+  P3 Debt Management     : 14 confirmed source fields
+  P4 Savings Behaviour   : 10 confirmed source fields
+  P5 Work & Identity     : 31 confirmed source fields
+  P6 Financial Resilience: 17 confirmed source fields
+  P7 Social Schemes      :  9 confirmed source fields
+  P8 Tax Compliance      : 11 confirmed source fields
+
+????????????????????????????????????????????????????????????????????????????????
+END OF SPECIFICATION — GigCredit Input Field Spec v2.0
+????????????????????????????????????????????????????????????????????????????????

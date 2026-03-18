@@ -1,0 +1,488 @@
+PHASE-1 -- GIGCREDIT SYSTEM FOUNDATION & GLOBAL ARCHITECTURE SPECIFICATION
+
+
+OBJECTIVE
+
+
+Define the complete system architecture, execution boundaries, data flow, and responsibilities of each component before implementation begins.
+
+
+This phase ensures that any implementation agent (Antigravity / Claude) understands:
+
+
+* What runs on-device
+* What runs on backend
+* What data flows where
+* What is NEVER allowed
+* What is required before moving to next phase
+
+
+This phase does NOT include implementation code -- only architecture clarity.
+
+
+---
+
+
+SYSTEM DESIGN PRINCIPLE
+
+
+ONLY VERIFIED DATA IS USED FOR CREDIT SCORING
+
+
+Any data that fails validation MUST be discarded and MUST NOT reach:
+
+
+* Feature engineering
+* ML models
+* Explainability
+* Report generation
+
+
+---
+
+
+GLOBAL SYSTEM COMPONENTS
+
+
+The system consists of 3 execution environments:
+
+
+1. MOBILE ON-DEVICE LAYER (PRIMARY ENGINE)
+2. BACKEND SERVER LAYER (VERIFICATION + LLM)
+3. OFFLINE MODEL TRAINING LAYER (DEVELOPMENT ONLY)
+
+
+---
+
+
+1️⃣ MOBILE ON-DEVICE LAYER (CORE SYSTEM)
+
+
+This is the MOST IMPORTANT layer.
+
+
+All critical processing happens here.
+
+
+Responsibilities:
+
+
+* OCR extraction (PaddleOCR Lite)
+* AI document authenticity detection (EfficientNet-Lite0)
+* Face verification (MediaPipe + MobileFaceNet)
+* Validation (individual, cross, global)
+* Feature engineering (95 features)
+* ML inference (P1-P6 models)
+* SHAP approximation
+* Pillar aggregation
+* Temporary storage handling
+* Security enforcement (Keystore + anti-debug)
+
+
+STRICT RULE:
+
+
+Raw user data MUST NOT be sent to backend except minimal identifiers.
+
+
+---
+
+
+2️⃣ BACKEND SERVER LAYER
+
+
+Stack:
+
+
+* FastAPI
+* MongoDB
+
+
+Responsibilities:
+
+
+* Simulated verification APIs
+* Data lookup (PAN, Aadhaar, ITR, etc.)
+* LLM report generation
+* Final report storage (optional)
+
+
+STRICT RULE:
+
+
+Backend DOES NOT perform:
+
+
+* OCR
+* Feature engineering
+* Credit scoring
+
+
+---
+
+
+3️⃣ OFFLINE MODEL TRAINING LAYER
+
+
+Runs only during development.
+
+
+Responsibilities:
+
+
+* Dataset preparation
+* Feature engineering pipeline creation
+* Model training (P1-P6)
+* SHAP computation (Tree SHAP)
+* Meta-learner training
+* Model conversion -> TFLite
+* Encryption of models
+
+
+Outputs:
+
+
+* .tflite encrypted models
+* shap_coefficients.json
+* feature_means.json
+
+
+---
+
+
+GLOBAL DATA FLOW OVERVIEW
+
+
+User Input
+↓
+On-device processing
+↓
+Validation layers
+↓
+Verified Profile Object
+↓
+Feature Engineering (95 features)
+↓
+ML Scoring Models
+↓
+SHAP Approximation
+↓
+Pillar Aggregation
+↓
+LLM Report Generation (backend)
+↓
+Final Report
+
+
+---
+
+
+CRITICAL DATA FLOW RULES
+
+
+RULE-1:
+
+
+Unverified data MUST NEVER enter feature engineering.
+
+
+RULE-2:
+
+
+Feature vector MUST only contain normalized values [0-1].
+
+
+RULE-3:
+
+
+Full OCR text MUST NOT be sent to model directly.
+
+
+RULE-4:
+
+
+Only structured validated fields are used.
+
+
+RULE-5:
+
+
+LLM MUST NOT modify score.
+
+
+---
+
+
+GLOBAL STATE MANAGEMENT (ON DEVICE)
+
+
+A global object must be maintained across steps.
+
+
+Structure:
+
+
+verified_profile = {
+
+
+identity: {},
+bank: {},
+utilities: {},
+work: {},
+schemes: {},
+insurance: {},
+itr: {},
+emi: {}
+
+
+}
+
+
+This object is updated ONLY after successful validation of each step.
+
+
+---
+
+
+TEMPORARY STORAGE DESIGN
+
+
+Location:
+
+
+/app_cache/verified_data/
+
+
+Files:
+
+
+profile.json
+bank_transactions.csv
+utility_records.json
+ocr_temp_text/
+
+
+RULES:
+
+
+* Stored only during onboarding
+* Used for cross-validation + feature engineering
+* Must be deleted after report generation
+
+
+---
+
+
+DOCUMENT PROCESSING PIPELINE (GLOBAL)
+
+
+Every uploaded file follows this EXACT order:
+
+
+Upload Event
+↓
+AI Detection Model (EfficientNet-Lite0)
+↓
+If REAL -> continue
+Else -> reject
+↓
+Image preprocessing
+↓
+OCR extraction
+↓
+Regex field extraction
+↓
+Validation layers
+
+
+---
+
+
+FACE VERIFICATION PIPELINE
+
+
+Aadhaar/PAN Image
+↓
+MediaPipe Face Detection
+↓
+Face crop
+↓
+MobileFaceNet
+↓
+128-d embedding
+
+
+Selfie
+↓
+Same pipeline
+
+
+↓
+Cosine similarity
+
+
+Decision:
+
+
+«0.75 -> accept
+0.60-0.75 -> review
+<0.60 -> reject»
+
+
+---
+
+
+BACKEND API COMMUNICATION FLOW
+
+
+Example:
+
+
+User enters PAN
+↓
+POST /gov/pan/verify
+↓
+Backend queries MongoDB
+↓
+Returns JSON
+↓
+Device compares with OCR data
+
+
+---
+
+
+NETWORK USAGE RULES
+
+
+Internet REQUIRED for:
+
+
+* API verification
+* LLM report generation
+
+
+Internet NOT REQUIRED for:
+
+
+* OCR
+* ML scoring
+* validation
+
+
+---
+
+
+ERROR HANDLING PRINCIPLE
+
+
+If ANY validation fails:
+
+
+* Stop that step
+* Ask user to re-upload or correct
+* DO NOT proceed
+
+
+---
+
+
+STEP FLOW CONTROL
+
+
+Each step has:
+
+
+* status = NOT_STARTED
+* status = IN_PROGRESS
+* status = VERIFIED
+
+
+Only VERIFIED steps allow next step.
+
+
+---
+
+
+OPTIONAL STEP RULE
+
+
+If step is optional:
+
+
+* User can skip
+* Features fallback used
+* No blocking
+
+
+If mandatory:
+
+
+* MUST pass validation
+
+
+---
+
+
+MULTIPLE INPUT HANDLING
+
+
+Example:
+
+
+User uploads 2 bank statements
+
+
+Processing:
+
+
+↓
+Convert both to CSV
+↓
+Merge datasets
+↓
+Deduplicate transactions
+↓
+Use merged dataset
+
+
+---
+
+
+SECURITY FOUNDATION (HIGH LEVEL)
+
+
+Layers:
+
+
+* Model encryption (AES-256)
+* Android Keystore
+* Code obfuscation (R8)
+* Root detection
+* Debugger detection
+
+
+Detailed implementation comes in later phase.
+
+
+---
+
+
+OUTPUT OF PHASE-1
+
+
+At the end of this phase, the agent MUST understand:
+
+
+* Full architecture separation
+* Data flow rules
+* Validation dependency
+* On-device vs backend responsibility
+* Storage strategy
+* Execution order
+
+
+NO implementation should begin before this understanding is complete.
+
+
+END OF PHASE-1

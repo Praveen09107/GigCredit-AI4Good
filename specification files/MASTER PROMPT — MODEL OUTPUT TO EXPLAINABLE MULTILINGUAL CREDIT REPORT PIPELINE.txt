@@ -1,0 +1,478 @@
+﻿MASTER PROMPT — MODEL OUTPUT TO EXPLAINABLE MULTILINGUAL CREDIT REPORT PIPELINE
+
+
+SYSTEM CONTEXT
+
+
+This module converts verified financial data into a final explainable credit report.
+
+
+It operates only AFTER:
+
+
+• All verification steps are completed
+• All data is validated
+• Feature engineering is completed
+
+
+Core rule:
+
+
+ONLY VERIFIED AND VALIDATED DATA IS USED.
+
+
+---
+
+
+INPUT TO THIS PIPELINE
+
+
+The pipeline receives:
+
+
+1. Normalized Feature Vector (95 features, range [0,1])
+2. Verified Profile Object
+3. User Selected Language
+
+
+Example:
+
+
+feature_vector[95]
+verified_profile
+language = "Tamil"
+
+
+---
+
+
+PHASE-1 FEATURE VECTOR TO PILLAR COMPUTATION
+
+
+Each feature belongs to one of 8 pillars.
+
+
+Pillars:
+
+
+P1 Income Stability
+P2 Payment Discipline
+P3 Debt Management
+P4 Savings Behaviour
+P5 Work & Identity (rule-based)
+P6 Financial Resilience
+P7 Social Accountability
+P8 Tax Compliance
+
+
+---
+
+
+PILLAR SCORE CALCULATION
+
+
+Each pillar score is computed using weighted sum of its features.
+
+
+Example:
+
+
+P1_score =
+Σ (F-P1-i × weight_i)
+
+
+All intra-pillar weights sum to 1.00.
+
+
+Output:
+
+
+P1_score → [0,1]
+P2_score → [0,1]
+...
+P8_score → [0,1]
+
+
+---
+
+
+PHASE-2 FINAL CREDIT SCORE COMPUTATION
+
+
+IMPORTANT — SCORE COMPUTATION METHOD (AUTHORITATIVE)
+
+Final credit score MUST be computed using the Logistic Regression meta-learner.
+The older weighted-sum method is deprecated and MUST NOT be used.
+
+Meta-learner input (20 values):
+  - 8 pillar scores: [P1..P8]
+  - 4 work-type one-hot flags
+  - 8 interaction terms (pillar × work-type)
+
+Meta-learner computation:
+  logit = dot(input, coefficients) + intercept
+  probability = sigmoid(logit)                 // range [0,1]
+  gigcredit_score = round(300 + probability * 600)   // range [300,900]
+
+Risk band mapping:
+  300–450 → High Risk
+  451–650 → Medium Risk
+  651–900 → Low Risk
+
+NOTE:
+  Pillar weights (P1=0.25, P2=0.20, P3=0.15, P4=0.15, P5=0.10, P6=0.07, P7=0.05, P8=0.03)
+  may be displayed in the UI as “importance weights”, but MUST NOT be used to compute
+  the final score.
+
+
+---
+
+
+PHASE-3 EXPLAINABILITY ENGINE (CRITICAL)
+
+
+IMPORTANT:
+
+
+The system does NOT run real-time SHAP.
+
+
+Instead it uses:
+
+
+Precomputed SHAP-based feature impact approximation
+
+
+---
+
+
+EXPLAINABILITY INPUTS
+
+
+feature_value
+feature_population_mean
+feature_shap_coefficient
+
+
+---
+
+
+IMPACT FORMULA
+
+
+impact = coefficient × (feature_value − mean)
+
+
+---
+
+
+FEATURE IMPACT OUTPUT
+
+
+For each feature:
+
+
+• Positive contribution → increases score
+• Negative contribution → decreases score
+
+
+Example:
+
+
+Stable income → +6
+High EMI → −12
+
+
+---
+
+
+PHASE-4 TOP FACTOR EXTRACTION
+
+
+Select:
+
+
+Top 5 positive features
+Top 5 negative features
+
+
+Convert them into readable labels.
+
+
+Example:
+
+
+Positive:
+
+
+• Stable monthly income
+• High gig income consistency
+• On-time utility payments
+
+
+Negative:
+
+
+• High EMI burden
+• Low savings balance
+
+
+---
+
+
+PHASE-5 PILLAR AGGREGATION LAYER
+
+
+Feature impacts are grouped into pillars.
+
+
+Mapping:
+
+
+Income Stability → P1 features
+Payment Discipline → P2 features
+Debt Management → P3 features
+Savings Behaviour → P4 features
+Work & Identity → P5
+Financial Resilience → P6
+Social Accountability → P7
+Tax Compliance → P8
+
+
+---
+
+
+PILLAR IMPACT OUTPUT
+
+
+Each pillar gets:
+
+
+• Score
+• Contribution summary
+
+
+Example:
+
+
+Income Stability → Strong
+Debt Management → Weak
+
+
+---
+
+
+PHASE-6 BUILD LLM INPUT PAYLOAD
+
+
+Create structured payload:
+
+
+{
+"credit_score": 720,
+"risk_level": "Medium",
+
+
+"pillar_scores": {
+"income_stability": 78,
+"payment_discipline": 84,
+"debt_management": 67,
+"savings_behaviour": 55,
+"work_identity": 90,
+"financial_resilience": 45,
+"social_accountability": 40,
+"tax_compliance": 50
+},
+
+
+"positive_factors": [
+"Stable monthly income",
+"Utility bills paid on time",
+"Consistent gig earnings"
+],
+
+
+"negative_factors": [
+"High EMI burden",
+"Low savings balance"
+],
+
+
+"language": "Tamil"
+}
+
+
+---
+
+
+PHASE-7 LLM REPORT GENERATION
+
+
+The payload is sent to backend LLM service.
+
+
+IMPORTANT RULE:
+
+
+The LLM MUST NOT modify:
+
+
+• credit_score
+• pillar_scores
+
+
+The LLM MUST ONLY generate:
+
+
+• Explanation
+• Suggestions
+
+
+---
+
+
+LLM TASK
+
+
+Generate a report in the selected language.
+
+
+The report must include:
+
+
+1. Credit Score
+2. Pillar-wise Breakdown
+3. Explainable AI Insights
+4. Personalized Suggestions
+
+
+---
+
+
+PHASE-8 MULTILINGUAL OUTPUT
+
+
+The entire report must be generated in:
+
+
+English / Hindi / Tamil / Telugu / Kannada
+
+
+All text must be translated appropriately.
+
+
+---
+
+
+PHASE-9 FINAL REPORT FORMAT
+
+
+SECTION 1 — CREDIT SCORE
+
+
+Credit Score: 720 / 900
+Risk Level: Medium
+
+
+---
+
+
+SECTION 2 — PILLAR BREAKDOWN
+
+
+Income Stability — 78 / 100
+Payment Discipline — 84 / 100
+Debt Management — 67 / 100
+Savings Behaviour — 55 / 100
+Work & Identity — 90 / 100
+Financial Resilience — 45 / 100
+Social Accountability — 40 / 100
+Tax Compliance — 50 / 100
+
+
+---
+
+
+SECTION 3 — EXPLAINABLE AI INSIGHTS
+
+
+Explain clearly:
+
+
+Why the score is high or low
+What behaviours helped
+What behaviours reduced the score
+
+
+Example:
+
+
+Your income is stable and consistent across months, which positively impacts your score.
+
+
+However, your EMI obligations are relatively high, which slightly reduces your overall score.
+
+
+---
+
+
+SECTION 4 — PERSONALIZED SUGGESTIONS
+
+
+Provide actionable improvements:
+
+
+Examples:
+
+
+Increase monthly savings
+Reduce EMI commitments
+Maintain consistent income deposits
+Pay bills before due date
+
+
+---
+
+
+PHASE-10 FINAL OUTPUT DELIVERY
+
+
+The mobile app renders:
+
+
+• Structured report UI
+• Multilingual content
+• Pillar visualization
+
+
+---
+
+
+FINAL EXECUTION FLOW
+
+
+Feature Vector (95)
+↓
+Pillar computation
+↓
+Final score calculation
+↓
+Feature impact approximation
+↓
+Top factor extraction
+↓
+Pillar aggregation
+↓
+LLM payload creation
+↓
+Backend LLM processing
+↓
+Multilingual explanation generation
+↓
+Final report rendering
+
+
+---
+
+
+END OF MODEL → REPORT PIPELINE

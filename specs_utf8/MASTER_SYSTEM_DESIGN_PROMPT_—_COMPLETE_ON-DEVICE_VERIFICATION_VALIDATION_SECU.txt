@@ -1,0 +1,873 @@
+MASTER SYSTEM DESIGN PROMPT -- COMPLETE ON-DEVICE VERIFICATION, VALIDATION, SECURITY, AND CREDIT SCORING PIPELINE
+
+
+SYSTEM CONTEXT
+
+
+Design a privacy-first mobile verification system called GigCredit that evaluates the financial credibility of gig workers who typically lack traditional credit scores.
+
+
+The system verifies identity, validates financial behaviour, detects document manipulation, and generates a trustworthy alternative credit profile.
+
+
+The architecture must combine:
+
+
+* On-device OCR extraction and validation
+* AI image authenticity detection
+* Multi-layer document verification
+* Backend verification APIs
+* MongoDB verification datasets
+* Cross-step identity validation
+* Structured financial transaction analysis
+* Secure AI model execution
+
+
+The core rule of the system:
+
+
+ONLY VERIFIED DATA PROCEEDS TO SCORING.
+
+
+Any data failing validation is rejected and excluded from the scoring pipeline.
+
+
+---
+
+
+SYSTEM ARCHITECTURE OVERVIEW
+
+
+The system consists of two major components.
+
+
+1. On-Device Processing Layer
+2. Backend Verification Layer
+
+
+Sensitive documents remain on the device and are processed locally.
+
+
+Backend APIs simulate official verification services.
+
+
+---
+
+
+ON-DEVICE PROCESSING RESPONSIBILITIES
+
+
+The mobile device performs most of the computation.
+
+
+Responsibilities include:
+
+
+* Security initialization
+* AI image authenticity detection
+* OCR extraction
+* Field extraction
+* Individual validation
+* Cross internal validation
+* Cross step validation
+* Fraud detection
+* Feature extraction
+* Credit scoring inference
+
+
+Technologies used:
+
+
+OCR engine
+PaddleOCR Lite
+
+
+Face recognition
+MobileFaceNet
+
+
+AI inference runtime
+TensorFlow Lite
+
+
+AI image authenticity detection
+Lightweight CNN model
+
+
+---
+
+
+ON-DEVICE SECURITY ARCHITECTURE
+
+
+The AI evaluation model must be protected using multiple security layers.
+
+
+Eight security layers protect the model and sensitive data.
+
+
+Layer 1
+Model Encryption
+
+
+Layer 2
+Secure Key Storage (Android Keystore)
+
+
+Layer 3
+Runtime Model Decryption
+
+
+Layer 4
+Code Obfuscation
+
+
+Layer 5
+Debugger Detection
+
+
+Layer 6
+Root Detection
+
+
+Layer 7
+Anti Hook Detection
+
+
+Layer 8
+Secure Data Cleanup
+
+
+---
+
+
+MODEL ENCRYPTION
+
+
+During development the evaluation model is encrypted.
+
+
+Example workflow
+
+
+evaluation_model.tflite
+↓
+AES encryption
+↓
+evaluation_model.enc
+
+
+Only the encrypted file is packaged inside the mobile application.
+
+
+Example
+
+
+assets/evaluation_model.enc
+
+
+If the application is reverse engineered the attacker only sees encrypted data.
+
+
+---
+
+
+ANDROID KEYSTORE
+
+
+The encryption key used for model decryption must be securely stored.
+
+
+The system uses Android Keystore.
+
+
+Key generation process
+
+
+First app launch
+↓
+Generate encryption key
+↓
+Store key in Android Keystore
+
+
+Key properties
+
+
+* Key stored in secure hardware
+* Key cannot be exported
+* Key cannot be accessed by other applications
+
+
+The application can only request cryptographic operations using the key.
+
+
+---
+
+
+RUNTIME MODEL DECRYPTION
+
+
+The encrypted model is decrypted only during runtime.
+
+
+Example runtime process
+
+
+evaluation_model.enc
+↓
+Retrieve key from Android Keystore
+↓
+Decrypt model in memory
+↓
+Load TensorFlow Lite interpreter
+
+
+The decrypted model exists only in RAM.
+
+
+It is never written to disk.
+
+
+---
+
+
+CODE OBFUSCATION
+
+
+Application code is obfuscated during build.
+
+
+Purpose
+
+
+* Protect sensitive logic
+* Prevent reverse engineering
+* Hide model loading functions
+
+
+Example transformation
+
+
+loadEvaluationModel() -> a.b()
+
+
+---
+
+
+DEBUGGER DETECTION
+
+
+The system checks whether a debugger is attached.
+
+
+If debugger detected
+
+
+Terminate execution or disable AI model inference.
+
+
+---
+
+
+ROOT DETECTION
+
+
+The system checks whether the device is rooted.
+
+
+Indicators include
+
+
+* Superuser binaries
+* Root management apps
+* Modified system partitions
+
+
+If root detected
+
+
+Disable document verification modules.
+
+
+---
+
+
+ANTI HOOK DETECTION
+
+
+The system checks for runtime hooking frameworks.
+
+
+Example
+
+
+Frida detection.
+
+
+If detected
+
+
+Block model execution.
+
+
+---
+
+
+SECURE DATA CLEANUP
+
+
+After verification completes
+
+
+* Uploaded images deleted
+* OCR text cleared
+* Temporary files removed
+* Model unloaded from memory
+
+
+This prevents sensitive data leakage.
+
+
+---
+
+
+AI IMAGE AUTHENTICITY DETECTION
+
+
+Every uploaded document is analyzed before OCR begins.
+
+
+The AI detector identifies
+
+
+* AI generated documents
+* Photoshop edited images
+* Digitally manipulated files
+
+
+Pipeline
+
+
+User uploads image
+↓
+AI image detection model
+↓
+Classification
+
+
+Possible outputs
+
+
+REAL DOCUMENT
+AI GENERATED
+EDITED DOCUMENT
+
+
+If manipulated
+
+
+Reject document and request re-upload.
+
+
+---
+
+
+PDF DOCUMENT HANDLING
+
+
+If a PDF is uploaded
+
+
+PDF -> image pages conversion occurs.
+
+
+Example
+
+
+bank_statement.pdf
+↓
+page1.png
+page2.png
+page3.png
+
+
+Each page undergoes AI authenticity detection and OCR.
+
+
+---
+
+
+OCR PROCESSING PIPELINE
+
+
+OCR runs only once per document upload.
+
+
+Pipeline
+
+
+Document image
+↓
+Image preprocessing
+↓
+Text detection
+↓
+Text recognition
+↓
+Raw OCR text generated
+
+
+Example
+
+
+Name: Ravi Kumar
+PAN: ABCDE1234F
+DOB: 1996-04-12
+
+
+Two outputs produced
+
+
+1 Full OCR text
+2 Extracted structured fields
+
+
+---
+
+
+FIELD EXTRACTION
+
+
+Regex and pattern matching extract fields.
+
+
+Example PAN regex
+
+
+[A-Z]{5}[0-9]{4}[A-Z]
+
+
+Example structured output
+
+
+{
+pan: "ABCDE1234F",
+name: "Ravi Kumar",
+dob: "1996-04-12"
+}
+
+
+---
+
+
+VERIFICATION STEPS
+
+
+The verification pipeline contains nine stages.
+
+
+Step-1
+Basic Profile Information
+
+
+Step-2
+Identity Verification
+(Aadhaar + PAN)
+
+
+Step-3
+Bank Verification
+
+
+Step-4
+Utility Bill Verification
+
+
+Step-5
+Occupation Proof Verification
+
+
+Step-6
+Government Scheme Verification
+
+
+Step-7
+Insurance Verification
+
+
+Step-8
+Income Tax Return Verification
+
+
+Step-9
+Existing EMI Detection
+
+
+Users can proceed to the next step only after validation succeeds.
+
+
+---
+
+
+VALIDATION TYPES
+
+
+Three types of validation are used.
+
+
+INDIVIDUAL VALIDATION
+
+
+Example
+
+
+PAN format validation
+IFSC validation
+Policy number validation
+
+
+---
+
+
+CROSS INTERNAL VALIDATION
+
+
+Fields inside the same document must match.
+
+
+Example
+
+
+Bank statement
+
+
+Account holder name
+Account number
+IFSC code
+
+
+All must match.
+
+
+---
+
+
+GLOBAL CROSS STEP VALIDATION
+
+
+Data must match across steps.
+
+
+Example
+
+
+PAN name ↔ bank account holder
+Insurance holder ↔ Aadhaar identity
+ITR PAN ↔ PAN verification step
+
+
+---
+
+
+GLOBAL VERIFIED PROFILE OBJECT
+
+
+Validated information is stored in a global object.
+
+
+Example
+
+
+verified_profile
+
+
+{
+name: "Ravi Kumar",
+pan_verified: true,
+aadhaar_verified: true,
+bank_verified: true,
+utility_verified: true,
+insurance_verified: true,
+itr_verified: true
+}
+
+
+The object grows as steps are completed.
+
+
+---
+
+
+BANK STATEMENT PROCESSING
+
+
+Bank statements undergo OCR extraction.
+
+
+Fields extracted
+
+
+Bank name
+Account holder name
+IFSC code
+Account number
+Transaction table
+
+
+Transactions converted into structured dataset.
+
+
+Example CSV
+
+
+transaction_date,description,amount,type,balance
+
+
+2025-09-05,HDFC LOAN EMI,8500,DEBIT,42000
+2025-09-10,UPI CREDIT SWIGGY,1500,CREDIT,43500
+2025-09-15,TNEB BILL PAYMENT,1200,DEBIT,42300
+
+
+Stored temporarily
+
+
+bank_transactions.csv
+
+
+---
+
+
+MULTIPLE BANK ACCOUNTS
+
+
+If multiple statements are uploaded
+
+
+bank1_transactions.csv
+bank2_transactions.csv
+
+
+Datasets merged
+
+
+merged_transactions.csv
+
+
+This dataset becomes the main financial data source.
+
+
+---
+
+
+TRANSACTION ANALYSIS
+
+
+Used for detecting
+
+
+Utility bill payments
+Insurance premium payments
+Recurring EMI deductions
+
+
+Example
+
+
+description contains "LOAN EMI"
+
+
+Recurring monthly pattern detected.
+
+
+Example output
+
+
+{
+active_loans: 2,
+total_monthly_emi: 18504
+}
+
+
+---
+
+
+DATA FLOW RULE
+
+
+The system follows a strict pipeline.
+
+
+User uploads document
+↓
+AI authenticity detection
+↓
+OCR extraction
+↓
+Field extraction
+↓
+Individual validation
+↓
+Cross validation
+↓
+Backend API verification
+↓
+Profile update
+
+
+If validation fails
+
+
+Reject data.
+
+
+---
+
+
+VALIDATED DATA PACKAGE
+
+
+Once a step is validated
+
+
+Inputs and OCR data are stored in a structured package.
+
+
+Example
+
+
+validated_data_package
+
+
+step1_profile
+step2_identity
+step3_bank
+step4_utilities
+step5_occupation
+step6_schemes
+step7_insurance
+step8_itr
+step9_emi
+
+
+Each step contains
+
+
+User inputs
+Full OCR text
+Extracted structured fields
+
+
+---
+
+
+FEATURE ENGINEERING
+
+
+After all steps validated
+
+
+Features are generated.
+
+
+Examples
+
+
+monthly_income
+bank_transaction_stability
+active_emi_count
+utility_payment_consistency
+insurance_active
+scheme_participation
+
+
+Raw OCR text is not used directly by the model.
+
+
+---
+
+
+CREDIT SCORING MODEL
+
+
+The AI scoring model runs locally using TensorFlow Lite.
+
+
+Example input
+
+
+{
+monthly_income: 42000,
+active_emi_count: 2,
+insurance_active: true,
+scheme_participation: true
+}
+
+
+Example output
+
+
+credit_score: 742
+risk_band: medium
+
+
+---
+
+
+FINAL ON-DEVICE EXECUTION PIPELINE
+
+
+App launch
+↓
+Security initialization
+↓
+Retrieve key from Android Keystore
+↓
+Decrypt evaluation model
+↓
+Load TensorFlow Lite interpreter
+↓
+User onboarding begins
+↓
+Step based verification
+↓
+Document upload event
+↓
+AI image authenticity detection
+↓
+OCR extraction
+↓
+Field extraction
+↓
+Validation modules
+↓
+Backend API verification
+↓
+Cross step validation
+↓
+Verified profile update
+↓
+Transaction dataset generation
+↓
+Feature engineering
+↓
+Credit scoring inference
+↓
+Explainable credit report
+↓
+Secure data cleanup
+
+
+---
+
+
+FINAL OUTPUT
+
+
+Credit score
+Risk band
+Loan eligibility
+Verification summary
+
+
+The system produces a trustworthy alternative financial profile for gig workers without relying on traditional credit bureaus.

@@ -1,0 +1,714 @@
+﻿MASTER UI/UX DESIGN PROMPT — GIGCREDIT MOBILE APPLICATION
+
+
+OBJECTIVE
+
+
+Design a clean, modern, fintech-grade mobile UI for the GigCredit application.
+
+
+The UI must:
+
+
+• Be consistent across all screens
+• Be easy to understand within 20–30 seconds
+• Clearly reflect verification + AI + trust system
+• Adapt dynamically with backend processing states
+• Provide smooth guided user experience
+
+
+Design style:
+
+
+• Minimal + modern fintech UI
+• Soft gradients + clean cards
+• Icon-driven + less text-heavy
+• Smooth transitions and feedback
+
+
+Primary theme:
+
+
+Trust • Verification • Financial Growth • AI Intelligence
+
+
+---
+
+
+==================================================
+SECTION-1 — AUTHENTICATION FLOW
+
+
+SCREEN-1: LOGIN / SIGNUP
+
+
+UI COMPONENTS:
+
+
+• App logo (GigCredit)
+• Tagline: "Your Financial Trust Score for the Gig Economy"
+
+
+INPUTS:
+
+
+• Mobile number
+• OTP verification
+
+
+OPTIONS:
+
+
+• Login (existing user)
+• Signup (new user)
+
+
+FLOW:
+
+
+User enters mobile
+↓
+OTP verification
+↓
+Login success
+↓
+Navigate to Home
+
+
+---
+
+
+==================================================
+SECTION-2 — HOME PAGE (LANDING SCREEN)
+
+
+STRUCTURE:
+
+
+---
+
+
+HEADER
+
+
+• Left: Profile icon (user avatar)
+• Right: About / Info icon
+
+
+---
+
+
+BODY (MAIN VISUAL AREA)
+
+
+Hero section:
+
+
+• Title: "Build Your Financial Trust Score"
+• Subtitle: "AI-powered verification for gig workers"
+
+
+---
+
+
+IMAGE SECTION (IMPORTANT)
+
+
+Display 4 images (your provided images):
+
+
+Layout:
+
+
+• 2x2 grid OR horizontal scroll cards
+
+
+Each image represents:
+
+
+1. Identity Verification
+2. Bank Analysis
+3. AI Fraud Detection
+4. Credit Scoring
+
+
+Each card contains:
+
+
+• Image
+• Small title
+• Icon overlay
+
+
+---
+
+
+---
+
+
+CALL TO ACTION
+
+
+Button:
+
+
+"Get Started"
+
+
+Design:
+
+
+• Rounded
+• Gradient background
+• Center aligned
+• Large touch target
+
+
+---
+
+
+==================================================
+SECTION-3 — GET STARTED POPUP
+
+
+TRIGGER:
+
+
+User clicks "Get Started"
+
+
+---
+
+
+POPUP UI:
+
+
+Title:
+
+
+"Start Your Verification"
+
+
+Message:
+
+
+"Complete all steps to generate your credit score"
+
+
+OPTIONS:
+
+
+1. Continue
+2. View Input Guidelines
+
+
+---
+
+
+FLOW:
+
+
+IF "Continue"
+→ Go to Step-1
+
+
+IF "View Input Guidelines"
+→ Navigate to Guidelines Screen
+
+
+---
+
+
+==================================================
+SECTION-4 — INPUT GUIDELINES SCREEN
+
+
+PURPOSE:
+
+
+Educate user before verification
+
+
+---
+
+
+STRUCTURE:
+
+
+Scrollable list of steps (Step-1 to Step-9)
+
+
+Each step card contains:
+
+
+• Step title
+• Required / Optional label
+• Weightage (impact on score)
+• Description of input
+• How to obtain input
+• Video link (YouTube guide)
+
+
+---
+
+
+EXAMPLE CARD:
+
+
+Step-3: Bank Verification
+Required
+Weightage: High
+
+
+Description:
+Upload bank statement (last 6 months)
+
+
+How to get:
+Download from bank app
+
+
+Video:
+[Watch Guide]
+
+
+---
+
+
+BOTTOM BUTTON:
+
+
+"Proceed to Verification"
+
+
+---
+
+
+==================================================
+SECTION-5 — VERIFICATION FLOW (STEP-1 TO STEP-9)
+
+
+IMPORTANT:
+
+
+ALL STEPS MUST FOLLOW UNIFORM UI
+
+
+---
+
+
+COMMON LAYOUT:
+
+
+---
+
+
+TOP HEADER
+
+
+• Step number
+• Progress bar (visual)
+
+
+Example:
+
+
+Step 2 of 9
+
+
+---
+
+
+BODY
+
+
+• Title of step
+• Input fields
+• Upload buttons
+• Status indicators
+
+
+---
+
+
+FOOTER
+
+
+• Continue button (disabled until valid)
+
+
+---
+
+
+STEP STATES:
+
+
+• Not Started
+• In Progress
+• Verified (green tick)
+
+
+---
+
+
+STEP DESIGN RULES:
+
+
+• Clean card UI
+• Minimal text
+• Icons for each input
+• Real-time validation feedback
+
+
+---
+
+
+EXAMPLES:
+
+
+STEP-2 (KYC):
+
+
+Inputs:
+
+
+• Aadhaar number
+• PAN number
+• Upload images
+• Capture selfie
+
+
+UI shows:
+
+
+• Face match progress
+• Verification status
+
+
+---
+
+
+STEP-3 (BANK):
+
+
+Inputs:
+
+
+• Account number
+• IFSC
+• Upload statement
+
+
+UI shows:
+
+
+• "Processing transactions..."
+• "Validating..."
+
+
+---
+
+
+==================================================
+SECTION-6 — LOADING & PROCESSING STATES
+
+
+CRITICAL (UX + BACKEND SYNC)
+
+
+---
+
+
+WHEN BACKEND / MODEL RUNNING:
+
+
+Show:
+
+
+• Loader animation
+• Step-specific messages
+
+
+Examples:
+
+
+"OCR Processing..."
+"Validating Bank Data..."
+"Analyzing Financial Behavior..."
+
+
+---
+
+
+RULE:
+
+
+Frontend must WAIT for backend/on-device completion
+
+
+NO UI BLOCK / CRASH
+
+
+---
+
+
+==================================================
+SECTION-7 — COMPLETION FLOW
+
+
+After Step-9:
+
+
+Show screen:
+
+
+"Verification Complete"
+
+
+---
+
+
+NEXT:
+
+
+Language Selection Screen
+
+
+---
+
+
+==================================================
+SECTION-8 — LANGUAGE SELECTION
+
+
+OPTIONS:
+
+
+• English
+• Hindi
+• Tamil
+• Telugu
+• Kannada
+
+
+---
+
+
+UI:
+
+
+• Clean selectable cards
+• Highlight selected language
+
+
+---
+
+
+BUTTON:
+
+
+"Generate Report"
+
+
+---
+
+
+==================================================
+SECTION-9 — REPORT LOADING SCREEN
+
+
+Show:
+
+
+"Generating Your Credit Report..."
+
+
+Animation:
+
+
+• Progress indicator
+• AI-themed animation
+
+
+Delay:
+
+
+2–5 seconds (sync with backend)
+
+
+---
+
+
+==================================================
+SECTION-10 — FINAL REPORT SCREEN
+
+
+STRUCTURE:
+
+
+---
+
+
+HEADER
+
+
+• Left: GigCredit logo
+• Title: "Your Credit Report"
+
+
+---
+
+
+---
+
+
+SECTION-1: CREDIT SCORE
+
+
+Large display:
+
+
+"742 / 900"
+
+
+Below:
+
+
+"Risk Level: Medium"
+
+
+---
+
+
+---
+
+
+SECTION-2: PILLAR BREAKDOWN
+
+
+7 pillars:
+
+
+• Progress bars
+• Score out of 100
+• Icons
+
+
+---
+
+
+---
+
+
+SECTION-3: EXPLANATION
+
+
+Simple text:
+
+
+"Your score is high because..."
+
+
+---
+
+
+---
+
+
+SECTION-4: SUGGESTIONS
+
+
+Bullet points:
+
+
+• Improve savings
+• Reduce EMI
+
+
+---
+
+
+---
+
+
+FOOTER
+
+
+Button:
+
+
+"Download as PDF"
+
+
+---
+
+
+==================================================
+SECTION-11 — UI CONSISTENCY RULES
+
+
+• Same color theme across app
+• Same button style
+• Same card design
+• Smooth transitions
+• No clutter
+
+
+---
+
+
+==================================================
+SECTION-12 — FRONTEND ↔ BACKEND SYNC RULES
+
+
+• Always show loading before response
+• Never assume success
+• Handle API delays gracefully
+• Retry on failure
+
+
+---
+
+
+==================================================
+SECTION-13 — ERROR UI HANDLING
+
+
+Show:
+
+
+• Clear message
+• Highlight issue
+• Retry button
+
+
+---
+
+
+==================================================
+FINAL UX FLOW SUMMARY
+
+
+Login
+↓
+Home
+↓
+Get Started
+↓
+Guidelines (optional)
+↓
+Step-1 → Step-9
+↓
+Language selection
+↓
+Report generation
+↓
+Final report
+↓
+Download PDF
+
+
+---
+
+
+END OF UI/UX MASTER PROMPT

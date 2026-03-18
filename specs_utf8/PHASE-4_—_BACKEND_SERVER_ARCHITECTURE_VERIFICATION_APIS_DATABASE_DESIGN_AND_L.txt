@@ -1,0 +1,465 @@
+PHASE-4 -- BACKEND SERVER ARCHITECTURE, VERIFICATION APIS, DATABASE DESIGN, AND LLM REPORT ENGINE
+
+
+OBJECTIVE
+
+
+Define the complete backend system that supports:
+
+
+* Verification APIs (simulated government/bank systems)
+* MongoDB data storage
+* LLM-based report generation
+* Secure communication with mobile app
+
+
+The backend is NOT responsible for ML scoring or OCR.
+
+
+---
+
+
+SECTION-1 -- BACKEND ROLE CLARIFICATION
+
+
+Backend responsibilities:
+
+
+* Identity verification (Aadhaar, PAN)
+* Bank verification (IFSC, account)
+* Insurance, ITR, schemes verification
+* LLM explanation generation
+* API orchestration
+
+
+Backend MUST NOT perform:
+
+
+* OCR
+* Feature engineering
+* Credit scoring
+
+
+---
+
+
+SECTION-2 -- TECH STACK
+
+
+Framework:
+
+
+FastAPI (Python)
+
+
+Database:
+
+
+MongoDB
+
+
+LLM:
+
+
+OpenAI / local LLM / API-based LLM
+
+
+Server:
+
+
+Uvicorn / Gunicorn
+
+
+---
+
+
+SECTION-3 -- API DESIGN PRINCIPLES
+
+
+RULE-1:
+
+
+Send ONLY minimal data
+
+
+RULE-2:
+
+
+Never store sensitive raw data unless required
+
+
+RULE-3:
+
+
+All responses must be JSON
+
+
+---
+
+
+SECTION-4 -- DATABASE DESIGN (MONGODB)
+
+
+Collections:
+
+
+aadhaar_db
+pan_db
+bank_accounts_db
+ifsc_db
+vehicle_rc_db
+insurance_db
+eshram_db
+itr_filings_db
+loan_accounts_db
+
+
+---
+
+
+EXAMPLE -- pan_db
+
+
+{
+"pan": "ABCDE1234F",
+"name": "Ravi Kumar",
+"dob": "1996-04-12",
+"status": "valid"
+}
+
+
+---
+
+
+EXAMPLE -- bank_accounts_db
+
+
+{
+"account_number": "1234567890",
+"ifsc": "HDFC0001234",
+"account_holder": "Ravi Kumar",
+"status": "active"
+}
+
+
+---
+
+
+SECTION-5 -- VERIFICATION API ENDPOINTS
+
+
+---
+
+
+1️⃣ PAN VERIFICATION
+
+
+POST /gov/pan/verify
+
+
+Request:
+
+
+{
+"pan": "ABCDE1234F"
+}
+
+
+Response:
+
+
+{
+"status": "valid",
+"name": "Ravi Kumar"
+}
+
+
+---
+
+
+2️⃣ AADHAAR VERIFICATION
+
+
+POST /gov/aadhaar/verify
+
+
+---
+
+
+3️⃣ IFSC VERIFICATION
+
+
+POST /bank/ifsc/verify
+
+
+---
+
+
+4️⃣ BANK ACCOUNT VERIFICATION
+
+
+POST /bank/penny-drop
+
+
+---
+
+
+5️⃣ VEHICLE RC
+
+
+POST /gov/vehicle/rc/verify
+
+
+---
+
+
+6️⃣ INSURANCE
+
+
+POST /gov/insurance/policy/verify
+
+
+---
+
+
+7️⃣ ITR VERIFICATION
+
+
+POST /gov/income-tax/itr/verify
+
+
+---
+
+
+SECTION-6 -- API EXECUTION FLOW
+
+
+Example PAN verification:
+
+
+Mobile app sends PAN
+↓
+FastAPI receives request
+↓
+Query MongoDB
+↓
+Find matching record
+↓
+Return JSON response
+↓
+Mobile performs validation
+
+
+---
+
+
+SECTION-7 -- SECURITY FOR APIS
+
+
+Implement:
+
+
+* HTTPS (mandatory)
+* API key authentication
+* Rate limiting
+
+
+Optional:
+
+
+* JWT authentication
+
+
+---
+
+
+SECTION-8 -- LLM REPORT GENERATION ENGINE
+
+
+IMPORTANT:
+
+
+LLM ONLY generates:
+
+
+* Explanation
+* Suggestions
+
+
+LLM MUST NOT modify:
+
+
+* Credit score
+* Pillar scores
+
+
+---
+
+
+INPUT PAYLOAD
+
+
+{
+credit_score,
+risk_level,
+pillar_scores,
+positive_factors,
+negative_factors,
+language
+}
+
+
+---
+
+
+LLM PROMPT STRUCTURE
+
+
+System prompt:
+
+
+"You are a financial assistant generating a credit report for a gig worker..."
+
+
+---
+
+
+OUTPUT STRUCTURE
+
+
+{
+"summary": "...",
+"insights": "...",
+"suggestions": [...]
+}
+
+
+---
+
+
+SECTION-9 -- MULTILINGUAL SUPPORT
+
+
+Two approaches:
+
+
+Option-1:
+
+
+LLM generates directly in selected language
+
+
+Option-2:
+
+
+Generate English -> translate
+
+
+Preferred:
+
+
+Direct multilingual generation
+
+
+---
+
+
+SECTION-10 -- REPORT API
+
+
+POST /report/generate
+
+
+Request:
+
+
+{
+payload
+}
+
+
+Response:
+
+
+{
+explanation,
+suggestions
+}
+
+
+---
+
+
+SECTION-11 -- BACKEND FLOW SUMMARY
+
+
+Mobile sends minimal data
+↓
+Backend verifies
+↓
+Returns results
+↓
+Mobile cross-validates
+↓
+After scoring -> mobile sends payload
+↓
+Backend generates report via LLM
+↓
+Returns final explanation
+
+
+---
+
+
+SECTION-12 -- ERROR HANDLING
+
+
+If no record found:
+
+
+{
+"status": "invalid"
+}
+
+
+Mobile must handle:
+
+
+* retry
+* user correction
+
+
+---
+
+
+SECTION-13 -- SCALABILITY DESIGN
+
+
+Future:
+
+
+* Replace mock DB with real APIs
+* Add caching (Redis)
+* Add load balancing
+
+
+---
+
+
+SECTION-14 -- OUTPUT OF PHASE-4
+
+
+After this phase:
+
+
+Agent must be able to:
+
+
+* build FastAPI server
+* design MongoDB schema
+* implement verification APIs
+* integrate LLM report generation
+* connect backend with mobile
+
+
+END OF PHASE-4

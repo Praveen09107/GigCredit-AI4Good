@@ -1,0 +1,722 @@
+MASTER SPEC -- ERROR HANDLING, LOGGING, DEBUGGING & FAILURE RECOVERY SYSTEM
+
+
+OBJECTIVE
+
+
+Design a production-grade error handling and debugging system for GigCredit that ensures:
+
+
+* No silent failures
+* Clear error traceability
+* Safe fallback mechanisms
+* User-friendly recovery
+* Debug visibility for developers
+* Security-safe logging
+
+
+This specification MUST be followed across ALL layers:
+
+
+* On-device processing
+* OCR pipeline
+* ML inference
+* Backend API
+* LLM report generation
+
+
+---
+
+
+==================================================
+SECTION-1 -- GLOBAL ERROR HANDLING PRINCIPLES
+
+
+RULE-1: NO SILENT FAILURE
+
+
+Every failure must:
+
+
+* Throw structured error
+* Log error
+* Return user-safe message
+
+
+---
+
+
+RULE-2: FAIL FAST, FAIL SAFE
+
+
+If a critical validation fails:
+
+
+-> Stop execution immediately
+-> Do NOT continue pipeline
+
+
+---
+
+
+RULE-3: NEVER PASS INVALID DATA
+
+
+Invalid / unverified data MUST NOT:
+
+
+* Enter feature engineering
+* Reach ML models
+* Be stored in verified_profile
+
+
+---
+
+
+RULE-4: USER-FRIENDLY ERROR OUTPUT
+
+
+Internal error != user message
+
+
+Example:
+
+
+Internal:
+"PAN regex mismatch"
+
+
+User:
+"Invalid PAN format. Please re-enter."
+
+
+---
+
+
+RULE-5: LOG EVERYTHING (BUT SAFELY)
+
+
+Log:
+
+
+* error type
+* module
+* timestamp
+* step
+
+
+DO NOT log:
+
+
+* full documents
+* full OCR text
+* sensitive identifiers
+
+
+---
+
+
+==================================================
+SECTION-2 -- ERROR CLASSIFICATION SYSTEM
+
+
+All errors must belong to a category:
+
+
+---
+
+
+1. INPUT_ERROR
+
+
+User input invalid
+
+
+Example:
+* wrong PAN format
+* invalid IFSC
+
+
+---
+
+
+2. PROCESSING_ERROR
+
+
+System failed during execution
+
+
+Example:
+* OCR crash
+* model inference failure
+
+
+---
+
+
+3. VALIDATION_ERROR
+
+
+Data mismatch
+
+
+Example:
+* PAN name != Aadhaar name
+
+
+---
+
+
+4. SECURITY_ERROR
+
+
+Security violation
+
+
+Example:
+* rooted device
+* debugger detected
+
+
+---
+
+
+5. NETWORK_ERROR
+
+
+Backend unreachable
+
+
+---
+
+
+6. DATA_INCONSISTENCY_ERROR
+
+
+Conflicting data across steps
+
+
+---
+
+
+7. MODEL_ERROR
+
+
+ML model failure
+
+
+---
+
+
+==================================================
+SECTION-3 -- STANDARD ERROR STRUCTURE
+
+
+Every error must follow this JSON format:
+
+
+{
+"error_code": "VAL_001",
+"error_type": "VALIDATION_ERROR",
+"module": "PAN_VERIFICATION",
+"message_internal": "PAN name mismatch",
+"message_user": "Name does not match PAN record",
+"severity": "HIGH",
+"step": "STEP-2",
+"action": "RETRY"
+}
+
+
+---
+
+
+==================================================
+SECTION-4 -- MODULE-WISE ERROR HANDLING
+
+
+---
+
+
+A. DOCUMENT UPLOAD PIPELINE
+
+
+ERRORS:
+
+
+1. INVALID FILE FORMAT
+
+
+-> Reject upload
+-> Prompt: "Upload valid image or PDF"
+
+
+---
+
+
+2. AI DETECTION FAIL
+
+
+If model crashes:
+
+
+-> fallback: allow OCR but mark low trust
+-> log warning
+
+
+---
+
+
+3. AI DETECTION RESULT = EDITED
+
+
+-> Reject file
+-> Ask re-upload
+
+
+---
+
+
+---
+
+
+B. OCR PIPELINE
+
+
+ERRORS:
+
+
+1. OCR FAIL (model crash)
+
+
+-> Retry once
+-> If fail -> show error
+
+
+---
+
+
+2. LOW CONFIDENCE (< threshold)
+
+
+-> Ask user to re-upload
+
+
+---
+
+
+3. FIELD NOT FOUND
+
+
+-> Mark validation failure
+
+
+---
+
+
+---
+
+
+C. FACE VERIFICATION
+
+
+ERRORS:
+
+
+1. FACE NOT DETECTED
+
+
+-> Prompt: "Face not clear, try again"
+
+
+---
+
+
+2. MULTIPLE FACES
+
+
+-> Reject
+
+
+---
+
+
+3. LOW SIMILARITY
+
+
+-> Reject
+-> Ask re-capture
+
+
+---
+
+
+---
+
+
+D. VALIDATION ENGINE
+
+
+ERRORS:
+
+
+1. REGEX FAIL
+
+
+-> show format error
+
+
+---
+
+
+2. CROSS-MISMATCH
+
+
+-> show mismatch message
+
+
+---
+
+
+3. API RESPONSE INVALID
+
+
+-> mark verification failed
+
+
+---
+
+
+---
+
+
+E. BACKEND API
+
+
+ERRORS:
+
+
+1. TIMEOUT
+
+
+-> retry (max 2 times)
+
+
+---
+
+
+2. NO RECORD FOUND
+
+
+-> return invalid
+
+
+---
+
+
+3. SERVER ERROR
+
+
+-> show "Try again later"
+
+
+---
+
+
+---
+
+
+F. FEATURE ENGINEERING
+
+
+ERRORS:
+
+
+1. MISSING DATA
+
+
+-> use fallback values
+
+
+---
+
+
+2. NaN / Infinity
+
+
+-> replace with default (0.40)
+
+
+---
+
+
+---
+
+
+G. ML MODEL
+
+
+ERRORS:
+
+
+1. MODEL LOAD FAIL
+
+
+-> block execution
+
+
+---
+
+
+2. INFERENCE FAIL
+
+
+-> retry once
+
+
+---
+
+
+3. INVALID INPUT VECTOR
+
+
+-> reject pipeline
+
+
+---
+
+
+---
+
+
+H. LLM REPORT
+
+
+ERRORS:
+
+
+1. LLM FAIL
+
+
+-> fallback to template report
+
+
+---
+
+
+2. TIMEOUT
+
+
+-> retry once
+
+
+---
+
+
+==================================================
+SECTION-5 -- LOGGING SYSTEM
+
+
+LOG LEVELS:
+
+
+INFO -- normal execution
+WARNING -- recoverable issue
+ERROR -- failure
+CRITICAL -- security/system failure
+
+
+---
+
+
+LOG FORMAT:
+
+
+timestamp | module | step | level | message
+
+
+Example:
+
+
+2026-03-17 10:22 | OCR | STEP-3 | ERROR | OCR failed on image
+
+
+---
+
+
+STORE:
+
+
+* local logs (device)
+* optional backend logs
+
+
+---
+
+
+==================================================
+SECTION-6 -- DEBUGGING MODE (DEV ONLY)
+
+
+Enable DEBUG_MODE:
+
+
+Features:
+
+
+* show internal errors
+* show feature vector
+* show model outputs
+* show API responses
+
+
+---
+
+
+DISABLE in production build
+
+
+---
+
+
+==================================================
+SECTION-7 -- RETRY STRATEGY
+
+
+Retry ONLY for:
+
+
+* network errors
+* OCR failure
+* LLM timeout
+
+
+MAX RETRIES:
+
+
+2 attempts
+
+
+---
+
+
+==================================================
+SECTION-8 -- FALLBACK STRATEGY
+
+
+IF non-critical failure:
+
+
+-> use fallback value
+
+
+Example:
+
+
+missing utility data -> neutral score
+
+
+---
+
+
+IF critical failure:
+
+
+-> STOP pipeline
+
+
+---
+
+
+==================================================
+SECTION-9 -- DATA CONSISTENCY CHECKPOINTS
+
+
+Before model execution:
+
+
+CHECK:
+
+
+* all required steps verified
+* feature_vector length = 95
+* no invalid values
+
+
+---
+
+
+IF FAIL:
+
+
+-> block scoring
+
+
+---
+
+
+==================================================
+SECTION-10 -- SECURITY ERROR HANDLING
+
+
+IF:
+
+
+* root detected
+* debugger detected
+
+
+-> stop execution
+-> do not load model
+
+
+---
+
+
+==================================================
+SECTION-11 -- USER EXPERIENCE FLOW
+
+
+For each error:
+
+
+1. Show clear message
+2. Highlight field
+3. Suggest action
+4. Allow retry
+
+
+---
+
+
+==================================================
+SECTION-12 -- FINAL FAILURE RECOVERY
+
+
+If pipeline fails completely:
+
+
+-> save progress
+-> allow restart from last valid step
+
+
+---
+
+
+==================================================
+FINAL GUARANTEES
+
+
+System ensures:
+
+
+* No invalid data enters model
+* All failures are traceable
+* User can recover from errors
+* Debugging is possible
+* Security is maintained
+
+
+---
+
+
+END OF ERROR HANDLING SPEC

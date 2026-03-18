@@ -1,0 +1,895 @@
+PHASE-5 -- FULL END-TO-END EXECUTION FLOW (FROM USER INPUT TO FINAL CREDIT REPORT)
+
+
+OBJECTIVE
+
+
+Provide a complete, step-by-step execution trace of the system.
+
+
+This phase explains:
+
+
+* Exact runtime order
+* How each component interacts
+* How data transforms at each stage
+* When storage happens
+* When backend is called
+* When models run
+* When data is deleted
+
+
+This is the FINAL system flow.
+
+
+---
+
+
+GLOBAL EXECUTION FLOW
+
+
+User opens app
+↓
+System initializes
+↓
+User completes 8-step verification
+↓
+All data validated
+↓
+Feature engineering
+↓
+ML scoring
+↓
+Explainability
+↓
+LLM report
+↓
+Cleanup
+
+
+---
+
+
+DETAILED STEP-BY-STEP FLOW
+
+
+---
+
+
+STEP-0 -- APP LAUNCH
+
+
+User opens app
+
+
+↓
+
+
+App initializes
+
+
+↓
+
+
+Run security checks:
+
+
+* Root detection
+* Debugger detection
+* Hook detection
+* App integrity
+
+
+↓
+
+
+IF SAFE -> continue
+ELSE -> block
+
+
+---
+
+
+STEP-1 -- MODEL PREPARATION
+
+
+Load encrypted models
+
+
+↓
+
+
+Fetch key from Android Keystore
+
+
+↓
+
+
+Decrypt models in RAM
+
+
+↓
+
+
+Initialize TFLite interpreters
+
+
+---
+
+
+STEP-2 -- USER STARTS VERIFICATION
+
+
+User clicks "Start"
+
+
+↓
+
+
+Step-1 begins
+
+
+---
+
+
+STEP-3 -- STEP-1 BASIC PROFILE
+
+
+User enters:
+
+
+* Name
+* Age
+* Mobile
+* Address
+* Work type
+
+
+↓
+
+
+Validation:
+
+
+* Regex checks
+* Age range
+
+
+↓
+
+
+Update:
+
+
+verified_profile.identity
+
+
+↓
+
+
+Move to next step
+
+
+---
+
+
+STEP-4 -- STEP-2 IDENTITY VERIFICATION
+
+
+User enters:
+
+
+* Aadhaar number
+* PAN number
+
+
+↓
+
+
+API CALL:
+
+
+POST /gov/aadhaar/verify
+POST /gov/pan/verify
+
+
+↓
+
+
+Backend returns response
+
+
+↓
+
+
+User uploads Aadhaar + PAN images
+
+
+↓
+
+
+DOCUMENT PIPELINE STARTS
+
+
+↓
+
+
+AI Detection Model runs
+
+
+↓
+
+
+If REAL -> continue
+Else -> reject
+
+
+↓
+
+
+OCR extraction
+
+
+↓
+
+
+Extract fields:
+
+
+name, dob, numbers
+
+
+↓
+
+
+Face verification:
+
+
+Aadhaar image vs selfie
+
+
+↓
+
+
+Validation:
+
+
+* OCR vs API match
+* Face similarity
+
+
+↓
+
+
+Update:
+
+
+verified_profile.identity
+
+
+---
+
+
+STEP-5 -- STEP-3 BANK VERIFICATION
+
+
+User inputs:
+
+
+* Account number
+* IFSC
+
+
+↓
+
+
+API:
+
+
+POST /bank/penny-drop
+
+
+↓
+
+
+User uploads bank statement
+
+
+↓
+
+
+OCR -> extract transactions
+
+
+↓
+
+
+Convert -> CSV
+
+
+↓
+
+
+Store:
+
+
+bank_transactions.csv
+
+
+↓
+
+
+Validation:
+
+
+* Account number match
+* Name match
+
+
+↓
+
+
+Feature pre-data ready
+
+
+↓
+
+
+Update:
+
+
+verified_profile.bank
+
+
+---
+
+
+MULTIPLE BANK CASE
+
+
+If user uploads 2 statements:
+
+
+↓
+
+
+Convert both to CSV
+
+
+↓
+
+
+Merge
+
+
+↓
+
+
+Remove duplicates
+
+
+↓
+
+
+Final dataset used
+
+
+---
+
+
+STEP-6 -- STEP-4 UTILITY VERIFICATION
+
+
+User uploads:
+
+
+* EB bills
+* Gas bills
+* Mobile bills
+
+
+↓
+
+
+For each document:
+
+
+↓
+
+
+AI detection
+↓
+
+
+OCR extraction
+
+
+↓
+
+
+Extract:
+
+
+amount, date, id
+
+
+↓
+
+
+Match with bank transactions
+
+
+↓
+
+
+If match found -> verified
+
+
+↓
+
+
+Update:
+
+
+verified_profile.utilities
+
+
+---
+
+
+STEP-7 -- STEP-5 WORK PROOF
+
+
+User uploads:
+
+
+* Vehicle RC / platform proof
+
+
+↓
+
+
+OCR + API verification
+
+
+↓
+
+
+Cross-check with identity
+
+
+↓
+
+
+Update:
+
+
+verified_profile.work
+
+
+---
+
+
+STEP-8 -- STEP-6 GOVERNMENT SCHEMES
+
+
+User uploads scheme docs
+
+
+↓
+
+
+OCR + API verify
+
+
+↓
+
+
+Update:
+
+
+verified_profile.schemes
+
+
+---
+
+
+STEP-9 -- STEP-7 INSURANCE
+
+
+User uploads policy
+
+
+↓
+
+
+OCR extract
+
+
+↓
+
+
+API verify
+
+
+↓
+
+
+Match premium with bank transaction
+
+
+↓
+
+
+Update:
+
+
+verified_profile.insurance
+
+
+---
+
+
+STEP-10 -- STEP-8 ITR
+
+
+User uploads ITR receipt
+
+
+↓
+
+
+OCR extract
+
+
+↓
+
+
+API verify
+
+
+↓
+
+
+Compare with bank income
+
+
+↓
+
+
+Update:
+
+
+verified_profile.itr
+
+
+---
+
+
+STEP-11 -- GLOBAL VALIDATION COMPLETE
+
+
+All steps verified
+
+
+↓
+
+
+verified_profile complete
+
+
+↓
+
+
+Proceed to processing
+
+
+---
+
+
+STEP-12 -- FEATURE ENGINEERING
+
+
+INPUT:
+
+
+* profile.json
+* bank_transactions.csv
+* utility data
+
+
+↓
+
+
+Process:
+
+
+Merge data
+↓
+
+
+Tag transactions
+↓
+
+
+Monthly aggregation
+↓
+
+
+Compute metrics
+↓
+
+
+Normalize
+
+
+↓
+
+
+Output:
+
+
+feature_vector[95]
+
+
+---
+
+
+STEP-13 -- ML MODEL EXECUTION
+
+
+feature_vector
+↓
+
+
+P1 -> Income model
+P2 -> Discipline
+P3 -> Debt
+P4 -> Savings
+P6 -> Resilience
+
+
+↓
+
+
+Outputs:
+
+
+pillar_scores
+
+
+↓
+
+
+Meta model:
+
+
+↓
+
+
+credit_score
+
+
+↓
+
+
+risk_level
+
+
+---
+
+
+STEP-14 -- EXPLAINABILITY ENGINE
+
+
+Compute:
+
+
+impact = coefficient x (value − mean)
+
+
+↓
+
+
+Select:
+
+
+top positive features
+top negative features
+
+
+---
+
+
+STEP-15 -- PILLAR AGGREGATION
+
+
+Group features into:
+
+
+* Income Stability
+* Payment Discipline
+* Debt Management
+* Savings Behaviour
+* Work & Identity
+* Financial Resilience
+* Social Accountability
+
+
+↓
+
+
+Compute pillar-level explanation
+
+
+---
+
+
+STEP-16 -- REPORT PAYLOAD CREATION
+
+
+Prepare:
+
+
+{
+score,
+risk,
+pillars,
+positives,
+negatives,
+language
+}
+
+
+---
+
+
+STEP-17 -- BACKEND LLM CALL
+
+
+POST /report/generate
+
+
+↓
+
+
+Send payload
+
+
+↓
+
+
+LLM generates:
+
+
+* explanation
+* suggestions
+
+
+↓
+
+
+Return to device
+
+
+---
+
+
+STEP-18 -- FINAL REPORT GENERATION
+
+
+Combine:
+
+
+* score
+* pillar scores
+* explanation
+* suggestions
+
+
+↓
+
+
+Render UI
+
+
+---
+
+
+STEP-19 -- DATA CLEANUP
+
+
+Delete:
+
+
+* uploaded images
+* OCR text
+* CSV files
+* temp files
+
+
+↓
+
+
+Keep:
+
+
+* encrypted models
+
+
+---
+
+
+STEP-20 -- END STATE
+
+
+User sees final report
+
+
+↓
+
+
+System returns to idle
+
+
+---
+
+
+COMPLETE EXECUTION SUMMARY
+
+
+App start
+↓
+Security check
+↓
+Model load
+↓
+Step-wise verification
+↓
+OCR + validation
+↓
+Backend verification
+↓
+Verified profile
+↓
+Feature engineering
+↓
+ML scoring
+↓
+Explainability
+↓
+LLM report
+↓
+Cleanup
+
+
+---
+
+
+CRITICAL GUARANTEES
+
+
+* No unverified data reaches model
+* No raw data leaves device
+* Models remain encrypted
+* Explainability is deterministic
+* LLM is non-authoritative
+
+
+---
+
+
+FINAL OUTPUT OF PHASE-5
+
+
+After this phase, the agent MUST:
+
+
+* understand full system end-to-end
+* know exact execution order
+* know where each component runs
+* know how data flows
+* know how output is generated
+
+
+END OF PHASE-5

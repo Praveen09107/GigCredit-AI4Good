@@ -1,0 +1,569 @@
+MASTER BACKEND SYSTEM SPECIFICATION -- GIGCREDIT VERIFICATION, API, AND REPORT GENERATION ARCHITECTURE
+
+
+SYSTEM ROLE
+
+
+The backend server supports the GigCredit system by providing:
+
+
+* Identity and financial verification APIs
+* Simulated government database access
+* LLM-based report generation
+* Secure communication layer
+
+
+The backend is NOT responsible for:
+
+
+* OCR processing
+* Machine learning scoring
+* Feature engineering
+* Document storage
+
+
+These tasks are handled on-device.
+
+
+---
+
+
+BACKEND ARCHITECTURE OVERVIEW
+
+
+Technology stack:
+
+
+FastAPI (Python)
+MongoDB (NoSQL database)
+
+
+Design principles:
+
+
+Stateless API architecture
+Minimal data transfer
+Privacy-first
+High scalability
+
+
+---
+
+
+BACKEND RESPONSIBILITIES
+
+
+The backend performs three primary functions:
+
+
+1. Verification API Layer
+2. Database Query Layer
+3. LLM Report Generation Layer
+
+
+---
+
+
+SECTION-1 VERIFICATION API LAYER
+
+
+The backend exposes REST APIs for verifying user-provided data.
+
+
+---
+
+
+API ENDPOINTS
+
+
+Identity Verification
+
+
+POST /gov/pan/verify
+POST /gov/aadhaar/verify
+
+
+Bank Verification
+
+
+POST /bank/account/verify
+POST /bank/ifsc/verify
+
+
+Vehicle Verification
+
+
+POST /gov/vehicle/rc/verify
+
+
+Insurance Verification
+
+
+POST /gov/insurance/policy/verify
+
+
+Income Tax Verification
+
+
+POST /gov/income-tax/itr/verify
+
+
+Government Schemes
+
+
+POST /gov/eshram/verify
+POST /gov/pmsym/verify
+
+
+Loan Detection
+
+
+POST /bank/loan/check
+
+
+---
+
+
+API REQUEST FLOW (GENERIC)
+
+
+Execution:
+
+
+User input collected on device
+↓
+Minimal identifier extracted
+↓
+API request sent to backend
+↓
+Backend queries MongoDB
+↓
+Matching record retrieved
+↓
+JSON response returned
+↓
+On-device validation continues
+
+
+---
+
+
+EXAMPLE -- PAN VERIFICATION FLOW
+
+
+On-device:
+
+
+User enters PAN
+↓
+App sends request
+
+
+Request:
+
+
+{
+ "pan": "ABCDE1234F"
+}
+
+
+Backend:
+
+
+Receive request
+↓
+Query pan_db collection
+↓
+Find matching document
+↓
+Return response
+
+
+Response:
+
+
+{
+ "status": "valid",
+ "name": "Ravi Kumar"
+}
+
+
+On-device:
+
+
+Compare API name with OCR name
+↓
+If match -> verified
+
+
+---
+
+
+SECTION-2 DATABASE QUERY LAYER
+
+
+MongoDB stores simulated verification datasets.
+
+
+---
+
+
+DATABASE STRUCTURE
+
+
+Collections:
+
+
+aadhaar_db
+pan_db
+bank_accounts_db
+vehicle_rc_db
+insurance_db
+itr_filings_db
+loan_accounts_db
+eshram_db
+
+
+---
+
+
+EXAMPLE DOCUMENT
+
+
+{
+ "aadhaar": "123456789012",
+ "name": "Ravi Kumar",
+ "dob": "1996-04-12",
+ "status": "valid"
+}
+
+
+---
+
+
+QUERY LOGIC
+
+
+Example:
+
+
+Input PAN -> search pan_db  
+If match found -> return record  
+Else -> return invalid
+
+
+---
+
+
+SECTION-3 BACKEND + ON-DEVICE INTEGRATION
+
+
+The backend is tightly integrated with on-device validation.
+
+
+---
+
+
+FULL VERIFICATION FLOW
+
+
+User uploads document
+↓
+On-device OCR extracts fields
+↓
+On-device validation checks format
+↓
+API call triggered
+↓
+Backend verifies record
+↓
+Response returned
+↓
+On-device cross validation
+↓
+Verified profile updated
+
+
+---
+
+
+IMPORTANT RULE
+
+
+Backend only verifies identifiers.
+
+
+On-device handles:
+
+
+OCR
+Fraud detection
+Face verification
+Feature engineering
+ML scoring
+
+
+---
+
+
+SECTION-4 BANK STATEMENT INTEGRATION
+
+
+Bank statements are processed entirely on-device.
+
+
+Backend is NOT involved in:
+
+
+OCR extraction
+Transaction parsing
+CSV generation
+
+
+However backend may verify:
+
+
+IFSC code
+Account existence
+Loan records
+
+
+---
+
+
+SECTION-5 LLM REPORT GENERATION LAYER
+
+
+After scoring is complete, backend generates explanation.
+
+
+---
+
+
+FLOW
+
+
+On-device scoring completed
+↓
+SHAP-based feature impacts computed
+↓
+Explanation payload created
+↓
+Payload sent to backend
+↓
+LLM generates explanation
+↓
+Response returned
+↓
+Final report rendered on device
+
+
+---
+
+
+LLM INPUT PAYLOAD
+
+
+{
+ "credit_score": 720,
+ "risk_level": "Medium",
+ "pillar_scores": {...},
+ "positive_factors": [...],
+ "negative_factors": [...],
+ "language": "Tamil"
+}
+
+
+---
+
+
+LLM OUTPUT
+
+
+{
+ "explanation": "Your income is stable...",
+ "suggestions": [
+   "Increase savings",
+   "Reduce EMI"
+ ]
+}
+
+
+---
+
+
+IMPORTANT CONSTRAINT
+
+
+The LLM does NOT modify:
+
+
+* Credit score
+* Pillar scores
+
+
+It ONLY generates:
+
+
+* Explanation text
+* Suggestions
+
+
+---
+
+
+SECTION-6 MULTILINGUAL SUPPORT
+
+
+The backend LLM generates responses based on user-selected language.
+
+
+Supported languages:
+
+
+English
+Hindi
+Tamil
+Telugu
+Kannada
+
+
+---
+
+
+SECTION-7 SECURITY ARCHITECTURE
+
+
+Communication security:
+
+
+HTTPS (TLS encryption)
+
+
+Authentication:
+
+
+API tokens / JWT
+
+
+Rate limiting:
+
+
+Prevent abuse
+
+
+Data privacy:
+
+
+Only minimal identifiers sent
+
+
+Backend does NOT store:
+
+
+User documents
+OCR text
+Financial transaction data
+
+
+---
+
+
+SECTION-8 COMPLETE BACKEND EXECUTION FLOW
+
+
+User inputs data
+↓
+On-device processing begins
+↓
+OCR extracts fields
+↓
+Validation checks format
+↓
+API call sent to backend
+↓
+Backend queries MongoDB
+↓
+Verification response returned
+↓
+On-device cross validation
+↓
+Profile updated
+↓
+Repeat for all steps
+↓
+Scoring complete
+↓
+SHAP impacts calculated
+↓
+Payload sent to LLM backend
+↓
+LLM generates explanation
+↓
+Response returned
+↓
+Final report displayed
+
+
+---
+
+
+SECTION-9 BACKEND PERFORMANCE
+
+
+Typical response times:
+
+
+API verification -> 50-150 ms
+LLM response -> 500-1500 ms
+
+
+---
+
+
+SECTION-10 FINAL SYSTEM INTEGRATION
+
+
+The complete system works as:
+
+
+On-device:
+
+
+OCR
+Validation
+Feature engineering
+ML scoring
+Explainability
+
+
+Backend:
+
+
+Verification APIs
+LLM report generation
+
+
+---
+
+
+FINAL ARCHITECTURE SUMMARY
+
+
+Mobile App
+↓
+On-device AI processing
+↓
+Backend verification APIs
+↓
+On-device scoring
+↓
+Backend LLM explanation
+↓
+Final report
+
+
+---
+
+
+END OF BACKEND SPECIFICATION

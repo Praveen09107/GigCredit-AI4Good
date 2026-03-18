@@ -1,0 +1,742 @@
+﻿PHASE-3 — ANDROID ON-DEVICE IMPLEMENTATION, MODEL EXECUTION, OCR PIPELINE, AND SECURE RUNTIME
+
+
+OBJECTIVE
+
+
+Define the exact execution workflow inside the Android application.
+
+
+This phase explains:
+
+
+• How models are loaded and decrypted
+• How OCR, AI detection, and validation run together
+• How temporary storage works
+• How feature engineering runs on-device
+• How final scoring happens
+
+
+This phase is the CORE runtime of the system.
+
+
+---
+
+
+SECTION-1 — APP INITIALIZATION (APP START)
+
+
+Execution begins when user opens the app.
+
+
+FLOW:
+
+
+App Launch
+↓
+Initialize Secure Environment
+↓
+Run Security Checks
+↓
+Load Models
+↓
+Prepare Runtime
+
+
+---
+
+
+SECURITY CHECKS (MANDATORY)
+
+
+1. Root Detection
+   Detect if device is rooted
+
+
+2. Debugger Detection
+   Check if app is being debugged
+
+
+3. Hook Detection
+   Detect frameworks like Frida/Xposed
+
+
+4. App Signature Verification
+   Ensure APK not tampered
+
+
+IF ANY FAILS:
+
+
+→ Disable model execution
+→ Show error
+
+
+---
+
+
+SECTION-2 — ANDROID KEYSTORE + MODEL DECRYPTION
+
+
+IMPORTANT CONCEPT
+
+
+Models are stored as:
+
+
+model.enc (encrypted)
+
+
+They must be decrypted ONLY at runtime.
+
+
+---
+
+
+KEYSTORE FLOW
+
+
+App First Launch
+↓
+Generate AES Key
+↓
+Store inside Android Keystore
+
+
+---
+
+
+MODEL LOAD FLOW
+
+
+Load model.enc
+↓
+Fetch key from Keystore
+↓
+Decrypt in memory (RAM)
+↓
+Initialize TensorFlow Lite Interpreter
+
+
+IMPORTANT RULES:
+
+
+• Decrypted model NEVER stored on disk
+• Exists only in RAM
+• Cleared after use
+
+
+---
+
+
+SECTION-3 — DOCUMENT UPLOAD PIPELINE (CORE ENTRY POINT)
+
+
+Every user upload triggers processing.
+
+
+FLOW:
+
+
+User Upload (Image/PDF)
+↓
+Convert PDF → Images (if needed)
+↓
+Send image to AI Detection Model
+
+
+---
+
+
+SECTION-4 — AI DOCUMENT AUTHENTICITY DETECTION
+
+
+MODEL:
+
+
+EfficientNet-Lite0
+
+
+---
+
+
+FLOW:
+
+
+Input Image
+↓
+Preprocessing (resize, normalize)
+↓
+Model inference
+↓
+Classification output
+
+
+---
+
+
+OUTPUT TYPES:
+
+
+REAL_DOCUMENT
+AI_GENERATED
+EDITED_DOCUMENT
+
+
+---
+
+
+DECISION LOGIC:
+
+
+IF REAL → continue
+
+
+IF AI/EDITED → reject upload
+
+
+---
+
+
+SECTION-5 — IMAGE PREPROCESSING
+
+
+Before OCR:
+
+
+• Resize image
+• Remove noise
+• Adjust brightness
+• Convert to grayscale (if needed)
+
+
+---
+
+
+SECTION-6 — OCR PIPELINE
+
+
+MODEL:
+
+
+PaddleOCR Lite
+
+
+---
+
+
+FLOW:
+
+
+Image
+↓
+Text detection
+↓
+Text recognition
+↓
+Full OCR text output
+↓
+Regex extraction
+
+
+---
+
+
+OUTPUTS:
+
+
+1. full_ocr_text (string)
+2. structured_fields (JSON)
+
+
+Example:
+
+
+{
+"name": "Ravi Kumar",
+"pan": "ABCDE1234F"
+}
+
+
+---
+
+
+SECTION-7 — FACE VERIFICATION (STEP-2 ONLY)
+
+
+FLOW:
+
+
+Document Image
+↓
+MediaPipe Face Detector
+↓
+Crop Face
+↓
+MobileFaceNet
+↓
+Generate embedding
+
+
+Selfie Image
+↓
+Same pipeline
+
+
+↓
+
+
+Cosine similarity
+
+
+---
+
+
+DECISION:
+
+
+«0.75 → verified
+0.60–0.75 → review
+<0.60 → reject»
+
+
+---
+
+
+SECTION-8 — VALIDATION ENGINE
+
+
+3 LAYERS:
+
+
+---
+
+
+1️⃣ INDIVIDUAL VALIDATION
+
+
+Examples:
+
+
+PAN format → regex
+IFSC → regex
+
+
+---
+
+
+2️⃣ CROSS-INTERNAL VALIDATION
+
+
+Example:
+
+
+Bank statement fields must match:
+
+
+name
+account number
+IFSC
+
+
+---
+
+
+3️⃣ CROSS-STEP VALIDATION
+
+
+Example:
+
+
+PAN name == Bank name
+ITR PAN == Step-2 PAN
+
+
+---
+
+
+IF ANY FAILS:
+
+
+→ reject step
+→ user must re-upload
+
+
+---
+
+
+SECTION-9 — BACKEND API INTEGRATION
+
+
+When required:
+
+
+Send minimal data only.
+
+
+Example:
+
+
+POST /gov/pan/verify
+
+
+↓
+
+
+Receive response
+
+
+↓
+
+
+Compare with OCR data
+
+
+---
+
+
+IMPORTANT:
+
+
+DO NOT send:
+
+
+• full OCR text
+• images
+
+
+---
+
+
+SECTION-10 — TEMP STORAGE SYSTEM
+
+
+Location:
+
+
+/app_cache/verified_data/
+
+
+---
+
+
+DATA STORED:
+
+
+• profile.json
+• bank_transactions.csv
+• OCR text (temporary)
+
+
+---
+
+
+BANK STATEMENT PROCESSING
+
+
+OCR → extract transactions
+↓
+
+
+Convert to CSV
+
+
+↓
+
+
+Store locally
+
+
+---
+
+
+MULTIPLE BANK HANDLING
+
+
+If user uploads multiple:
+
+
+↓
+
+
+Convert each → CSV
+↓
+
+
+Merge
+↓
+
+
+Remove duplicates
+
+
+↓
+
+
+Final dataset used
+
+
+---
+
+
+SECTION-11 — VERIFIED PROFILE UPDATE
+
+
+After each step:
+
+
+Update:
+
+
+verified_profile
+
+
+ONLY AFTER SUCCESSFUL VALIDATION
+
+
+---
+
+
+SECTION-12 — FEATURE ENGINEERING (ON DEVICE)
+
+
+INPUT:
+
+
+• profile.json
+• bank_transactions.csv
+• utility_records
+
+
+---
+
+
+FLOW:
+
+
+Merge all data
+↓
+Tag transactions
+↓
+Monthly aggregation
+↓
+Compute metrics
+↓
+Normalize
+↓
+Generate feature vector (95 features)
+
+
+---
+
+
+OUTPUT:
+
+
+feature_vector = [f1...f95]
+
+
+---
+
+
+SECTION-13 — ML MODEL EXECUTION
+
+
+FLOW:
+
+
+feature_vector
+↓
+P1 model
+↓
+P2 model
+↓
+P3 model
+↓
+P4 model
+↓
+P6 model
+
+
+↓
+
+
+Meta model
+
+
+---
+
+
+OUTPUT:
+
+
+credit_score
+risk_level
+pillar_scores
+
+
+---
+
+
+SECTION-14 — SHAP APPROXIMATION
+
+
+Compute:
+
+
+impact = coefficient × (value − mean)
+
+
+---
+
+
+OUTPUT:
+
+
+positive_features
+negative_features
+
+
+---
+
+
+SECTION-15 — PILLAR AGGREGATION
+
+
+Map features → pillars
+
+
+↓
+
+
+Compute pillar contributions
+
+
+---
+
+
+SECTION-16 — REPORT PAYLOAD CREATION
+
+
+Prepare JSON:
+
+
+{
+score,
+risk,
+pillars,
+insights,
+language
+}
+
+
+---
+
+
+SECTION-17 — BACKEND LLM CALL
+
+
+Send payload
+
+
+↓
+
+
+Receive:
+
+
+• Explanation
+• Suggestions
+
+
+---
+
+
+SECTION-18 — FINAL REPORT GENERATION
+
+
+Combine:
+
+
+• score
+• pillars
+• explanation
+
+
+↓
+
+
+Display report
+
+
+---
+
+
+SECTION-19 — SECURE DATA CLEANUP
+
+
+After report:
+
+
+DELETE:
+
+
+• images
+• OCR text
+• CSV files
+
+
+KEEP:
+
+
+• models (encrypted)
+
+
+---
+
+
+SECTION-20 — MEMORY MANAGEMENT
+
+
+IMPORTANT:
+
+
+• unload models when not needed
+• clear RAM after execution
+
+
+---
+
+
+SECTION-21 — PERFORMANCE OPTIMIZATION
+
+
+Rules:
+
+
+• run models sequentially
+• avoid parallel heavy tasks
+• reuse interpreters
+
+
+---
+
+
+SECTION-22 — OUTPUT OF PHASE-3
+
+
+After this phase:
+
+
+The agent MUST be able to:
+
+
+• execute full on-device pipeline
+• process documents
+• validate data
+• generate feature vector
+• run ML models
+• produce score
+
+
+END OF PHASE-3

@@ -1,0 +1,584 @@
+SYSTEM DESIGN PROMPT -- STEP-9 EXISTING EMI / LOAN OBLIGATION VERIFICATION
+
+All are optional 
+
+
+Context
+Step-9 identifies whether the user currently has active loan obligations or EMI commitments. Existing EMIs significantly affect credit capacity and repayment risk.
+
+
+This step does not require user document uploads.
+Instead, it analyzes the bank transaction dataset generated in Step-3.
+
+
+Primary Data Source
+
+
+* Bank Statement Transaction Dataset (structured CSV from Step-3 OCR)
+* Optional Loan Verification API (simulation)
+* MongoDB Loan Accounts Database
+
+
+This step detects:
+
+
+* Personal loan EMIs
+* Credit card EMIs
+* BNPL / consumer loan EMIs
+* Home loan EMIs
+
+
+Validation architecture follows:
+
+
+Transaction Pattern Detection
+Recurring Payment Validation
+Loan Verification (API simulation)
+Cross-Step Validation with Identity Profile
+Financial Obligation Calculation
+
+
+---
+
+
+DATA SOURCE
+
+
+All bank statement transactions were converted into a structured dataset during Step-3.
+
+
+Example dataset structure
+
+
+transaction_date
+transaction_description
+transaction_amount
+transaction_type
+balance_after_transaction
+
+
+Example record
+
+
+{
+"transaction_date": "2025-10-05",
+"transaction_description": "HDFC LOAN EMI",
+"transaction_amount": 8500,
+"transaction_type": "DEBIT",
+"balance_after_transaction": 33500
+}
+
+
+This dataset is stored locally and used for EMI analysis.
+
+
+---
+
+
+EMI DETECTION LOGIC
+
+
+The system scans transaction descriptions to identify potential EMI payments.
+
+
+Filtering query
+
+
+SELECT transactions
+WHERE transaction_type = "DEBIT"
+AND description contains keywords
+
+
+Keyword patterns used
+
+
+EMI
+LOAN EMI
+NACH EMI
+FINANCE EMI
+BAJAJ EMI
+CARD EMI
+BNPL EMI
+
+
+Example detected transactions
+
+
+05-Sep-2025 -> "HDFC LOAN EMI" -> ₹11,102
+05-Oct-2025 -> "HDFC LOAN EMI" -> ₹11,102
+05-Nov-2025 -> "HDFC LOAN EMI" -> ₹11,102
+
+
+---
+
+
+RECURRING PAYMENT DETECTION
+
+
+After filtering, the system groups transactions by description and amount.
+
+
+Example grouped result
+
+
+Description: HDFC LOAN EMI
+Amount: ₹11,102
+
+
+Dates detected
+
+
+05-Sep-2025
+05-Oct-2025
+05-Nov-2025
+
+
+Rule for EMI detection
+
+
+If transactions satisfy:
+
+
+* same debit amount
+* similar description text
+* recurring interval ~30 days
+
+
+Then the system classifies it as an Active EMI Payment Pattern.
+
+
+---
+
+
+EMI INTERVAL VALIDATION
+
+
+The system validates monthly recurrence using timestamps.
+
+
+Validation rule
+
+
+payment_interval = date(n+1) − date(n)
+
+
+Valid interval range
+
+
+28 days <= interval <= 35 days
+
+
+Example
+
+
+05-Sep -> 05-Oct = 30 days
+05-Oct -> 05-Nov = 31 days
+
+
+Pattern confirmed as monthly EMI schedule.
+
+
+---
+
+
+EMI STRUCTURE CREATION
+
+
+After detection, the system creates a structured EMI record.
+
+
+Example
+
+
+{
+"lender": "HDFC Bank",
+"emi_amount": 11102,
+"emi_frequency": "Monthly",
+"last_payment_date": "2025-11-05",
+"emi_status": "Active"
+}
+
+
+---
+
+
+MULTIPLE EMI DETECTION
+
+
+If multiple recurring patterns exist, the system stores each separately.
+
+
+Example detected EMIs
+
+
+EMI 1
+
+
+Merchant: AVStore Visa Card
+Monthly EMI: ₹1,879
+
+
+EMI 2
+
+
+Lender: HDFC Bank
+Monthly EMI: ₹11,102
+
+
+EMI 3
+
+
+Provider: Bajaj Finserv
+Monthly EMI: ₹5,523
+
+
+Combined EMI burden
+
+
+Total EMI/month = ₹18,504
+
+
+---
+
+
+NO-COST EMI DETECTION
+
+
+The system identifies No-Cost EMI based on transaction metadata.
+
+
+Example transaction
+
+
+BAJAJ FINSERV EMI
+Amount: ₹5,523
+Interest: ₹0
+
+
+Feature flag
+
+
+no_cost_emi_binary = 1
+
+
+No-cost EMIs indicate consumer purchases with zero interest burden.
+
+
+---
+
+
+OPTIONAL LOAN VERIFICATION API
+
+
+Detected EMI patterns may be validated using backend loan verification service.
+
+
+Endpoint
+
+
+POST /gov/loan/verify
+
+
+MongoDB Collection
+
+
+loan_accounts_db
+
+
+Example record
+
+
+{
+"loan_id": "HDFC-PL-83921",
+"borrower_name": "Ravi Kumar",
+"lender": "HDFC Bank",
+"loan_type": "Personal Loan",
+"emi_amount": 11102,
+"loan_status": "Active"
+}
+
+
+API Request
+
+
+{
+"lender": "HDFC Bank",
+"emi_amount": 11102,
+"borrower_name": "Ravi Kumar"
+}
+
+
+API Response
+
+
+{
+"loan_found": true,
+"loan_type": "Personal Loan",
+"emi_amount": 11102,
+"loan_status": "Active"
+}
+
+
+---
+
+
+INDIVIDUAL VALIDATION
+
+
+Detected EMI pattern is compared with API verification result.
+
+
+Field | Detected | API
+
+
+EMI Amount | 11102 | 11102
+Lender | HDFC Bank | HDFC Bank
+
+
+---
+
+
+CROSS-INTERNAL VALIDATION
+
+
+Ensure recurring pattern consistency.
+
+
+Checks performed
+
+
+* EMI amount consistent
+* EMI description consistent
+* Monthly payment interval valid
+
+
+---
+
+
+EMI FINANCIAL BURDEN CALCULATION
+
+
+System computes the user's EMI obligation.
+
+
+Example
+
+
+Detected EMIs
+
+
+Visa Card EMI -> ₹1,879
+Home Loan EMI -> ₹11,102
+Bajaj EMI -> ₹5,523
+
+
+Total EMI/month
+
+
+₹18,504
+
+
+---
+
+
+DEBT-TO-INCOME RATIO
+
+
+The system compares EMI burden with estimated monthly income.
+
+
+Example
+
+
+ITR income = ₹480,000 annually
+
+
+Monthly income estimate
+
+
+480000 / 12 = ₹40,000
+
+
+Debt ratio
+
+
+18,504 / 40,000 = 0.46
+
+
+---
+
+
+EMI RISK BANDS
+
+
+Band classification
+
+
+Band 0
+Debt ratio < 0.20
+No risk
+
+
+Band 1
+0.20 - 0.40
+Moderate burden
+
+
+Band 2
+0.40 - 0.60
+High burden
+
+
+Band 3
+
+
+«0.60
+Critical risk»
+
+
+Example
+
+
+Debt ratio = 0.46
+
+
+Classification
+
+
+Band 2 -> High EMI burden
+
+
+---
+
+
+GLOBAL VALIDATION
+
+
+Detected EMI obligations are validated against identity profile.
+
+
+Cross-checks
+
+
+Borrower name ↔ Step-1 identity
+Bank account ↔ Step-3 verified bank account
+
+
+---
+
+
+EMI PROFILE OBJECT
+
+
+After verification, the system creates an EMI profile.
+
+
+Example
+
+
+existing_loan_profile = {
+
+
+"active_emi_count": 3,
+
+
+"loan_list": [
+
+
+{
+"lender": "HDFC Bank",
+"emi_amount": 11102,
+"loan_type": "Home Loan"
+},
+
+
+{
+"lender": "Visa Card",
+"emi_amount": 1879,
+"loan_type": "Card EMI"
+},
+
+
+{
+"lender": "Bajaj Finserv",
+"emi_amount": 5523,
+"loan_type": "BNPL EMI"
+}
+
+
+],
+
+
+"total_monthly_emi": 18504
+}
+
+
+---
+
+
+GLOBAL PROFILE UPDATE
+
+
+verified_profile.emi_obligations = {
+
+
+"existing_emi_detected": true,
+
+
+"active_emi_count": 3,
+
+
+"total_monthly_emi": 18504
+
+
+}
+
+
+---
+
+
+TECHNICAL FLOW
+
+
+Load Step-3 bank transaction dataset
+↓
+Filter debit transactions with EMI keywords
+↓
+Group transactions by description and amount
+↓
+Detect recurring monthly payment pattern
+↓
+Validate interval between payments
+↓
+Create EMI candidate records
+↓
+Call loan verification API (optional)
+↓
+Validate EMI data with API response
+↓
+Calculate total monthly EMI burden
+↓
+Compute debt-to-income ratio
+↓
+Update global financial obligation object
+
+
+---
+
+
+OUTPUT OF STEP-9
+
+
+Step-9 Status = Completed
+
+
+EMI obligation profile is passed to the credit scoring model.
+
+
+Example scoring inputs
+
+
+* total_monthly_emi
+* active_loan_count
+* debt_to_income_ratio
+* no_cost_emi_binary
