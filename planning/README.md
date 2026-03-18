@@ -4,6 +4,7 @@ If you are a second developer or an AI agent joining mid-stream, start here.
 
 ### Canonical entry point
 - `7_MASTER_IMPLEMENTATION_BLUEPRINT_PRODUCTION_GRADE.md`: **single primary execution blueprint** (contradiction-resolved, production-grade draft)
+- `8_PHASE0_FREEZE_CHECKLIST_DEV_A.md`: **pre-sprint GO/NO-GO checklist** for Dev A sign-off
 
 ### Authoritative frozen specs
 - `3_END_TO_END_WORKFLOW_FREEZE.md`: single contradiction-free workflow
