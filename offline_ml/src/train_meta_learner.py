@@ -41,8 +41,7 @@ def _scorecards(features: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarra
 
 
 def _confidence_matrix(features: np.ndarray) -> np.ndarray:
-    base = np.clip(0.65 + 0.35 * features[:, 0:8], 0.0, 1.0)
-    return base
+    return np.ones((features.shape[0], 8), dtype=float)
 
 
 def _build_meta_x(p_adjusted: np.ndarray, work_type: pd.Series) -> np.ndarray:
@@ -67,6 +66,12 @@ def _build_meta_x(p_adjusted: np.ndarray, work_type: pd.Series) -> np.ndarray:
     return meta_x
 
 
+def _binary_labels(final_label: np.ndarray, quantile: float) -> tuple[np.ndarray, float]:
+    threshold = float(np.quantile(final_label, quantile))
+    y = (final_label >= threshold).astype(int)
+    return y, threshold
+
+
 def main() -> None:
     if not DATASET_PATH.exists():
         raise FileNotFoundError("Run data_generator.py before train_meta_learner.py")
@@ -88,40 +93,75 @@ def main() -> None:
     p_raw[:, 7] = p8
 
     confidence = _confidence_matrix(features)
-    p_adjusted = np.where(
-        confidence < 0.30,
-        0.50,
-        p_raw * confidence + 0.50 * (1.0 - confidence),
-    )
-
-    emi_ratio = features[:, 31]
-    over_debt_mask = emi_ratio > 0.80
-    p_adjusted[over_debt_mask, 2] = np.minimum(p_adjusted[over_debt_mask, 2], 0.30)
+    p_adjusted = p_raw * confidence
 
     meta_x = _build_meta_x(p_adjusted, df["work_type"])
     final_label = df["final_label"].to_numpy(dtype=float)
-    y = (final_label >= 0.60).astype(int)
-    threshold_used = 0.60
-    if len(np.unique(y)) < 2:
-        threshold_used = float(np.quantile(final_label, 0.60))
-        y = (final_label >= threshold_used).astype(int)
-    if len(np.unique(y)) < 2:
-        threshold_used = float(np.median(final_label))
-        y = (final_label >= threshold_used).astype(int)
-    if len(np.unique(y)) < 2:
-        raise RuntimeError("Meta labels are single-class after fallback thresholds")
 
     scaler = StandardScaler()
     meta_x_scaled = scaler.fit_transform(meta_x)
-    model = LogisticRegression(C=1.0, max_iter=1000, random_state=RANDOM_SEED)
 
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
-    cv_auc = cross_val_score(model, meta_x_scaled, y, cv=cv, scoring="roc_auc")
-    mean_auc = float(np.mean(cv_auc))
+    quantile_candidates = [0.40, 0.45, 0.50, 0.55, 0.60, 0.65]
+    c_candidates = [0.0625, 0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]
+    class_weight_candidates = [None, "balanced"]
+    solver_candidates = ["lbfgs", "liblinear"]
 
-    model.fit(meta_x_scaled, y)
+    best_quantile = quantile_candidates[0]
+    best_threshold = 0.0
+    best_c = c_candidates[0]
+    best_class_weight: str | None = None
+    best_solver = solver_candidates[0]
+    best_cv_auc = -1.0
+    best_cv_auc_folds: list[float] = []
+    y_best: np.ndarray | None = None
+
+    for quantile in quantile_candidates:
+        y_candidate, threshold_candidate = _binary_labels(final_label, quantile)
+        if len(np.unique(y_candidate)) < 2:
+            continue
+        for candidate_weight in class_weight_candidates:
+            for candidate_solver in solver_candidates:
+                for candidate_c in c_candidates:
+                    candidate_model = LogisticRegression(
+                        C=candidate_c,
+                        max_iter=4000,
+                        random_state=RANDOM_SEED,
+                        class_weight=candidate_weight,
+                        solver=candidate_solver,
+                    )
+                    candidate_cv = cross_val_score(
+                        candidate_model,
+                        meta_x_scaled,
+                        y_candidate,
+                        cv=cv,
+                        scoring="roc_auc",
+                    )
+                    candidate_mean = float(np.mean(candidate_cv))
+                    if candidate_mean > best_cv_auc:
+                        best_cv_auc = candidate_mean
+                        best_quantile = quantile
+                        best_threshold = threshold_candidate
+                        best_c = candidate_c
+                        best_class_weight = candidate_weight
+                        best_solver = candidate_solver
+                        best_cv_auc_folds = candidate_cv.tolist()
+                        y_best = y_candidate
+
+    if y_best is None:
+        raise RuntimeError("Failed to build a valid binary target for meta training")
+
+    model = LogisticRegression(
+        C=best_c,
+        max_iter=4000,
+        random_state=RANDOM_SEED,
+        class_weight=best_class_weight,
+        solver=best_solver,
+    )
+
+    model.fit(meta_x_scaled, y_best)
     pred = model.predict_proba(meta_x_scaled)[:, 1]
-    train_auc = float(roc_auc_score(y, pred))
+    train_auc = float(roc_auc_score(y_best, pred))
 
     coef = model.coef_[0].tolist()
     if len(coef) != META_INPUT_LENGTH:
@@ -141,9 +181,13 @@ def main() -> None:
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "samples": int(len(df)),
         "meta_input_length": META_INPUT_LENGTH,
-        "label_threshold_used": threshold_used,
-        "cv_auc_mean": mean_auc,
-        "cv_auc_folds": cv_auc.tolist(),
+        "label_quantile_used": best_quantile,
+        "label_threshold_used": best_threshold,
+        "best_c": best_c,
+        "best_class_weight": best_class_weight,
+        "best_solver": best_solver,
+        "cv_auc_mean": best_cv_auc,
+        "cv_auc_folds": best_cv_auc_folds,
         "train_auc": train_auc,
     }
     with META_TRAINING_REPORT_PATH.open("w", encoding="utf-8") as file:

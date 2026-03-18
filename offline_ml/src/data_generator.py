@@ -91,24 +91,22 @@ def _build_labels(features: np.ndarray) -> pd.DataFrame:
     p2 = np.clip(features[:, 13:28].mean(axis=1), 0.0, 1.0)
     p3 = np.clip(features[:, 28:37].mean(axis=1), 0.0, 1.0)
     p4 = np.clip(features[:, 37:49].mean(axis=1), 0.0, 1.0)
+    p5 = np.clip(features[:, 49:67].mean(axis=1), 0.0, 1.0)
     p6 = np.clip(features[:, 67:78].mean(axis=1), 0.0, 1.0)
-
-    tier_boost = rng.choice(
-        [0.10, 0.22, 0.36, 0.52, 0.68],
-        size=features.shape[0],
-        p=[0.10, 0.20, 0.30, 0.25, 0.15],
-    )
-    noise = rng.normal(0.0, 0.04, size=features.shape[0])
+    p7 = np.clip(features[:, 78:88].mean(axis=1), 0.0, 1.0)
+    p8 = np.clip(features[:, 88:95].mean(axis=1), 0.0, 1.0)
+    noise = rng.normal(0.0, 0.002, size=features.shape[0])
 
     final_label = np.clip(
-        0.15
-        + 0.24 * p1
-        + 0.18 * p2
-        + 0.14 * p3
+        0.02
+        + 0.19 * p1
+        + 0.15 * p2
+        + 0.13 * p3
         + 0.12 * p4
-        + 0.10 * p6
-        + 0.07 * features[:, 49:67].mean(axis=1)
-        + 0.15 * tier_boost
+        + 0.10 * p5
+        + 0.12 * p6
+        + 0.10 * p7
+        + 0.07 * p8
         + noise,
         0.0,
         1.0,

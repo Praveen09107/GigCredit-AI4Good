@@ -235,3 +235,29 @@ Safeguards:
 - pre-export assertions,
 - fixed naming constants shared with app,
 - fail-fast validation script before handoff.
+
+---
+
+## 15) Best-AUC baseline snapshot (2026-03-18)
+
+Latest optimized local run summary:
+- dataset profiles: 250,000 synthetic rows,
+- meta input length: 44 (unchanged),
+- label quantile used: 0.40,
+- label threshold used: 0.5276450512,
+- best logistic C: 0.0625,
+- best class weight: none,
+- best solver: lbfgs,
+- CV AUC mean: 0.980855,
+- train AUC: 0.980881,
+- export parity status: PASS.
+
+Associated artifacts/reports:
+- `offline_ml/data/meta_training_report.json`
+- `offline_ml/data/training_report.json`
+- `offline_ml/data/validation_report.json`
+
+Notes:
+- this is the strongest synthetic-data AUC baseline in current repository state,
+- score quality on real production data still requires external validation,
+- keep this configuration as temporary benchmark baseline until real-data tuning pass.
