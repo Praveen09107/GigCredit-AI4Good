@@ -1,0 +1,5 @@
+file_name,document_type,work_type,capture_mode,rotation_degrees,language_hint,is_primary,declared_fields_available,notes
+aadhaar__front__case001__01.png,aadhaar_front,platform,camera,0,en,true,true,
+aadhaar__back__case001__02.png,aadhaar_back,platform,camera,0,en,true,true,
+pan__front__case001__01.jpg,pan,platform,camera,0,en,true,true,
+bank_statement__primary__case001__01.pdf,bank_statement_primary,platform,gallery,0,en,true,true,
