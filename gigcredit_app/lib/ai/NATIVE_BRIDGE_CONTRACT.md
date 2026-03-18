@@ -22,7 +22,20 @@ Response payload:
 Request payload:
 ```json
 {
-  "imageBytes": [0, 1, 2]
+  "imageBytes": [0, 1, 2],
+  "meta": {
+    "documentType": "pan|aadhaar_front|aadhaar_back|bank_statement|rc|insurance|itr|bill",
+    "captureMode": "camera|gallery",
+    "rotationDegrees": 0,
+    "languageHint": "en",
+    "byteCount": 123456,
+    "meanIntensity": 128.4,
+    "entropyLike": 0.24,
+    "blurScore": 0.0,
+    "glareScore": 0.0,
+    "perspectiveScore": 0.0,
+    "deviceModel": "optional-string"
+  }
 }
 ```
 Response payload:
@@ -32,6 +45,8 @@ Response payload:
   "confidence": 0.0
 }
 ```
+
+`meta` is optional but strongly recommended for production OCR quality tuning and diagnostics.
 
 ### `authenticity.detect`
 Request payload:

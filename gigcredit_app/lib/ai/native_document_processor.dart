@@ -13,7 +13,15 @@ class NativeChannelOcrEngine implements OcrEngine {
   @override
   Future<OcrResult> extractText(List<int> imageBytes) async {
     try {
-      return await bridge.extractText(imageBytes);
+      return await bridge.extractText(
+        imageBytes,
+        meta: {
+          'source': 'native_channel_ocr_engine',
+          'byteCount': imageBytes.length,
+          'meanIntensity': _mean(imageBytes),
+          'entropyLike': _entropyLikeScore(imageBytes),
+        },
+      );
     } on NativeBridgeException {
       return fallback.extractText(imageBytes);
     }

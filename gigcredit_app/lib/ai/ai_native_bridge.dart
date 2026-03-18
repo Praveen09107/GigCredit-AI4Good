@@ -34,10 +34,17 @@ class NativeAiBridge {
     }
   }
 
-  Future<OcrResult> extractText(List<int> imageBytes) async {
+  Future<OcrResult> extractText(
+    List<int> imageBytes, {
+    Map<String, Object?>? meta,
+  }) async {
+    final arguments = <String, Object?>{'imageBytes': imageBytes};
+    if (meta != null && meta.isNotEmpty) {
+      arguments['meta'] = meta;
+    }
     final payload = await _invoke<Map<dynamic, dynamic>>(
       method: 'ocr.extractText',
-      arguments: {'imageBytes': imageBytes},
+      arguments: arguments,
     );
     final rawText = (payload['rawText'] ?? '').toString();
     final confidence = (payload['confidence'] as num?)?.toDouble() ?? 0.0;
