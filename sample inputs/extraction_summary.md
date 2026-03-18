@@ -27,3 +27,25 @@
 ## Notes
 - Parsed values are best-effort and need validation against source documents.
 - Field-level normalization/mapping to final schema is still pending.
+
+## KYC Image Extraction (Completed This Pass)
+
+- Output file: `sample inputs/kyc_extracted_fields.csv`
+- Tracker status updated:
+	- `aadhaar front.jpeg` -> `extracted_with_review`
+	- `aadhaar back.jpeg` -> `extracted_with_review`
+	- `pan front.jpeg` -> `extracted_with_review`
+	- `pan back.jpeg` -> `extracted_with_review`
+
+### Confirmation Required from User
+
+- Aadhaar:
+	- `aadhaar_number`
+	- `gender`
+	- `address_line_1`
+	- `city_district`
+
+- PAN:
+	- `pan_number`
+	- `fathers_name`
+	- `issuing_unit`

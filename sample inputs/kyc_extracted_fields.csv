@@ -1,0 +1,15 @@
+file_name,document_type,field_name,extracted_value,confidence,needs_user_confirmation
+aadhaar front.jpeg,aadhaar_front,full_name,Praveen Kumar P,high,no
+aadhaar front.jpeg,aadhaar_front,date_of_birth,09/01/2007,high,no
+aadhaar front.jpeg,aadhaar_front,gender,Male,medium,yes
+aadhaar front.jpeg,aadhaar_front,aadhaar_number,749420067990,high,yes
+aadhaar back.jpeg,aadhaar_back,address_line_1,"S/O: Prabhakaran, 205F, SRIRANGAM NEW TOWN, WIMCO NAGAR, SAKTHIPURAM",medium,yes
+aadhaar back.jpeg,aadhaar_back,city_district,Kattivakkam,medium,yes
+aadhaar back.jpeg,aadhaar_back,state,Tamil Nadu,high,no
+aadhaar back.jpeg,aadhaar_back,pin_code,600057,high,no
+pan front.jpeg,pan_front,full_name,Praveen Kumar P,high,no
+pan front.jpeg,pan_front,fathers_name,Prabhakaran,medium,yes
+pan front.jpeg,pan_front,date_of_birth,09/01/2007,high,no
+pan front.jpeg,pan_front,pan_number,IPZPP3254R,high,yes
+pan back.jpeg,pan_back,helpline_number,033-40802999,high,no
+pan back.jpeg,pan_back,issuing_unit,"Income Tax PAN Services Unit, UTIITSL, Navi Mumbai",medium,yes

@@ -1,6 +1,6 @@
 file_name,document_type,extraction_status,missing_from_user,notes
-aadhaar back.jpeg,aadhaar_back,pending_manual_review,"If unreadable, share clearer image",queued for manual field extraction from image
-aadhaar front.jpeg,aadhaar_front,pending_manual_review,"If unreadable, share clearer image",queued for manual field extraction from image
+aadhaar back.jpeg,aadhaar_back,extracted_with_review,Confirm marked fields in kyc_extracted_fields.csv,OCR extraction completed; user confirmation required for medium-confidence fields
+aadhaar front.jpeg,aadhaar_front,extracted_with_review,Confirm marked fields in kyc_extracted_fields.csv,OCR extraction completed; user confirmation required for medium-confidence fields
 Bank Statement.pdf,bank_statement_primary,partial_extracted,,text extracted from 12 pages (49392 chars); pending field parsing
 broadband bill 2(wifi).jpeg,wifi_bill,pending,,
 broadband bill(wifi).jpeg,wifi_bill,pending,,
@@ -24,8 +24,8 @@ Online Platform worker screenshots\WhatsApp Image 2026-03-19 at 12.41.55 AM.jpeg
 Online Platform worker screenshots\WhatsApp Image 2026-03-19 at 12.41.56 AM (1).jpeg,platform_activity_proof,pending,,
 Online Platform worker screenshots\WhatsApp Image 2026-03-19 at 12.41.56 AM.jpeg,platform_activity_proof,pending,,
 Online Platform worker screenshots\WhatsApp Image 2026-03-19 at 12.41.57 AM.jpeg,platform_activity_proof,pending,,
-pan back.jpeg,pan_back,pending_manual_review,"If unreadable, share clearer image",queued for manual field extraction from image
-pan front.jpeg,pan_front,pending_manual_review,"If unreadable, share clearer image",queued for manual field extraction from image
+pan back.jpeg,pan_back,extracted_with_review,Confirm marked fields in kyc_extracted_fields.csv,OCR extraction completed; user confirmation required for medium-confidence fields
+pan front.jpeg,pan_front,extracted_with_review,Confirm marked fields in kyc_extracted_fields.csv,OCR extraction completed; user confirmation required for medium-confidence fields
 Pm svanidhi letter of recommendation.jpeg,recommendation_letter,pending,,
 pm sym template card no values.jpeg,insurance,pending,,
 PMJJBY part 1.jpeg,insurance,pending,,
