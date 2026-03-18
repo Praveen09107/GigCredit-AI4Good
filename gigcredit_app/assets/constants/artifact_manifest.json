@@ -1,0 +1,60 @@
+{
+  "generated_at": "2026-03-18T17:34:47.220757+00:00",
+  "generator": "offline_ml.src.package_artifacts_for_app",
+  "artifacts": {
+    "scorer_p1": {
+      "source": "D:\\Program Files\\GigCredit\\offline_ml\\output\\p1_scorer.dart",
+      "target": "D:\\Program Files\\GigCredit\\gigcredit_app\\lib\\scoring\\generated\\p1_scorer.dart",
+      "sha256": "3c8e8ef06c3a712a97825bfb42a0b2c1c5185250e85fc575bde3282e5ddefdfc",
+      "size_bytes": 237206
+    },
+    "scorer_p2": {
+      "source": "D:\\Program Files\\GigCredit\\offline_ml\\output\\p2_scorer.dart",
+      "target": "D:\\Program Files\\GigCredit\\gigcredit_app\\lib\\scoring\\generated\\p2_scorer.dart",
+      "sha256": "ea12821c5dfe4af3960ea93dfc8e226c8cb75b0988ea6a1d4df6bfbf04444e89",
+      "size_bytes": 237478
+    },
+    "scorer_p3": {
+      "source": "D:\\Program Files\\GigCredit\\offline_ml\\output\\p3_scorer.dart",
+      "target": "D:\\Program Files\\GigCredit\\gigcredit_app\\lib\\scoring\\generated\\p3_scorer.dart",
+      "sha256": "2e1b716b8f5d03c0ecd8f5d857d6826a86ba455c6525f11aff86c783f0b4ae82",
+      "size_bytes": 196775
+    },
+    "scorer_p4": {
+      "source": "D:\\Program Files\\GigCredit\\offline_ml\\output\\p4_scorer.dart",
+      "target": "D:\\Program Files\\GigCredit\\gigcredit_app\\lib\\scoring\\generated\\p4_scorer.dart",
+      "sha256": "22966db55362954f3b7b36319e9ccad4b62056651f804d8030be1bced361e9bd",
+      "size_bytes": 197083
+    },
+    "scorer_p6": {
+      "source": "D:\\Program Files\\GigCredit\\offline_ml\\output\\p6_scorer.dart",
+      "target": "D:\\Program Files\\GigCredit\\gigcredit_app\\lib\\scoring\\generated\\p6_scorer.dart",
+      "sha256": "73c0794ac24be6ee69a4ac5e0d5d98480259fa7ac1334271f4a17494b1eb25bd",
+      "size_bytes": 7736213
+    },
+    "meta_coefficients": {
+      "source": "D:\\Program Files\\GigCredit\\offline_ml\\data\\meta_coefficients.json",
+      "target": "D:\\Program Files\\GigCredit\\gigcredit_app\\assets\\constants\\meta_coefficients.json",
+      "sha256": "0be219aa9a5cb8fd1419579fedda9908204ff183c1d325ec80ecfdb5ee03c423",
+      "size_bytes": 3458
+    },
+    "shap_lookup": {
+      "source": "D:\\Program Files\\GigCredit\\offline_ml\\data\\shap_lookup.json",
+      "target": "D:\\Program Files\\GigCredit\\gigcredit_app\\assets\\constants\\shap_lookup.json",
+      "sha256": "05bc628953cd2fe43114cabe96ae13c7236c29d48b9ead0f58ef75d7df7f990f",
+      "size_bytes": 45953
+    },
+    "state_income_anchors": {
+      "source": "D:\\Program Files\\GigCredit\\offline_ml\\data\\state_income_anchors.json",
+      "target": "D:\\Program Files\\GigCredit\\gigcredit_app\\assets\\constants\\state_income_anchors.json",
+      "sha256": "9991513876836fd49e5fb510aecb33499c67df19d1f7df232faf6a7ade825a45",
+      "size_bytes": 579
+    },
+    "feature_means": {
+      "source": "D:\\Program Files\\GigCredit\\offline_ml\\data\\feature_means.json",
+      "target": "D:\\Program Files\\GigCredit\\gigcredit_app\\assets\\constants\\feature_means.json",
+      "sha256": "6a6e43994e298fea045d8ef0ecd5fb6c8f59a067a0c32694be96fda471b0cb69",
+      "size_bytes": 2177
+    }
+  }
+}

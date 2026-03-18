@@ -66,6 +66,7 @@ META_TRAINING_REPORT_PATH = DATA_DIR / "meta_training_report.json"
 STATE_INCOME_ANCHORS_PATH = DATA_DIR / "state_income_anchors.json"
 FEATURE_MEANS_PATH = DATA_DIR / "feature_means.json"
 VALIDATION_REPORT_PATH = DATA_DIR / "validation_report.json"
+REAL_READY_EVAL_REPORT_PATH = DATA_DIR / "real_ready_evaluation_report.json"
 
 
 def ensure_directories() -> None:
