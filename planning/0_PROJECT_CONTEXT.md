@@ -89,40 +89,139 @@ Models are NOT loaded as `.tflite` files at runtime. Instead:
 - **Session recovery:** Encrypted profile cached for 24 hours, resume on crash
 - **Offline capability:** OCR, scoring, PDF all work offline. API verification queued.
 
-## DIRECTORY STRUCTURE
+## DIRECTORY STRUCTURE (PRODUCTION-GRADE)
 ```
-GigCredit/
-├── offline_ml/               # Python: data gen, training, m2cgen export
-│   ├── data_generator.py
-│   ├── tune_models.py
-│   ├── train_final.py
-│   ├── extract_shap.py
-│   ├── train_meta_learner.py
-│   ├── export_to_dart.py
-│   └── validate_export.py
-├── backend/                  # Python: FastAPI + MongoDB
-│   ├── main.py
-│   ├── database.py
-│   ├── models.py
-│   ├── auth.py
-│   ├── seed_db.py
-│   └── routers/
-│       ├── verify.py
-│       └── report.py
-├── gigcredit_app/            # Flutter mobile app
-│   ├── lib/
-│   │   ├── main.dart
-│   │   ├── ai/               # TFLite, PaddleOCR, face verification
-│   │   ├── core/             # Feature engineering, bank parser, confidence
-│   │   ├── models/           # Data classes
-│   │   ├── scoring/          # m2cgen scorers, meta-learner, explainability, scorecards
-│   │   ├── services/         # API client
-│   │   └── ui/               # All screens
-│   ├── assets/
-│   │   ├── models/           # .tflite files (FaceNet, EfficientNet)
-│   │   └── constants/        # .json files (SHAP, meta coefficients)
-│   └── test/
-└── planning/                 # This folder — planning documents
+gigcredit_app/
+├── lib/
+│   ├── main.dart
+│   ├── app/                               # App-wide configuration
+│   │   ├── router.dart                    # GoRouter config + auth guard
+│   │   ├── theme.dart                     # Colors, text styles, gradients
+│   │   └── constants.dart                 # API URLs, feature indices, pillar weights
+│   ├── models/                            # Pure data classes
+│   │   ├── bank_transaction.dart
+│   │   ├── verified_profile.dart
+│   │   ├── score_report.dart
+│   │   ├── processed_document.dart
+│   │   └── enums.dart                     # WorkType, TransactionTag, AuthResult, etc.
+│   ├── providers/                         # Riverpod state management
+│   │   ├── verified_profile_provider.dart
+│   │   ├── auth_provider.dart
+│   │   └── score_provider.dart
+│   ├── ai/                                # Dev A owns — all TFLite + OCR
+│   │   ├── ai_interfaces.dart             # Abstract classes (published Hour 2)
+│   │   ├── mock_document_processor.dart   # Dev B uses until real AI is ready
+│   │   ├── authenticity_detector.dart     # EfficientNet-Lite0
+│   │   ├── face_verifier.dart             # MobileFaceNet
+│   │   ├── ocr_engine.dart                # PaddleOCR native
+│   │   ├── field_extractors.dart          # Regex parsers per document type
+│   │   └── document_processor.dart        # Orchestrator pipeline
+│   ├── services/                          # Dev A owns — backend communication
+│   │   ├── api_client_interface.dart      # IApiClient abstract (published Hour 2)
+│   │   ├── mock_api_client.dart           # Hardcoded responses for dev
+│   │   ├── api_client.dart                # Real implementation
+│   │   └── secure_storage_service.dart    # Session persistence
+│   ├── scoring/                           # Dev B owns — scoring pipeline
+│   │   ├── p1_scorer.dart                 # m2cgen auto-generated (XGBoost P1)
+│   │   ├── p2_scorer.dart                 # m2cgen auto-generated (XGBoost P2)
+│   │   ├── p3_scorer.dart                 # m2cgen auto-generated (XGBoost P3)
+│   │   ├── p4_scorer.dart                 # m2cgen auto-generated (XGBoost P4)
+│   │   ├── p6_scorer.dart                 # m2cgen auto-generated (RandomForest P6)
+│   │   ├── scorecard_p5.dart              # Hand-written Dart weighted sum
+│   │   ├── scorecard_p7.dart              # Hand-written Dart weighted sum
+│   │   ├── scorecard_p8.dart              # Hand-written Dart weighted sum
+│   │   ├── meta_learner.dart              # LR dot product + sigmoid
+│   │   ├── scoring_engine.dart            # 18-step orchestrator
+│   │   ├── feature_sanitizer.dart         # NaN → 0.50, clamp [0,1]
+│   │   ├── pillar_validator.dart          # Output validation per pillar
+│   │   ├── shap_engine.dart               # Binned SHAP lookup
+│   │   └── scoring_constants.dart         # Grade cutoffs, risk bands, weights
+│   ├── core/                              # Dev B owns — business logic
+│   │   ├── feature_engineering.dart       # Profile → 95 normalized features
+│   │   ├── confidence_engine.dart         # 8 pillar confidence values
+│   │   ├── bank_parser.dart               # PDF → structured transactions
+│   │   ├── transaction_tagger.dart        # 4-layer keyword tagging
+│   │   └── pdf_generator.dart             # On-device PDF report
+│   └── ui/                                # Dev B owns — all screens
+│       ├── screens/
+│       │   ├── login_screen.dart
+│       │   ├── home_screen.dart
+│       │   ├── guidelines_screen.dart
+│       │   ├── language_select_screen.dart
+│       │   ├── report_loading_screen.dart
+│       │   ├── final_report_screen.dart
+│       │   └── steps/
+│       │       ├── step1_profile.dart
+│       │       ├── step2_identity.dart
+│       │       ├── step3_bank.dart
+│       │       ├── step4_utilities.dart
+│       │       ├── step5_work_proof.dart
+│       │       ├── step6_schemes.dart
+│       │       ├── step7_insurance.dart
+│       │       └── step8_itr_gst.dart
+│       └── widgets/                       # Reusable components
+│           ├── document_upload_card.dart   # Camera/gallery picker (used 30+ times)
+│           ├── score_gauge.dart            # Circular score dial
+│           ├── pillar_bar.dart             # Single pillar progress bar
+│           ├── step_progress_bar.dart      # Top nav showing step 1-8
+│           ├── work_type_selector.dart     # The 4-card grid selector
+│           └── loading_overlay.dart        # Processing state overlay
+├── assets/
+│   ├── models/
+│   │   ├── mobilefacenet.tflite
+│   │   └── efficientnet_lite0.tflite
+│   └── constants/
+│       ├── shap_lookup.json               # Binned SHAP values (~8-12KB)
+│       ├── meta_coefficients.json         # LR 20 coefficients + intercept
+│       ├── state_income_anchors.json      # 36 state median incomes
+│       └── feature_means.json             # 95-feature training means
+├── test/
+│   ├── golden_profile_test.dart
+│   ├── feature_engineering_test.dart
+│   └── scoring_engine_test.dart
+└── pubspec.yaml
+
+offline_ml/                                # Python — runs once before app dev
+├── data_generator.py
+├── tune_models.py
+├── train_final.py
+├── extract_shap.py
+├── train_meta_learner.py
+├── export_to_dart.py
+├── validate_export.py
+├── data/                                  # Generated artifacts
+│   ├── synthetic_profiles.csv
+│   ├── best_params.json
+│   ├── training_report.json
+│   ├── shap_lookup.json
+│   ├── meta_coefficients.json
+│   ├── state_income_anchors.json
+│   └── feature_means.json
+└── output/                                # m2cgen .dart files
+    ├── p1_scorer.dart
+    ├── p2_scorer.dart
+    ├── p3_scorer.dart
+    ├── p4_scorer.dart
+    └── p6_scorer.dart
+
+backend/                                   # Python FastAPI — deployed to Render
+├── main.py
+├── database.py
+├── models.py
+├── auth.py
+├── seed_db.py
+├── requirements.txt
+├── .env
+├── Procfile
+└── routers/
+    ├── verify.py
+    └── report.py
+
+planning/                                  # This folder — planning documents
+├── 0_PROJECT_CONTEXT.md
+├── 1_GIGCREDIT_FULL_IMPLEMENTATION_PLAN.md
+├── 2_GIGCREDIT_TEAM_WORK_SPLIT.md
+└── 3_PRODUCTION_REVIEW_REPORT.md
 ```
 
 ## GRADE AND RISK BANDS

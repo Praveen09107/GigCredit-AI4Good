@@ -58,6 +58,44 @@ pip install xgboost scikit-learn optuna shap m2cgen numpy pandas
 ```
 - **Acceptance:** `python -c "import m2cgen; print(m2cgen.__version__)"` returns >= 2.8.0.
 
+## Task 0.4: Publish Interface Stubs (HOUR 2 — CRITICAL HANDOFF)
+Developer A must create these files IMMEDIATELY so Developer B is never blocked.
+- **File:** `lib/ai/ai_interfaces.dart`
+  ```dart
+  abstract class IAuthenticityDetector {
+    Future<AuthResult> detectAuthenticity(Uint8List imageBytes);
+  }
+  abstract class IFaceVerifier {
+    Future<FaceMatchResult> verifyFace(Uint8List aadhaarPhoto, Uint8List selfie);
+  }
+  abstract class IOCREngine {
+    Future<String> extractText(Uint8List imageBytes);
+    Future<Map<String, String>> extractFields(String rawText, DocumentType type);
+  }
+  abstract class IDocumentProcessor {
+    Future<ProcessedDocument> processDocument(Uint8List imageBytes, DocumentType type);
+  }
+  ```
+- **File:** `lib/services/api_client_interface.dart`
+  ```dart
+  abstract class IApiClient {
+    Future<Map<String, dynamic>> verifyPan(String pan);
+    Future<Map<String, dynamic>> verifyAadhaar(String aadhaarLast4);
+    Future<Map<String, dynamic>> verifyIfsc(String ifsc);
+    Future<Map<String, dynamic>> verifyBankAccount(String accountHash, String ifsc);
+    Future<Map<String, dynamic>> verifyVehicleRC(String rcNumber);
+    Future<Map<String, dynamic>> verifyInsurance(String policyNumber);
+    Future<Map<String, dynamic>> verifyITR(String pan);
+    Future<Map<String, dynamic>> verifyEShram(String uan);
+    Future<Map<String, dynamic>> checkLoan(String borrowerName, String lender);
+    Future<Map<String, dynamic>> generateReport(Map<String, dynamic> payload);
+    Future<void> storeReport(Map<String, dynamic> report);
+  }
+  ```
+- **File:** `lib/services/mock_api_client.dart` — Returns hardcoded `{"status": "ACTIVE", ...}` for all endpoints.
+- **File:** `lib/ai/mock_document_processor.dart` — Returns hardcoded OCR text and field maps.
+- **Acceptance:** Developer B can import and code against these interfaces from Hour 2 onward.
+
 ---
 
 # PHASE 1: OFFLINE ML PIPELINE (Hour 1–8)
@@ -168,17 +206,21 @@ pip install xgboost scikit-learn optuna shap m2cgen numpy pandas
 - **Acceptance:** All 5 models produce identical outputs in Python and Dart within tolerance.
 
 ## Task 1.8: Copy Artifacts to Flutter Project
-- **Logic:** Copy the generated files to the Flutter project:
+- **Logic:** Copy ALL generated files to the Flutter project:
   ```
-  p1_scorer.dart → gigcredit_app/lib/scoring/p1_scorer.dart
-  p2_scorer.dart → gigcredit_app/lib/scoring/p2_scorer.dart
-  p3_scorer.dart → gigcredit_app/lib/scoring/p3_scorer.dart
-  p4_scorer.dart → gigcredit_app/lib/scoring/p4_scorer.dart
-  p6_scorer.dart → gigcredit_app/lib/scoring/p6_scorer.dart
-  shap_lookup.json → gigcredit_app/assets/constants/shap_lookup.json
+  p1_scorer.dart         → gigcredit_app/lib/scoring/p1_scorer.dart
+  p2_scorer.dart         → gigcredit_app/lib/scoring/p2_scorer.dart
+  p3_scorer.dart         → gigcredit_app/lib/scoring/p3_scorer.dart
+  p4_scorer.dart         → gigcredit_app/lib/scoring/p4_scorer.dart
+  p6_scorer.dart         → gigcredit_app/lib/scoring/p6_scorer.dart
+  shap_lookup.json       → gigcredit_app/assets/constants/shap_lookup.json
   meta_coefficients.json → gigcredit_app/assets/constants/meta_coefficients.json
+  state_income_anchors.json → gigcredit_app/assets/constants/state_income_anchors.json
+  feature_means.json     → gigcredit_app/assets/constants/feature_means.json
   ```
-- **Acceptance:** `flutter analyze` on the app reports no errors related to the scoring files.
+  NOTE: `state_income_anchors.json` contains 36 state/UT median incomes used by P1[0] normalization.
+  `feature_means.json` contains the 95-feature training mean vector used for NaN fallback.
+- **Acceptance:** `flutter analyze` reports no errors. All 9 files exist in the project.
 
 ---
 
@@ -279,7 +321,20 @@ pip install xgboost scikit-learn optuna shap m2cgen numpy pandas
 - **Logic:** Accept `ScoreReportRecord`, insert into `score_reports_db` collection with compound index on `(user_id, generated_at)`.
 - **Acceptance:** Document is persisted in MongoDB.
 
-## Task 2.8: Deploy to Render
+## Task 2.8: Create Requirements File
+- **File:** `backend/requirements.txt`
+  ```
+  fastapi==0.109.0
+  uvicorn==0.27.0
+  motor==3.3.2
+  pymongo==4.6.1
+  google-generativeai==0.3.2
+  python-dotenv==1.0.0
+  pydantic==2.5.3
+  ```
+- **Acceptance:** `pip install -r requirements.txt` installs all dependencies cleanly.
+
+## Task 2.9: Deploy to Render
 - **File:** `backend/Procfile` or `render.yaml`
 - **Logic:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
 - **Acceptance:** The API is accessible at `https://<app-name>.onrender.com/docs` and all endpoints work.
@@ -568,11 +623,24 @@ pip install xgboost scikit-learn optuna shap m2cgen numpy pandas
     48: balance_dip_frequency = months_with_balance_below_1000 / 6, inverted
 
   P5 Work & Identity [49-66] — 18 features (SCORECARD, not ML):
-    49-66: aadhaar_verified, pan_verified, face_match_score, kyc_completeness,
-           name_consistency_score, address_match_score, work_type_encoded (4 one-hot),
-           profession_tenure_norm, age_suitability_score, platform_tenure_norm,
-           platform_rating_norm, dl_valid, rc_active, nsdc_certified, nsqf_level_norm,
-           gst_registered, trade_licence_valid
+    49: kyc_completeness = (aadhaar*0.40 + pan*0.30 + face*0.30)
+    50: face_similarity_score = scaled cosine sim [0.70-1.00] → [0-1]
+    51: work_verified_binary = Step 5 verification outcome
+    52: platform_quality_score = rating/acceptance (Platform/Freelancer only)
+    53: work_tenure_norm = min(months_working, 36) / 36
+    54: total_jobs_or_trips_norm = min(total, 1000) / 1000 (Platform/Freelancer)
+    55: active_worker_binary = duty status / hours per week / income recency
+    56: multi_platform_binary = distinct platforms detected
+    57: business_size_encoded = Udyam enterprise type (Vendor/Trades)
+    58: skill_certification_score = NSQF + grade + duration (Tradesperson)
+    59: id_platform_verified = platform ID verification badge
+    60: vehicle_condition_score = age + RC validity + insurance (Platform)
+    61: business_asset_norm = Udyam + SVANidhi + equipment debits (Vendor/Trades)
+    62: upi_merchant_diversity_norm = distinct UPI merchant categories / 6
+    63: trades_licence_active_binary = Shops & Est. + FSSAI validity (Vendor/Trades)
+    64: freelance_hourly_rate_norm = hourly rate / (ANCHOR*0.5) (Freelancer)
+    65: platform_type_encoded = ride/food/hyperlocal type (Platform)
+    66: age_risk_band = age bracket scoring [0.35-1.00]
 
   P6 Financial Resilience [67-77] — 11 features:
     67: health_insurance_active (binary)

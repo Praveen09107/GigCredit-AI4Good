@@ -31,7 +31,7 @@ through a clean interface that Developer A defines EARLY. Developer A
 publishes the interface stub on Hour 2 so Developer B is never blocked.
 
 **EXECUTION PLAN REFERENCE:** For the most detailed phase-by-phase runbook, use:
-- `planning/4_IMPLEMENTATION_PLAN_20_PHASES.md`
+- `planning/1_GIGCREDIT_FULL_IMPLEMENTATION_PLAN.md`
 
 ---
 
@@ -60,6 +60,12 @@ publishes the interface stub on Hour 2 so Developer B is never blocked.
 - `gigcredit_app/lib/scoring/p1_scorer.dart` … `p6_scorer.dart` exist and compile
 - `gigcredit_app/assets/constants/shap_lookup.json` exists
 - `gigcredit_app/assets/constants/meta_coefficients.json` exists
+- `gigcredit_app/assets/constants/state_income_anchors.json` exists
+- `gigcredit_app/assets/constants/feature_means.json` exists
+- `gigcredit_app/lib/services/api_client_interface.dart` published (Hour 2)
+- `gigcredit_app/lib/services/mock_api_client.dart` published (Hour 2)
+- `gigcredit_app/lib/ai/ai_interfaces.dart` published (Hour 2)
+- `gigcredit_app/lib/ai/mock_document_processor.dart` published (Hour 2)
 - `offline_ml/validate_export.py` passed with `max_diff < 1e-5`
 
 ### HOUR 1–10: Backend Server (Phase 2) — IN PARALLEL WITH ML
@@ -107,6 +113,10 @@ Developer B imports these interfaces and codes against them. Developer A
 later provides the real implementations. Until then, Developer B uses
 mock implementations that return hardcoded sample data.
 
+**Also published at Hour 2 (see Task 0.4 in implementation plan):**
+- `lib/services/api_client_interface.dart` — `IApiClient` with all 11 endpoint methods
+- `lib/services/mock_api_client.dart` — Returns `{"status": "ACTIVE", ...}` for all endpoints
+
 ### HOUR 36–48: Integration & Testing (Phase 7)
 | Task | Details |
 |------|---------|
@@ -147,7 +157,7 @@ mock implementations that return hardcoded sample data.
 | 5.4 | Write `lib/core/confidence_engine.dart`. 8 confidence values based on data completeness. |
 
 ### HOUR 24–36: Scoring Engine & Report (Phase 6)
-*Note: Developer B can start this AFTER Developer A delivers the encrypted scoring model assets (Handoff 1.8).*
+*Note: Developer B can start this AFTER Developer A delivers the m2cgen `.dart` scorer files + JSON constants (Handoff 1.8).*
 | Task | Details |
 |------|---------|
 | 6.1 | Write `lib/scoring/scoring_engine.dart`. The 18-step orchestrator. |
