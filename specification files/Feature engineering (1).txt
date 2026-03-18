@@ -1,18 +1,31 @@
+IMPORTANT NOTICE (2026-03-18):
+THIS FILE IS PARTIALLY OUTDATED.
+
+Use this document for feature ideas/mapping context only.
+For implementation-authoritative scoring behavior, use:
+1) planning/7_MASTER_IMPLEMENTATION_BLUEPRINT_PRODUCTION_GRADE.md
+2) planning/1_SCORING_ENGINE_SPEC_FREEZE.md
+3) specification files/REVISED â€” SCORING ENGINE ARCHITECTURE (SUPERSEDES ML WORKFLOW + PHASE-2 + PHASE-3 SCORING SECTIONS).txt
+
+Invalid here where conflicting:
+- Legacy weighted-sum final score method
+- Any minimum-gate or confidence rule that conflicts with the frozen scoring spec
+
 ????????????????????????????????????????????????????????????????????????????????
-?         GIGCREDIT — FINAL COMPLETE FEATURE ENGINEERING SPECIFICATION       ?
+?         GIGCREDIT ï¿½ FINAL COMPLETE FEATURE ENGINEERING SPECIFICATION       ?
 ?         v2.0 CONSOLIDATED | All Patches Applied | Zero Gaps Guaranteed     ?
 ?         8 Pillars | 95 Features | All Weights Verified to Sum = 1.00       ?
 ????????????????????????????????????????????????????????????????????????????????
 
 ?????????????????????????????????????????????????????????????????????????????
-SECTION 0 — GLOBAL CONVENTIONS
+SECTION 0 ï¿½ GLOBAL CONVENTIONS
 ?????????????????????????????????????????????????????????????????????????????
 
 FEATURE STANDARDS:
-  — All features: normalised Float32 in range [0.0, 1.0]
-  — 0.0 = worst possible signal | 1.0 = best possible signal
-  — NaN / Infinity ? replaced with FALLBACK before array assembly
-  — FALLBACK default = 0.40 unless explicitly stated otherwise
+  ï¿½ All features: normalised Float32 in range [0.0, 1.0]
+  ï¿½ 0.0 = worst possible signal | 1.0 = best possible signal
+  ï¿½ NaN / Infinity ? replaced with FALLBACK before array assembly
+  ï¿½ FALLBACK default = 0.40 unless explicitly stated otherwise
 
 GLOBAL ANCHOR:
   ANCHOR = state_median_monthly_income (?)
@@ -20,9 +33,9 @@ GLOBAL ANCHOR:
   Fallback = ?15,000/month (national median)
 
 HARD SCORING BLOCKS (evaluate BEFORE any feature computation):
-  — aadhaar_verified = false         ? BLOCK: "Identity not verified"
-  — face_similarity_score < 0.70     ? BLOCK: "Face match failed"
-  — bank_statement_absent = true     ? BLOCK: "Bank statement required"
+  ï¿½ aadhaar_verified = false         ? BLOCK: "Identity not verified"
+  ï¿½ face_similarity_score < 0.70     ? BLOCK: "Face match failed"
+  ï¿½ bank_statement_absent = true     ? BLOCK: "Bank statement required"
 
 PILLAR WEIGHT TABLE:
   P1 Income Stability        0.25
@@ -36,8 +49,8 @@ PILLAR WEIGHT TABLE:
   TOTAL                      1.00 ?
 
 FINAL SCORE:
-  raw_score = ? (pillar_score[i] × pillar_weight[i])
-  gigcredit_score = round(300 + (raw_score × 600))
+  raw_score = ? (pillar_score[i] ï¿½ pillar_weight[i])
+  gigcredit_score = round(300 + (raw_score ï¿½ 600))
   Range: 300 (floor) ? 900 (ceiling)
 
 WORK-TYPE FEATURE ROUTING:
@@ -46,18 +59,18 @@ WORK-TYPE FEATURE ROUTING:
   such that intra-pillar weights always sum to 1.00 at runtime.
 
 BLOCKED DATA (NEVER extracted, NEVER enters any feature):
-  — Social Category (Udyam field) ? BLOCKED for fairness compliance
-  — Client Names in Upwork transactions ? BLOCKED for privacy
+  ï¿½ Social Category (Udyam field) ? BLOCKED for fairness compliance
+  ï¿½ Client Names in Upwork transactions ? BLOCKED for privacy
 
 
 ?????????????????????????????????????????????????????????????????????????????
-SECTION 1 — UPI TRANSACTION STATEMENT SPEC
+SECTION 1 ï¿½ UPI TRANSACTION STATEMENT SPEC
 ?????????????????????????????????????????????????????????????????????????????
 
 STEP: 3 (optional upload alongside bank statement)
 PLATFORMS: Google Pay, PhonePe, Paytm, BHIM UPI
 FORMAT: PDF export or CSV export
-MANDATORY: NO — optional but provides significant booster across 6 pillars
+MANDATORY: NO ï¿½ optional but provides significant booster across 6 pillars
 
 FIELDS TO EXTRACT:
   Field                     | Type           | Purpose
@@ -94,7 +107,7 @@ UPI TRANSACTION TAG ENGINE:
 
 
 ?????????????????????????????????????????????????????????????????????????????
-SECTION 2 — GLOBAL PREPROCESSING (compute before any pillar features)
+SECTION 2 ï¿½ GLOBAL PREPROCESSING (compute before any pillar features)
 ?????????????????????????????????????????????????????????????????????????????
 
 BANK STATEMENT MONTHLY AGGREGATES:
@@ -108,7 +121,7 @@ BANK STATEMENT MONTHLY AGGREGATES:
   REQUIRE: months_covered ? 6
 
 INCOME SERIES:
-  income_series             = [monthly_credit[1] … monthly_credit[n]]
+  income_series             = [monthly_credit[1] ï¿½ monthly_credit[n]]
   avg_monthly_income        = mean(income_series)
   std_monthly_income        = std(income_series)
   min_monthly_income        = min(income_series)
@@ -153,14 +166,14 @@ UTILITY MERGE (bank + UPI combined):
 
 FX CONVERSION:
   For international platform income (USD):
-    amount_inr = amount_usd × RBI_reference_rate on payout date
+    amount_inr = amount_usd ï¿½ RBI_reference_rate on payout date
     FX fallback = 83.0 (if RBI rate unavailable)
   Platform credits from PAYONEER / WISE / UPWORK PAYMENT tagged as
   UPI_FREELANCE_INCOME in UPI and GIG_INCOME in bank.
 
 
 ?????????????????????????????????????????????????????????????????????????????
-PILLAR 1 — INCOME STABILITY
+PILLAR 1 ï¿½ INCOME STABILITY
 Pillar Weight: 0.25 | Feature Count: 13 | All work types applicable
 ?????????????????????????????????????????????????????????????????????????????
 
@@ -175,8 +188,8 @@ F-P1-01 | avg_monthly_income_norm
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Absolute income level vs state median
 SOURCE     : Bank Statement ? monthly_credit series | ANCHOR
-FORMULA    : avg_monthly_income ÷ (ANCHOR × 2.5) | Clamp [0.0, 1.0]
-EXAMPLE    : avg=?18,000, ANCHOR=?15,000 ? 18000÷37500 = 0.48
+FORMULA    : avg_monthly_income ï¿½ (ANCHOR ï¿½ 2.5) | Clamp [0.0, 1.0]
+EXAMPLE    : avg=?18,000, ANCHOR=?15,000 ? 18000ï¿½37500 = 0.48
 FALLBACK   : 0.40
 WEIGHT     : 0.15
 
@@ -185,7 +198,7 @@ F-P1-02 | income_stability_cv
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Month-to-month income consistency (lower variance = better)
 SOURCE     : Bank Statement ? monthly_credit series
-FORMULA    : cv = std_monthly_income ÷ avg_monthly_income
+FORMULA    : cv = std_monthly_income ï¿½ avg_monthly_income
              income_stability_cv = 1.0 ? min(cv, 1.0)
 EXAMPLE    : avg=?18,000, std=?3,600 ? cv=0.20 ? score=0.80
 FALLBACK   : 0.40
@@ -197,7 +210,7 @@ F-P1-03 | income_growth_slope
 MEASURES   : Whether income is trending up, flat, or declining
 SOURCE     : Bank Statement ? monthly_credit series
 FORMULA    : slope = linear_regression_slope(income_series)
-             slope_norm = (slope ÷ avg_monthly_income) + 0.5
+             slope_norm = (slope ï¿½ avg_monthly_income) + 0.5
              Clamp [0.0, 1.0]
 EXAMPLE    : +?500/month on ?20,000 base ? 0.025+0.5 = 0.525
 FALLBACK   : 0.50 (flat income assumed)
@@ -211,8 +224,8 @@ SOURCE     : Bank Statement ? tagged income categories
 FORMULA    : distinct_tags = count(unique tags in {GIG_INCOME,
              PLATFORM_PAYOUT, SALARY, GOVERNMENT_CREDIT,
              CASH_DEPOSIT, SAVINGS_CREDIT})
-             income_source_diversity = min(distinct_tags, 4) ÷ 4
-EXAMPLE    : 3 distinct sources ? 3÷4 = 0.75
+             income_source_diversity = min(distinct_tags, 4) ï¿½ 4
+EXAMPLE    : 3 distinct sources ? 3ï¿½4 = 0.75
 FALLBACK   : 0.25
 WEIGHT     : 0.07
 
@@ -221,7 +234,7 @@ F-P1-05 | gig_income_share
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Share of bank credits confirmed as gig income
 SOURCE     : Bank Statement ? GIG_INCOME tagged credits vs all credits
-FORMULA    : gig_income_share = sum(GIG_INCOME credits) ÷ sum(all credits)
+FORMULA    : gig_income_share = sum(GIG_INCOME credits) ï¿½ sum(all credits)
              Clamp [0.0, 1.0]
 EXAMPLE    : ?72,000 gig of ?90,000 total ? 0.80
 FALLBACK   : 0.30
@@ -233,11 +246,11 @@ F-P1-06 | bank_to_platform_ratio
 MEASURES   : Fraction of platform earnings confirmed in bank
 SOURCE     : Platform Screenshots ? Bank Deposited / Daily Earnings
              Bank Statement ? GIG_INCOME credits
-FORMULA    : ratio = Bank Deposited ÷ Daily Earnings (from screenshots)
+FORMULA    : ratio = Bank Deposited ï¿½ Daily Earnings (from screenshots)
              If screenshots unavailable:
-               ratio = avg(monthly_gig_credit) ÷ avg(platform_monthly)
+               ratio = avg(monthly_gig_credit) ï¿½ avg(platform_monthly)
              Cash adjustment:
-               adjusted = ratio + (cash_collection_ratio × 0.5)
+               adjusted = ratio + (cash_collection_ratio ï¿½ 0.5)
                Clamp [0.0, 1.0]
 EXAMPLE    : Bank ?12,000 / Platform ?15,000 = 0.80.
              Cash 20% ? adjusted = 0.80 + 0.10 = 0.90
@@ -251,10 +264,10 @@ MEASURES   : Platform income normalised against state median
 SOURCE     : Platform Screenshots ? Monthly Summary / Net Income
              Upwork ? Net Income This Period (Transaction History screen)
 FORMULA    : avg_platform_monthly = avg(Net Income across 3 months)
-             platform_monthly_earnings_norm = avg_platform_monthly ÷ (ANCHOR × 2.5)
+             platform_monthly_earnings_norm = avg_platform_monthly ï¿½ (ANCHOR ï¿½ 2.5)
              Clamp [0.0, 1.0]
              For USD income: apply FX conversion before normalisation
-EXAMPLE    : ?22,000/month, ANCHOR=?15,000 ? 22000÷37500 = 0.587
+EXAMPLE    : ?22,000/month, ANCHOR=?15,000 ? 22000ï¿½37500 = 0.587
 FALLBACK   : 0.40 (platform docs absent)
              0.50 (neutral skip for non-platform work types)
 WEIGHT     : 0.10
@@ -262,23 +275,23 @@ WEIGHT     : 0.10
 ????????????????????????????????????????????????????????????????????????
 F-P1-08 | itr_to_bank_ratio
 ????????????????????????????????????????????????????????????????????????
-MEASURES   : ITR declared income vs bank credits — cross-document check
+MEASURES   : ITR declared income vs bank credits ï¿½ cross-document check
 SOURCE     : ITR ? Total Income | Bank Statement ? avg_monthly_income
-FORMULA    : itr_monthly = Total Income ÷ 12
-             ratio = avg_monthly_income ÷ itr_monthly
+FORMULA    : itr_monthly = Total Income ï¿½ 12
+             ratio = avg_monthly_income ï¿½ itr_monthly
              Scoring:
                Ratio
 ????????????????????????????????????????????????????????????????????????
 F-P1-08 | itr_to_bank_ratio  (CONTINUED)
 ????????????????????????????????????????????????????????????????????????
-MEASURES   : ITR declared income vs bank credits — cross-document check
+MEASURES   : ITR declared income vs bank credits ï¿½ cross-document check
 SOURCE     : ITR ? Total Income | Bank Statement ? avg_monthly_income
-FORMULA    : itr_monthly = Total Income ÷ 12
-             ratio = avg_monthly_income ÷ itr_monthly
+FORMULA    : itr_monthly = Total Income ï¿½ 12
+             ratio = avg_monthly_income ï¿½ itr_monthly
              Scoring curve:
-               ratio 0.60–1.40 ? 1.00  (within ±40% tolerance band)
-               ratio < 0.60    ? ratio ÷ 0.60  (proportional drop)
-               ratio > 1.40    ? 1.40 ÷ ratio  (over-earner, soft penalty)
+               ratio 0.60ï¿½1.40 ? 1.00  (within ï¿½40% tolerance band)
+               ratio < 0.60    ? ratio ï¿½ 0.60  (proportional drop)
+               ratio > 1.40    ? 1.40 ï¿½ ratio  (over-earner, soft penalty)
              NOTE: ratio > 1.40 triggers income_consistency = MEDIUM flag
              (bank higher than ITR is common in India, not hard penalised)
 FALLBACK   : 0.50 (ITR not submitted)
@@ -290,7 +303,7 @@ F-P1-09 | gst_monthly_turnover_norm
 MEASURES   : GST-declared monthly turnover as verified income signal
 SOURCE     : GST Returns ? Taxable Turnover (6 months) | ANCHOR
 FORMULA    : avg_gst_turnover = avg(Taxable Turnover across 6 returns)
-             gst_monthly_turnover_norm = avg_gst_turnover ÷ (ANCHOR × 2.5)
+             gst_monthly_turnover_norm = avg_gst_turnover ï¿½ (ANCHOR ï¿½ 2.5)
              Clamp [0.0, 1.0]
 APPLICABLE : Vendors / Freelancers with GST registration only
 FALLBACK   : 0.40 (GST-registered user, not submitted)
@@ -303,7 +316,7 @@ F-P1-10 | svanidhi_income_signal
 MEASURES   : SVANidhi loan disbursement confirmed in bank credits
 SOURCE     : SVANidhi ? Loan Amount Sanctioned, Loan Disbursement Date
              Bank Statement ? GOVERNMENT_CREDIT tagged credits
-FORMULA    : Search bank credits within ±3 days of Disbursement Date
+FORMULA    : Search bank credits within ï¿½3 days of Disbursement Date
              for amount matching Loan Amount Sanctioned within 5%.
                Found  ? 1.00
                Not found ? 0.50 (unconfirmed but not penalised)
@@ -320,7 +333,7 @@ SOURCE     : UPI Statement ? UPI_GIG_INCOME tagged RECEIVED transactions
              Bank Statement ? monthly_credit
 FORMULA    : upi_only_income = sum(UPI_GIG_INCOME amounts that do NOT
              have a matching bank credit within 48 hours of UPI date)
-             upi_income_signal_norm = upi_only_income ÷ (ANCHOR × 3)
+             upi_income_signal_norm = upi_only_income ï¿½ (ANCHOR ï¿½ 3)
              Clamp [0.0, 1.0]
              NOTE: Bank-matched amounts are NEVER double-counted.
 FALLBACK   : 0.40 (UPI statement not submitted)
@@ -334,8 +347,8 @@ SOURCE     : Bank Statement ? most recent GIG_INCOME tagged credit date
              Platform Screenshots ? Duty Status (Screen 4)
 FORMULA    : days_since = current_date ? max(GIG_INCOME credit dates)
                ? 30 days  ? 1.00
-               31–60 days ? 0.65
-               61–90 days ? 0.30
+               31ï¿½60 days ? 0.65
+               61ï¿½90 days ? 0.30
                > 90 days  ? 0.00
 FALLBACK   : 0.40
 WEIGHT     : 0.04
@@ -343,9 +356,9 @@ WEIGHT     : 0.04
 ????????????????????????????????????????????????????????????????????????
 F-P1-13 | min_to_avg_income_ratio
 ????????????????????????????????????????????????????????????????????????
-MEASURES   : Worst-month income vs average — downside income floor
+MEASURES   : Worst-month income vs average ï¿½ downside income floor
 SOURCE     : Bank Statement ? monthly_credit series
-FORMULA    : min_to_avg_income_ratio = min_monthly_income ÷ avg_monthly_income
+FORMULA    : min_to_avg_income_ratio = min_monthly_income ï¿½ avg_monthly_income
              Clamp [0.0, 1.0]
 EXAMPLE    : min=?8,000, avg=?18,000 ? 0.44
 EXAMPLE    : min=?16,000, avg=?18,000 ? 0.89
@@ -357,7 +370,7 @@ P1 WEIGHT CHECK: 0.15+0.14+0.09+0.07+0.09+0.10+0.10+0.05+0.05
 
 
 ?????????????????????????????????????????????????????????????????????????????
-PILLAR 2 — PAYMENT DISCIPLINE
+PILLAR 2 ï¿½ PAYMENT DISCIPLINE
 Pillar Weight: 0.20 | Feature Count: 15 | F-P2-12 reclassified as modifier
 ?????????????????????????????????????????????????????????????????????????????
 
@@ -372,13 +385,13 @@ P2 INTRA-PILLAR WEIGHTS:
 F-P2-01 | utility_ontime_ratio
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Fraction of utility bills paid on or before due date
-SOURCE     : EB Bills ? Payment Date + Due Date (×6)
-             Mobile Bills ? Payment Made + Due Date (×6)
-             WiFi Bills ? Payment Status + Bill Due Date (×6)
+SOURCE     : EB Bills ? Payment Date + Due Date (ï¿½6)
+             Mobile Bills ? Payment Made + Due Date (ï¿½6)
+             WiFi Bills ? Payment Status + Bill Due Date (ï¿½6)
              LPG Bills ? Order Status (completed = on-time always)
 FORMULA    : For each bill with known Due Date:
                on_time[i] = 1 if Payment Date ? Due Date else 0
-             utility_ontime_ratio = sum(on_time) ÷ count(bills with Due Date)
+             utility_ontime_ratio = sum(on_time) ï¿½ count(bills with Due Date)
              LPG: Order Status = "Completed" ? on_time = 1 (cash/immediate)
              Bills with missing Due Date ? excluded from denominator entirely
              (neither counted as late nor on-time)
@@ -395,8 +408,8 @@ SOURCE     : Bank Statement ? Transaction Mode per row
 FORMULA    : digital_count = count(mode ? {UPI, NEFT, IMPS,
                Net Banking, BHIM, Debit Card, BBPS})
              cash_count = count(mode = CASH)
-             cheque_count = count(CHEQUE) × 0.5
-             digital_payment_ratio = digital_count ÷
+             cheque_count = count(CHEQUE) ï¿½ 0.5
+             digital_payment_ratio = digital_count ï¿½
                (digital_count + cash_count + cheque_count)
              UPI supplement: add upi_total_count to digital_count
              Clamp [0.0, 1.0]
@@ -409,7 +422,7 @@ F-P2-03 | upi_payment_consistency
 MEASURES   : How regularly UPI is used for recurring utility payments
 SOURCE     : UPI Statement ? UPI_UTILITY_PAYMENT tagged transactions
 FORMULA    : upi_utility_months = count(months where upi_utility_paid[m] > 0)
-             upi_payment_consistency = upi_utility_months ÷ 6
+             upi_payment_consistency = upi_utility_months ï¿½ 6
 EXAMPLE    : 5 of 6 months ? 0.833
 FALLBACK   : 0.40 (UPI not submitted)
 WEIGHT     : 0.08
@@ -421,11 +434,11 @@ MEASURES   : UPI payment failure rate (insufficient funds / errors)
 SOURCE     : UPI Statement ? Transaction Status = FAILED per month
 FORMULA    : total_upi_attempts = count(all UPI transactions)
              failed_count = count(status = FAILED or PENDING)
-             failure_rate = failed_count ÷ total_upi_attempts
-             upi_failed_transaction_penalty = 1.0 ? min(failure_rate × 3, 1.0)
+             failure_rate = failed_count ï¿½ total_upi_attempts
+             upi_failed_transaction_penalty = 1.0 ? min(failure_rate ï¿½ 3, 1.0)
              (Penalises harshly: >33% failure rate ? score = 0)
 EXAMPLE    : 4 failed out of 50 total ? rate=0.08 ? score=1.0?0.24=0.76
-FALLBACK   : 0.70 (UPI not submitted — moderate positive assumed)
+FALLBACK   : 0.70 (UPI not submitted ï¿½ moderate positive assumed)
 WEIGHT     : 0.05
 
 ????????????????????????????????????????????????????????????????????????
@@ -436,11 +449,11 @@ SOURCE     : All utility bills ? payment dates + amounts
              Bank Statement ? debit transactions
 FORMULA    : total_bill_payments = count(all bills with payment date)
              matched_payments = count(bills where bank debit exists
-               within ±1 day AND amount within 5% of bill amount)
-             bank_txn_matching_ratio = matched_payments ÷ total_bill_payments
+               within ï¿½1 day AND amount within 5% of bill amount)
+             bank_txn_matching_ratio = matched_payments ï¿½ total_bill_payments
              UPI supplement: if bank match fails, check upi_utility_paid[m]
-             within same month — count as matched if found
-EXAMPLE    : 14 of 18 bills matched in bank/UPI ? 14÷18 = 0.778
+             within same month ï¿½ count as matched if found
+EXAMPLE    : 14 of 18 bills matched in bank/UPI ? 14ï¿½18 = 0.778
 FALLBACK   : 0.40
 WEIGHT     : 0.11
 
@@ -448,11 +461,11 @@ WEIGHT     : 0.11
 F-P2-06 | bill_amount_consistency
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Whether bill amounts are consistent (active subscriber)
-SOURCE     : EB Bills ? Amount Paid (×6)
-             Mobile Bills ? Total Amount Payable (×6)
-             WiFi Bills ? Total Amount Due (×6)
+SOURCE     : EB Bills ? Amount Paid (ï¿½6)
+             Mobile Bills ? Total Amount Payable (ï¿½6)
+             WiFi Bills ? Total Amount Due (ï¿½6)
 FORMULA    : For each utility type with ? 3 bills:
-               cv_type = std(amounts) ÷ avg(amounts)
+               cv_type = std(amounts) ï¿½ avg(amounts)
              bill_amount_consistency = 1.0 ? mean(cv_type across types)
              Clamp [0.0, 1.0]
 FALLBACK   : 0.50
@@ -470,14 +483,14 @@ FORMULA    : For each submitted insurance policy:
                expected_months = policy active months in 6-month window
                found_debits = count(bank INSURANCE_DEBIT matching
                  premium amount within 5% in expected months)
-               policy_consistency = found_debits ÷ expected_months
+               policy_consistency = found_debits ï¿½ expected_months
              insurance_premium_consistency = avg(policy_consistency
                across all submitted policies)
 MODIFIER (F-P2-12 reclassified):
              Apply payment frequency adjustment to raw score:
-               Monthly    ? final = raw × 1.00
-               Quarterly  ? final = raw × 0.90
-               Half-yearly? final = raw × 0.80
+               Monthly    ? final = raw ï¿½ 1.00
+               Quarterly  ? final = raw ï¿½ 0.90
+               Half-yearly? final = raw ï¿½ 0.80
                Yearly     ? final = min(raw, 0.85)
                Unknown    ? final = raw (no adjustment)
 FALLBACK   : 0.40 (no insurance submitted)
@@ -489,9 +502,9 @@ F-P2-08 | balance_never_negative_ratio
 MEASURES   : Fraction of months where closing balance stayed positive
 SOURCE     : Bank Statement ? monthly_balance series
 FORMULA    : positive_months = count(months where monthly_balance[m] > 0)
-             balance_never_negative_ratio = positive_months ÷ months_covered
+             balance_never_negative_ratio = positive_months ï¿½ months_covered
 EXAMPLE    : All 6 months positive ? 1.00
-EXAMPLE    : 1 month dipped ? 5÷6 = 0.833
+EXAMPLE    : 1 month dipped ? 5ï¿½6 = 0.833
 FALLBACK   : 0.50
 WEIGHT     : 0.08
 
@@ -499,11 +512,11 @@ WEIGHT     : 0.08
 F-P2-09 | rent_payment_consistency
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Fraction of months with confirmed rent payment
-SOURCE     : Rent Receipts ? Date + Amount + Payment Method (×6)
-             Bank Statement ? debits matching rent amount ±5%
+SOURCE     : Rent Receipts ? Date + Amount + Payment Method (ï¿½6)
+             Bank Statement ? debits matching rent amount ï¿½5%
 FORMULA    : rent_paid_months = count(months with valid rent receipt
                AND (Payment Method = Digital OR bank debit matched))
-             rent_payment_consistency = rent_paid_months ÷ 6
+             rent_payment_consistency = rent_paid_months ï¿½ 6
              If user owns property (no receipts) ? 1.00
              If rent receipts absent ? 0.50 (neutral)
 FALLBACK   : 0.50
@@ -518,7 +531,7 @@ FORMULA    : "139(1)" ? 1.00  (filed on time)
              "139(5)" ? 0.75  (revised return)
              "139(4)" ? 0.40  (belated return)
              Not submitted ? 0.0
-NOTE       : This value is shared with F-P8-03 — compute once, reuse.
+NOTE       : This value is shared with F-P8-03 ï¿½ compute once, reuse.
 FALLBACK   : 0.0
 WEIGHT     : 0.05
 
@@ -530,7 +543,7 @@ SOURCE     : LPG Bills ? Amount Paid + Order Status
 FORMULA    : lgp_completed_months = count(bills where
                Order Status = "Completed")
              lgp_payment_cash_acknowledgement =
-               lgp_completed_months ÷ 6
+               lgp_completed_months ï¿½ 6
              (LPG cash = accepted norm in India; completed = paid)
 FALLBACK   : 0.50 (LPG not submitted)
 WEIGHT     : 0.01
@@ -538,33 +551,33 @@ WEIGHT     : 0.01
 ????????????????????????????????????????????????????????????????????????
 F-P2-13 | cheque_ecs_bounce_penalty
 ????????????????????????????????????????????????????????????????????????
-MEASURES   : Bounced cheques or ECS/NACH return events — strongest
+MEASURES   : Bounced cheques or ECS/NACH return events ï¿½ strongest
              negative signal in Indian bank statement analysis
 SOURCE     : Bank Statement ? all transaction Description rows
              Pre-computed: bounce_events (from preprocessing)
 FORMULA    : cheque_ecs_bounce_penalty:
-               0 events  ? 1.00  (clean — no bounces)
+               0 events  ? 1.00  (clean ï¿½ no bounces)
                1 event   ? 0.50  (single incident)
                2 events  ? 0.20  (recurring stress)
                3+ events ? 0.00  (severe payment distress)
-FALLBACK   : 0.80 (bank absent — mild positive assumed)
+FALLBACK   : 0.80 (bank absent ï¿½ mild positive assumed)
 WEIGHT     : 0.03
 
 ????????????????????????????????????????????????????????????????????????
 F-P2-14 | ott_subscription_consistency
 ????????????????????????????????????????????????????????????????????????
-MEASURES   : Consistent OTT subscription — discretionary spending
+MEASURES   : Consistent OTT subscription ï¿½ discretionary spending
              discipline (paying for entertainment = above subsistence)
-SOURCE     : OTT Bills ? Platform, Payment Date, Amount (×6)
+SOURCE     : OTT Bills ? Platform, Payment Date, Amount (ï¿½6)
              Bank Statement ? merchant NETFLIX | AMAZON | HOTSTAR |
              DISNEY+ | SONY LIV | JIOCINEMA | PRIME debits
 FORMULA    : If OTT bills submitted < 1: return 0.50 (neutral skip)
              ott_paid_months = count(months with valid OTT bill AND
                (Status=Paid OR bank debit matched))
-             ott_subscription_consistency = ott_paid_months ÷ 6
-NOTE       : Amount not weighted — ?199 Netflix = same signal as ?1499.
+             ott_subscription_consistency = ott_paid_months ï¿½ 6
+NOTE       : Amount not weighted ï¿½ ?199 Netflix = same signal as ?1499.
              Rewards consistency, not spending level.
-FALLBACK   : 0.50 (OTT not submitted — neutral, not penalised)
+FALLBACK   : 0.50 (OTT not submitted ï¿½ neutral, not penalised)
 WEIGHT     : 0.02
 
 ????????????????????????????????????????????????????????????????????????
@@ -574,8 +587,8 @@ MEASURES   : What fraction of debit transactions are pure ATM cash
              withdrawals (high = cash-dominant informal economy)
 SOURCE     : Bank Statement ? Transaction Mode + Description
              Pre-computed: atm_debit_count, total_debit_count
-FORMULA    : atm_ratio = atm_debit_count ÷ total_debit_count
-             atm_withdrawal_ratio = 1.0 ? min(atm_ratio × 2, 1.0)
+FORMULA    : atm_ratio = atm_debit_count ï¿½ total_debit_count
+             atm_withdrawal_ratio = 1.0 ? min(atm_ratio ï¿½ 2, 1.0)
              (>50% ATM debits ? score = 0)
 EXAMPLE    : 12 ATM of 80 total ? ratio=0.15 ? score=1.0?0.30=0.70
 EXAMPLE    : 40 ATM of 60 total ? ratio=0.67 ? score=0.00
@@ -590,11 +603,11 @@ F-P2-16 | eb_consumption_consistency
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Consistency of electricity consumption across 6 months
              (stable residence + regular occupancy pattern)
-SOURCE     : EB Bills ? Units Consumed (kWh) × 6 bills
+SOURCE     : EB Bills ? Units Consumed (kWh) ï¿½ 6 bills
 FORMULA    : units_list = [Units Consumed from each of 6 bills]
              Exclude: 0 values or OCR-failed values
              If len(valid_units) < 3 ? return 0.40 (insufficient data)
-             consumption_cv = std(units_list) ÷ avg(units_list)
+             consumption_cv = std(units_list) ï¿½ avg(units_list)
              eb_consumption_consistency = 1.0 ? min(consumption_cv, 1.0)
 EXAMPLE    : units=[45,52,48,50,47,51] ? cv=0.049 ? score=0.951
 EXAMPLE    : units=[22,95,38,12,78,44] ? cv=0.85 ? score=0.15
@@ -606,7 +619,7 @@ P2 WEIGHT CHECK: 0.19+0.13+0.08+0.05+0.11+0.08+0.06+0.08
 
 
 ?????????????????????????????????????????????????????????????????????????????
-PILLAR 3 — DEBT MANAGEMENT
+PILLAR 3 ï¿½ DEBT MANAGEMENT
 Pillar Weight: 0.15 | Feature Count: 9 | All work types applicable
 ?????????????????????????????????????????????????????????????????????????????
 
@@ -624,7 +637,7 @@ SOURCE     : Bank Statement ? monthly_emi_debit series
              Loan Schedule ? Monthly EMI
 FORMULA    : avg_monthly_emi = avg(monthly_emi_debit[1..n])
              Supplement: if EMI screenshot available, use Monthly EMI Amount
-             emi_ratio = avg_monthly_emi ÷ avg_monthly_income
+             emi_ratio = avg_monthly_emi ï¿½ avg_monthly_income
              emi_to_income_ratio:
                emi_ratio ? 0.20 ? 1.00  (healthy: ?20% of income to debt)
                emi_ratio ? 0.30 ? 0.80
@@ -632,7 +645,7 @@ FORMULA    : avg_monthly_emi = avg(monthly_emi_debit[1..n])
                emi_ratio ? 0.50 ? 0.35
                emi_ratio > 0.50 ? 0.10  (over-leveraged)
              No EMI detected ? 1.00
-FALLBACK   : 0.70 (no EMI data — mild positive)
+FALLBACK   : 0.70 (no EMI data ï¿½ mild positive)
 WEIGHT     : 0.28
 
 ????????????????????????????????????????????????????????????????????????
@@ -659,9 +672,9 @@ MEASURES   : Whether EMI debits occur in every month (no missed payments)
 SOURCE     : Bank Statement ? monthly_emi_debit series
 FORMULA    : If no active loans: return 1.00 (no loans = perfect score)
              months_with_emi = count(months where monthly_emi_debit[m] > 0)
-             emi_payment_regularity = months_with_emi ÷ months_covered
+             emi_payment_regularity = months_with_emi ï¿½ months_covered
 EXAMPLE    : EMI in all 6 months ? 1.00
-EXAMPLE    : EMI missed in 2 months ? 4÷6 = 0.667
+EXAMPLE    : EMI missed in 2 months ? 4ï¿½6 = 0.667
 FALLBACK   : 0.70
 WEIGHT     : 0.15
 
@@ -698,7 +711,7 @@ FORMULA    : Categorise each loan by narration keywords:
                ? purpose_score = 0.30
              loan_purpose_encoded = avg(purpose_score across all loans)
              No loans: return 1.00
-FALLBACK   : 0.60 (unknown purpose — neutral)
+FALLBACK   : 0.60 (unknown purpose ï¿½ neutral)
 WEIGHT     : 0.15
 
 ????????????????????????????????????????????????????????????????????????
@@ -707,10 +720,10 @@ F-P3-06 | total_outstanding_to_income
 MEASURES   : Total debt outstanding vs annual income
 SOURCE     : Loan Schedule ? Loan Amount (outstanding)
              EMI Screenshot ? EMI Duration + Monthly EMI Amount
-FORMULA    : estimated_outstanding = Monthly EMI × remaining months
+FORMULA    : estimated_outstanding = Monthly EMI ï¿½ remaining months
              total_outstanding = sum(estimated_outstanding across all loans)
-             annual_income = avg_monthly_income × 12
-             debt_to_income = total_outstanding ÷ annual_income
+             annual_income = avg_monthly_income ï¿½ 12
+             debt_to_income = total_outstanding ï¿½ annual_income
              total_outstanding_to_income:
                debt_to_income ? 0.5 ? 1.00
                debt_to_income ? 1.0 ? 0.75
@@ -729,10 +742,10 @@ SOURCE     : Bank Statement ? all debit rows
 FORMULA    : unexplained_debit_months = count(months where:
                sum(debits NOT tagged as EMI_DEBIT | UTILITY_DEBIT |
                INSURANCE_DEBIT | SAVINGS_CREDIT | SALARY_DEBIT)
-               > avg_monthly_income × 0.30)
-             hidden_debit_ratio = 1.0 ? (unexplained_debit_months ÷ 6)
+               > avg_monthly_income ï¿½ 0.30)
+             hidden_debit_ratio = 1.0 ? (unexplained_debit_months ï¿½ 6)
              Clamp [0.0, 1.0]
-EXAMPLE    : 2 months with large unexplained debits ? 1.0?(2÷6)=0.667
+EXAMPLE    : 2 months with large unexplained debits ? 1.0?(2ï¿½6)=0.667
 FALLBACK   : 0.60
 WEIGHT     : 0.06
 
@@ -742,7 +755,7 @@ F-P3-08 | emi_screenshot_bank_match
 MEASURES   : Whether EMI screenshot amount matches bank debit
 SOURCE     : EMI Screenshot ? Transaction Amount, Date
              Bank Statement ? debit rows
-FORMULA    : Search bank debits within ±3 days of screenshot date
+FORMULA    : Search bank debits within ï¿½3 days of screenshot date
              for amount matching Transaction Amount within 5%.
                Match found  ? 1.00
                Match absent ? 0.30
@@ -768,7 +781,7 @@ P3 WEIGHT CHECK: 0.28+0.15+0.15+0.05+0.15+0.06+0.06+0.04+0.06 = 1.00 ?
 
 
 ?????????????????????????????????????????????????????????????????????????????
-PILLAR 4 — SAVINGS BEHAVIOUR
+PILLAR 4 ï¿½ SAVINGS BEHAVIOUR
 Pillar Weight: 0.15 | Feature Count: 12 | All work types applicable
 ?????????????????????????????????????????????????????????????????????????????
 
@@ -783,9 +796,9 @@ F-P4-01 | avg_closing_balance_norm
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Average bank closing balance vs state median
 SOURCE     : Bank Statement ? monthly_balance series | ANCHOR
-FORMULA    : avg_closing_balance_norm = avg_closing_balance ÷ (ANCHOR × 3)
+FORMULA    : avg_closing_balance_norm = avg_closing_balance ï¿½ (ANCHOR ï¿½ 3)
              Clamp [0.0, 1.0]
-EXAMPLE    : avg balance ?24,000, ANCHOR=?15,000 ? 24000÷45000 = 0.533
+EXAMPLE    : avg balance ?24,000, ANCHOR=?15,000 ? 24000ï¿½45000 = 0.533
 FALLBACK   : 0.30
 WEIGHT     : 0.20
 
@@ -796,7 +809,7 @@ MEASURES   : Average monthly surplus retained (credit minus debit)
 SOURCE     : Bank Statement ? monthly_credit, monthly_debit
 FORMULA    : monthly_surplus[m] = max(0, monthly_credit[m] ? monthly_debit[m])
              avg_surplus = avg(monthly_surplus)
-             savings_rate = avg_surplus ÷ avg_monthly_income
+             savings_rate = avg_surplus ï¿½ avg_monthly_income
              savings_rate_norm:
                savings_rate ? 0.25 ? 1.00  (saving 25%+ of income)
                savings_rate ? 0.15 ? 0.80
@@ -825,9 +838,9 @@ F-P4-04 | ppf_tenure_norm
 MEASURES   : How long the PPF account has been active
 SOURCE     : PPF Passbook ? Date of Issue
 FORMULA    : months_active = (current_date ? Date of Issue).months
-             ppf_tenure_norm = min(months_active, 180) ÷ 180
+             ppf_tenure_norm = min(months_active, 180) ï¿½ 180
              (180 months = 15 years = PPF maturity ceiling)
-EXAMPLE    : 36 months active ? 36÷180 = 0.20
+EXAMPLE    : 36 months active ? 36ï¿½180 = 0.20
 FALLBACK   : 0.0 (PPF not submitted)
 WEIGHT     : 0.08
 
@@ -837,7 +850,7 @@ F-P4-05 | balance_growth_slope
 MEASURES   : Whether closing balance is trending upward over 6 months
 SOURCE     : Bank Statement ? monthly_balance series
 FORMULA    : slope = linear_regression_slope(monthly_balance series)
-             slope_norm = (slope ÷ avg_closing_balance) + 0.5
+             slope_norm = (slope ï¿½ avg_closing_balance) + 0.5
              Clamp [0.0, 1.0]
 EXAMPLE    : Balance growing ?1,000/month on ?20,000 avg ? 0.05+0.5=0.55
 FALLBACK   : 0.50 (flat balance assumed)
@@ -849,8 +862,8 @@ F-P4-06 | zero_balance_months_penalty (inverted)
 MEASURES   : How often balance hits near-zero (financial stress signal)
 SOURCE     : Bank Statement ? monthly_balance series
 FORMULA    : near_zero_months = count(months where monthly_balance[m]
-               < ANCHOR × 0.10)
-             zero_balance_months_penalty = 1.0 ? (near_zero_months ÷ 6)
+               < ANCHOR ï¿½ 0.10)
+             zero_balance_months_penalty = 1.0 ? (near_zero_months ï¿½ 6)
 EXAMPLE    : 1 near-zero month ? 1.0?0.167 = 0.833
 EXAMPLE    : 4 near-zero months ? 1.0?0.667 = 0.333
 FALLBACK   : 0.50
@@ -865,7 +878,7 @@ SOURCE     : PM-SYM ? Monthly Individual Contribution amount
              Bank Statement ? INSURANCE_DEBIT tagged rows
 FORMULA    : pmsym_debits = count(months where bank INSURANCE_DEBIT
                matches PM-SYM contribution amount within ?5)
-             pmsym_contribution_savings_signal = pmsym_debits ÷ 6
+             pmsym_contribution_savings_signal = pmsym_debits ï¿½ 6
              PM-SYM not submitted ? 0.0 (feature weight redistributed)
 FALLBACK   : 0.0 (PM-SYM absent ? weight redistributed within P4)
 WEIGHT     : 0.07
@@ -875,7 +888,7 @@ F-P4-08 | income_to_balance_multiple
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : How many months of income held as buffer (savings depth)
 SOURCE     : Bank Statement ? avg_closing_balance, avg_monthly_income
-FORMULA    : buffer_months = avg_closing_balance ÷ avg_monthly_income
+FORMULA    : buffer_months = avg_closing_balance ï¿½ avg_monthly_income
              income_to_balance_multiple:
                buffer_months ? 3.0 ? 1.00
                buffer_months ? 2.0 ? 0.80
@@ -893,7 +906,7 @@ SOURCE     : UPI Statement ? UPI_P2P_SENT transactions to known savings
              UPI IDs (Jar, Fi Money, Niyo, Jupiter, Slice piggybank)
 FORMULA    : savings_transfer_months = count(months where any
                UPI_P2P_SENT to savings-tagged counterparty > 0)
-             upi_savings_signal = savings_transfer_months ÷ 6
+             upi_savings_signal = savings_transfer_months ï¿½ 6
 FALLBACK   : 0.30 (UPI not submitted)
 WEIGHT     : 0.03
 
@@ -902,11 +915,11 @@ F-P4-10 | vendor_asset_savings_proxy
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Whether vendor has re-invested earnings (business assets)
 SOURCE     : Udyam ? Enterprise Type (Micro/Small/Medium)
-             Bank Statement ? large one-time debit ? ANCHOR × 2 not
+             Bank Statement ? large one-time debit ? ANCHOR ï¿½ 2 not
              tagged as EMI or utility (suggests equipment purchase)
 FORMULA    : asset_purchase_months = count(months where single debit
-               ? ANCHOR × 2 AND NOT EMI_DEBIT AND NOT UTILITY_DEBIT)
-             vendor_asset_savings_proxy = min(asset_purchase_months, 2) ÷ 2
+               ? ANCHOR ï¿½ 2 AND NOT EMI_DEBIT AND NOT UTILITY_DEBIT)
+             vendor_asset_savings_proxy = min(asset_purchase_months, 2) ï¿½ 2
 APPLICABLE : Vendors / Tradespeople only
 FALLBACK   : 0.50 (neutral skip for other work types)
 WEIGHT     : 0.02
@@ -918,8 +931,8 @@ MEASURES   : Automated SIP / RD debits in bank (formal savings discipline)
 SOURCE     : Bank Statement ? SAVINGS_CREDIT tag (SIP | RD |
              RECURRING DEPOSIT | MUTUAL FUND | ELSS in description)
              Pre-computed: savings_debit_months
-FORMULA    : bank_sip_rd_regularity = savings_debit_months ÷ 6
-EXAMPLE    : SIP debit in 4 of 6 months ? 4÷6 = 0.667
+FORMULA    : bank_sip_rd_regularity = savings_debit_months ï¿½ 6
+EXAMPLE    : SIP debit in 4 of 6 months ? 4ï¿½6 = 0.667
 NOTE       : This is the ONLY feature consuming the SAVINGS_CREDIT tag.
 FALLBACK   : 0.30 (no SIP/RD = no automated savings habit)
 WEIGHT     : 0.05
@@ -927,11 +940,11 @@ WEIGHT     : 0.05
 ????????????????????????????????????????????????????????????????????????
 F-P4-12 | rent_burden_ratio (inverted)
 ????????????????????????????????????????????????????????????????????????
-MEASURES   : Rent as fraction of monthly income — affordability signal
-SOURCE     : Rent Receipts ? Rent Amount (×6)
+MEASURES   : Rent as fraction of monthly income ï¿½ affordability signal
+SOURCE     : Rent Receipts ? Rent Amount (ï¿½6)
              Bank Statement ? avg_monthly_income
 FORMULA    : avg_rent = avg(Rent Amount across 6 receipts)
-             rent_burden = avg_rent ÷ avg_monthly_income
+             rent_burden = avg_rent ï¿½ avg_monthly_income
              rent_burden_ratio:
                rent_burden ? 0.20 ? 1.00  (affordable)
                rent_burden ? 0.30 ? 0.80
@@ -947,7 +960,7 @@ P4 WEIGHT CHECK: 0.20+0.18+0.09+0.08+0.09+0.09+0.07+0.04
 
 
 ?????????????????????????????????????????????????????????????????????????????
-PILLAR 5 — WORK & IDENTITY
+PILLAR 5 ï¿½ WORK & IDENTITY
 Pillar Weight: 0.10 | Feature Count: 18 | Work-type routing active
 ?????????????????????????????????????????????????????????????????????????????
 
@@ -968,9 +981,9 @@ FORMULA    : score components:
                aadhaar_verified = 1.0 else 0.0
                pan_verified = 1.0 else 0.0
                face_score = face_similarity_score (from MobileFaceNet)
-             kyc_completeness = (aadhaar_verified × 0.40) +
-                                 (pan_verified × 0.30) +
-                                 (face_score × 0.30)
+             kyc_completeness = (aadhaar_verified ï¿½ 0.40) +
+                                 (pan_verified ï¿½ 0.30) +
+                                 (face_score ï¿½ 0.30)
 FALLBACK   : 0.0 (if Aadhaar unverified ? BLOCKED before this runs)
 WEIGHT     : 0.10
 
@@ -985,7 +998,7 @@ FORMULA    : face_similarity_score = max(
                similarity(selfie, pan_photo))
              Threshold gate: < 0.70 ? BLOCK (handled before P5)
              Score as-is for P5: Clamp [0.70, 1.00] ? map to [0.0, 1.0]
-             Scaled: (face_similarity_score ? 0.70) ÷ 0.30
+             Scaled: (face_similarity_score ? 0.70) ï¿½ 0.30
 FALLBACK   : 0.0 (if face match not completed)
 WEIGHT     : 0.11
 
@@ -1011,15 +1024,15 @@ MEASURES   : Quality and reputation signal from platform profile
 SOURCE     : Platform Screenshots ? Rating, Acceptance Rate
              Upwork ? Job Success Score (JSS), Badge Tier, ID Verified
 FORMULA    : For Indian platform workers:
-               platform_quality_score = (Rating ÷ 5.0 × 0.60) +
-                                         (Acceptance Rate × 0.40)
+               platform_quality_score = (Rating ï¿½ 5.0 ï¿½ 0.60) +
+                                         (Acceptance Rate ï¿½ 0.40)
              For Upwork:
-               jss_norm = JSS ÷ 100
+               jss_norm = JSS ï¿½ 100
                badge_score = {Top Rated Plus: 1.0, Top Rated: 0.75, None: 0.4}
                id_verified = 1.0 if ID Verified = Yes else 0.7
-               platform_quality_score = (jss_norm × 0.50) +
-                                         (badge_score × 0.30) +
-                                         (id_verified × 0.20)
+               platform_quality_score = (jss_norm ï¿½ 0.50) +
+                                         (badge_score ï¿½ 0.30) +
+                                         (id_verified ï¿½ 0.20)
 APPLICABLE : Platform Workers + Freelancers only
 FALLBACK   : 0.50 (neutral for other work types)
 WEIGHT     : 0.09
@@ -1034,7 +1047,7 @@ SOURCE     : Platform Screenshots ? earliest earnings date
              Upwork ? Total Hours / Hours per Week (estimated tenure)
 FORMULA    : Derive start_date from earliest available work document.
              months_working = (current_date ? start_date).months
-             work_tenure_norm = min(months_working, 36) ÷ 36
+             work_tenure_norm = min(months_working, 36) ï¿½ 36
              (3 years = maximum anchor for normalisation)
 FALLBACK   : 0.30 (short tenure assumed)
 WEIGHT     : 0.09
@@ -1042,13 +1055,13 @@ WEIGHT     : 0.09
 ????????????????????????????????????????????????????????????????????????
 F-P5-06 | total_jobs_or_trips_norm
 ????????????????????????????????????????????????????????????????????????
-MEASURES   : Volume of completed work — experience and activity depth
+MEASURES   : Volume of completed work ï¿½ experience and activity depth
 SOURCE     : Platform Screenshots ? Total Rides / Total Orders
              Upwork ? Total Jobs Completed
 FORMULA    : For platform workers:
-               total_jobs_or_trips_norm = min(Total Rides, 1000) ÷ 1000
+               total_jobs_or_trips_norm = min(Total Rides, 1000) ï¿½ 1000
              For Upwork:
-               total_jobs_or_trips_norm = min(Total Jobs, 100) ÷ 100
+               total_jobs_or_trips_norm = min(Total Jobs, 100) ï¿½ 100
 APPLICABLE : Platform Workers + Freelancers only
 FALLBACK   : 0.40 (neutral for other work types)
 WEIGHT     : 0.07
@@ -1105,14 +1118,14 @@ F-P5-10 | skill_certification_score
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Certified skill level as work quality proxy
 SOURCE     : Skill India Certificate ? NSQF Level, Grade, Course Duration
-FORMULA    : nsqf_norm = NSQF Level ÷ 8  (NSQF goes 1–8)
+FORMULA    : nsqf_norm = NSQF Level ï¿½ 8  (NSQF goes 1ï¿½8)
              grade_score = {A: 1.0, B: 0.75, C: 0.50, D: 0.25, else: 0.40}
-             duration_norm = min(Duration in days, 180) ÷ 180
-             skill_certification_score = (nsqf_norm × 0.50) +
-                                          (grade_score × 0.30) +
-                                          (duration_norm × 0.20)
+             duration_norm = min(Duration in days, 180) ï¿½ 180
+             skill_certification_score = (nsqf_norm ï¿½ 0.50) +
+                                          (grade_score ï¿½ 0.30) +
+                                          (duration_norm ï¿½ 0.20)
              API verified ? score as-is
-             Not verified ? score × 0.70 (document not API-confirmed)
+             Not verified ? score ï¿½ 0.70 (document not API-confirmed)
              Not submitted ? 0.0 (weight redistributed)
 APPLICABLE : Tradespeople primarily; accepted for all work types
 FALLBACK   : 0.0 (not applicable ? weight redistributed within P5)
@@ -1139,12 +1152,12 @@ MEASURES   : Vehicle asset quality (affects earning continuity)
 SOURCE     : RC Book ? Date of Registration, Registration Validity
              Vehicle Insurance ? Vehicle IDV, Bonus Percent
 FORMULA    : vehicle_age_years = (current_date ? Date of Registration).years
-             age_score = max(0, 1.0 ? (vehicle_age_years ÷ 15))
+             age_score = max(0, 1.0 ? (vehicle_age_years ï¿½ 15))
              rc_valid = 1.0 if Registration Validity > current_date else 0.0
              insurance_active = 1.0 if insurance end_date > current_date else 0.0
-             vehicle_condition_score = (age_score × 0.40) +
-                                        (rc_valid × 0.30) +
-                                        (insurance_active × 0.30)
+             vehicle_condition_score = (age_score ï¿½ 0.40) +
+                                        (rc_valid ï¿½ 0.30) +
+                                        (insurance_active ï¿½ 0.30)
 APPLICABLE : Platform Workers (vehicle-based) only
 FALLBACK   : 0.50 (neutral for non-vehicle workers)
 WEIGHT     : 0.04
@@ -1176,7 +1189,7 @@ SOURCE     : UPI Statement ? Counterparty Name / UPI ID (all SENT rows)
 FORMULA    : merchant_categories = count(distinct tag types in
                {UPI_UTILITY_PAYMENT, UPI_EMI_PAYMENT, UPI_GIG_INCOME,
                 UPI_FREELANCE_INCOME, and any merchant category keywords})
-             upi_merchant_diversity_norm = min(merchant_categories, 6) ÷ 6
+             upi_merchant_diversity_norm = min(merchant_categories, 6) ï¿½ 6
 FALLBACK   : 0.40 (UPI not submitted)
 WEIGHT     : 0.02
 
@@ -1202,10 +1215,10 @@ F-P5-16 | freelance_hourly_rate_norm
 MEASURES   : Hourly rate on Upwork as proxy for skill premium
 SOURCE     : Upwork Screenshots ? Hourly Rate
 FORMULA    : If platform_currency = USD:
-               hourly_inr = Hourly Rate × RBI_reference_rate
+               hourly_inr = Hourly Rate ï¿½ RBI_reference_rate
              Else: hourly_inr = Hourly Rate
-             freelance_hourly_rate_norm = min(hourly_inr, ANCHOR × 0.5)
-                                          ÷ (ANCHOR × 0.5)
+             freelance_hourly_rate_norm = min(hourly_inr, ANCHOR ï¿½ 0.5)
+                                          ï¿½ (ANCHOR ï¿½ 0.5)
              Clamp [0.0, 1.0]
 APPLICABLE : Freelancers only
 FALLBACK   : 0.40 (neutral for other work types)
@@ -1232,13 +1245,13 @@ MEASURES   : Applicant age as statistical credit risk band
 SOURCE     : Aadhaar Card ? Date of Birth (confirmed extraction field)
 FORMULA    : age_years = (current_date ? Date of Birth).years
              age_risk_band:
-               age 18–22 ? 0.50  (young, limited income history)
-               age 23–30 ? 0.85  (early career, growing income)
-               age 31–45 ? 1.00  (prime earning age, peak stability)
-               age 46–55 ? 0.80  (stable, approaching wind-down)
-               age 56–60 ? 0.55  (reduced gig work capacity)
-               age 61–65 ? 0.35  (near retirement, high gig exit risk)
-FALLBACK   : 0.65 (age unknown — mild caution)
+               age 18ï¿½22 ? 0.50  (young, limited income history)
+               age 23ï¿½30 ? 0.85  (early career, growing income)
+               age 31ï¿½45 ? 1.00  (prime earning age, peak stability)
+               age 46ï¿½55 ? 0.80  (stable, approaching wind-down)
+               age 56ï¿½60 ? 0.55  (reduced gig work capacity)
+               age 61ï¿½65 ? 0.35  (near retirement, high gig exit risk)
+FALLBACK   : 0.65 (age unknown ï¿½ mild caution)
 FAIRNESS   : Age is a statistical signal ONLY. Must be logged separately
              in fairness audit trail. Cannot be sole basis for decline.
 WEIGHT     : 0.05
@@ -1248,7 +1261,7 @@ P5 WEIGHT CHECK: 0.10+0.11+0.11+0.09+0.09+0.07+0.08+0.05+0.04
 
 
 ?????????????????????????????????????????????????????????????????????????????
-PILLAR 6 — FINANCIAL RESILIENCE
+PILLAR 6 ï¿½ FINANCIAL RESILIENCE
 Pillar Weight: 0.07 | Feature Count: 11 | All work types applicable
 ?????????????????????????????????????????????????????????????????????????????
 
@@ -1264,7 +1277,7 @@ MEASURES   : Active health insurance coverage (top shock risk)
 SOURCE     : Health Insurance ? Policy Expiry Date + Policy Status (API)
 FORMULA    : Policy Expiry > current_date AND API status = Active ? 1.0
              Policy expired ? 0.0 | Not submitted ? 0.0
-FALLBACK   : 0.0 (absence penalised — resilience requires coverage)
+FALLBACK   : 0.0 (absence penalised ï¿½ resilience requires coverage)
 WEIGHT     : 0.18
 
 ????????????????????????????????????????????????????????????????????????
@@ -1272,10 +1285,10 @@ F-P6-02 | health_sum_insured_to_income
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Health coverage amount vs annual income (adequacy)
 SOURCE     : Health Insurance ? Basic Floater Sum Insured | ANCHOR
-FORMULA    : sum_insured_to_annual = Sum Insured ÷ (ANCHOR × 12)
+FORMULA    : sum_insured_to_annual = Sum Insured ï¿½ (ANCHOR ï¿½ 12)
              health_sum_insured_to_income = min(sum_insured_to_annual, 1.0)
-EXAMPLE    : ?3,00,000 insured, ANCHOR=?15,000 ? 300000÷180000 = 1.0 (capped)
-EXAMPLE    : ?50,000 insured ? 50000÷180000 = 0.278
+EXAMPLE    : ?3,00,000 insured, ANCHOR=?15,000 ? 300000ï¿½180000 = 1.0 (capped)
+EXAMPLE    : ?50,000 insured ? 50000ï¿½180000 = 0.278
 FALLBACK   : 0.0 (policy absent)
 WEIGHT     : 0.10
 
@@ -1311,10 +1324,10 @@ SOURCE     : Life Insurance ? Sum Assured
              PMJJBY ? Sum Assured (fixed ?2,00,000)
 FORMULA    : total_life = max(Life Sum Assured if active,
                               PMJJBY ?2,00,000 if pmjjby active)
-             life_sum_assured_norm = min(total_life, ANCHOR × 24)
-                                      ÷ (ANCHOR × 24)
-EXAMPLE    : ?5,00,000 cover, ANCHOR=?15,000 ? 500000÷360000 = 1.0 (capped)
-EXAMPLE    : PMJJBY only ? 200000÷360000 = 0.556
+             life_sum_assured_norm = min(total_life, ANCHOR ï¿½ 24)
+                                      ï¿½ (ANCHOR ï¿½ 24)
+EXAMPLE    : ?5,00,000 cover, ANCHOR=?15,000 ? 500000ï¿½360000 = 1.0 (capped)
+EXAMPLE    : PMJJBY only ? 200000ï¿½360000 = 0.556
 FALLBACK   : 0.0
 WEIGHT     : 0.08
 
@@ -1348,8 +1361,8 @@ F-P6-08 | vehicle_idv_norm
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Vehicle declared value as income-backing asset
 SOURCE     : Vehicle Insurance ? Vehicle IDV | ANCHOR
-FORMULA    : vehicle_idv_norm = min(Vehicle IDV, ANCHOR × 12) ÷ (ANCHOR × 12)
-EXAMPLE    : IDV=?80,000, ANCHOR=?15,000 ? 80000÷180000 = 0.444
+FORMULA    : vehicle_idv_norm = min(Vehicle IDV, ANCHOR ï¿½ 12) ï¿½ (ANCHOR ï¿½ 12)
+EXAMPLE    : IDV=?80,000, ANCHOR=?15,000 ? 80000ï¿½180000 = 0.444
 APPLICABLE : Vehicle workers only
 FALLBACK   : 0.30 (non-vehicle workers)
 WEIGHT     : 0.05
@@ -1359,7 +1372,7 @@ F-P6-09 | avg_balance_to_monthly_income
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Financial buffer depth (months of income in bank)
 SOURCE     : Bank Statement ? avg_closing_balance, avg_monthly_income
-FORMULA    : buffer_months = avg_closing_balance ÷ avg_monthly_income
+FORMULA    : buffer_months = avg_closing_balance ï¿½ avg_monthly_income
              avg_balance_to_monthly_income:
                buffer_months ? 3.0 ? 1.00
                buffer_months ? 2.0 ? 0.80
@@ -1376,10 +1389,10 @@ MEASURES   : Insurance spend as fraction of income (insurance awareness)
 SOURCE     : All insurance premiums across all submitted policies
              Bank Statement ? avg_monthly_income
 FORMULA    : total_annual_premium = sum(all submitted premiums)
-             monthly_premium = total_annual_premium ÷ 12
-             ratio = monthly_premium ÷ avg_monthly_income
+             monthly_premium = total_annual_premium ï¿½ 12
+             ratio = monthly_premium ï¿½ avg_monthly_income
              insurance_premium_to_income_ratio:
-               ratio 0.01–0.08 ? 1.00  (sweet spot)
+               ratio 0.01ï¿½0.08 ? 1.00  (sweet spot)
                ratio > 0.08   ? 0.80  (over-insured or high premium)
                ratio = 0.00   ? 0.10  (no insurance = fragile)
 FALLBACK   : 0.10 (no insurance = fragile)
@@ -1392,14 +1405,14 @@ MEASURES   : Large P2P receipts + cash spikes = financial distress signal
 SOURCE     : UPI Statement ? UPI_P2P_RECEIVED transactions
              Bank Statement ? CASH_DEPOSIT tagged credits
 FORMULA    : large_p2p = count(UPI_P2P_RECEIVED where Amount > ANCHOR)
-             cash_spikes = count(months where CASH_DEPOSIT > ANCHOR × 1.5)
+             cash_spikes = count(months where CASH_DEPOSIT > ANCHOR ï¿½ 1.5)
              emergency_count = large_p2p + cash_spikes
              upi_emergency_signal:
                count = 0 ? 1.00 (no distress signals)
                count = 1 ? 0.70 (possible one-time event)
                count = 2 ? 0.45
                count ? 3 ? 0.20 (recurring financial distress)
-FALLBACK   : 0.70 (UPI not submitted — cannot confirm)
+FALLBACK   : 0.70 (UPI not submitted ï¿½ cannot confirm)
 WEIGHT     : 0.07
 
 P6 WEIGHT CHECK: 0.18+0.10+0.05+0.12+0.08+0.08+0.05+0.05
@@ -1407,7 +1420,7 @@ P6 WEIGHT CHECK: 0.18+0.10+0.05+0.12+0.08+0.08+0.05+0.05
 
 
 ?????????????????????????????????????????????????????????????????????????????
-PILLAR 7 — SOCIAL ACCOUNTABILITY
+PILLAR 7 ï¿½ SOCIAL ACCOUNTABILITY
 Pillar Weight: 0.05 | Feature Count: 10 | All work types applicable
 ?????????????????????????????????????????????????????????????????????????????
 
@@ -1428,7 +1441,7 @@ FORMULA    : scheme_weights = {
              govt_scheme_enrollment_score =
                sum(scheme_weights[s] for each verified scheme)
 EXAMPLE    : eShram + PM-SYM + PMJJBY = 0.25+0.25+0.20 = 0.70
-FALLBACK   : 0.00 (no schemes submitted — P7 weight is only 5%)
+FALLBACK   : 0.00 (no schemes submitted ï¿½ P7 weight is only 5%)
 WEIGHT     : 0.20
 
 ????????????????????????????????????????????????????????????????????????
@@ -1437,7 +1450,7 @@ F-P7-02 | eshram_tenure_norm
 MEASURES   : How long the eShram registration has been active
 SOURCE     : eShram Card ? Date of Registration
 FORMULA    : months_since = (current_date ? Date of Registration).months
-             eshram_tenure_norm = min(months_since, 36) ÷ 36
+             eshram_tenure_norm = min(months_since, 36) ï¿½ 36
 FALLBACK   : 0.0 (eShram not submitted)
 WEIGHT     : 0.12
 
@@ -1449,7 +1462,7 @@ SOURCE     : PM-SYM ? Monthly Individual Contribution
              Bank Statement ? INSURANCE_DEBIT rows
 FORMULA    : pmsym_debits = count(months where bank INSURANCE_DEBIT
                matches PM-SYM amount within ?5)
-             pmsym_contribution_consistency = pmsym_debits ÷ 6
+             pmsym_contribution_consistency = pmsym_debits ï¿½ 6
              Not submitted ? 0.0 (weight redistributed within P7)
 FALLBACK   : 0.0
 WEIGHT     : 0.12
@@ -1500,7 +1513,7 @@ FORMULA    : govt_credit_months = count(months with GOVERNMENT_CREDIT > 0)
              govt_credit_received_binary:
                ? 3 months ? 1.00 (regular beneficiary)
                ? 1 month  ? 0.60 (occasional)
-               0 months   ? 0.30 (not beneficiary — neutral, not penalised)
+               0 months   ? 0.30 (not beneficiary ï¿½ neutral, not penalised)
 FALLBACK   : 0.30
 WEIGHT     : 0.07
 
@@ -1511,7 +1524,7 @@ MEASURES   : Size of active UPI social/peer transaction network
 SOURCE     : UPI Statement ? UPI_P2P_SENT + UPI_P2P_RECEIVED
 FORMULA    : distinct_contacts = count(unique Counterparty UPI IDs
                in P2P sent + received)
-             upi_p2p_network_signal = min(distinct_contacts, 10) ÷ 10
+             upi_p2p_network_signal = min(distinct_contacts, 10) ï¿½ 10
 FALLBACK   : 0.30 (UPI not submitted)
 WEIGHT     : 0.08
 
@@ -1519,10 +1532,10 @@ WEIGHT     : 0.08
 F-P7-09 | mobile_tenure_norm
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Consistency and duration of mobile subscription
-SOURCE     : Mobile Bills ? Mobile Number (×6), earliest Bill Month
+SOURCE     : Mobile Bills ? Mobile Number (ï¿½6), earliest Bill Month
 FORMULA    : If all 6 mobile numbers are identical:
                months_tenure = (current_date ? earliest Bill Month).months
-               mobile_tenure_norm = min(months_tenure, 60) ÷ 60
+               mobile_tenure_norm = min(months_tenure, 60) ï¿½ 60
              If numbers inconsistent across bills ? 0.10
 FALLBACK   : 0.40
 WEIGHT     : 0.07
@@ -1535,10 +1548,10 @@ SOURCE     : Rental Agreement ? Agreement Date (renters)
              Aadhaar back address vs Step 1 address (owners)
 FORMULA    : For renters:
                months_at_address = (current_date ? Agreement Date).months
-               residential_stability_norm = min(months_at_address, 36) ÷ 36
+               residential_stability_norm = min(months_at_address, 36) ï¿½ 36
              For owners (no rental agreement + Aadhaar address matches):
                residential_stability_norm = 1.00
-EXAMPLE    : 18 months at address ? 18÷36 = 0.50
+EXAMPLE    : 18 months at address ? 18ï¿½36 = 0.50
 EXAMPLE    : Property owner with matching address ? 1.00
 FALLBACK   : 0.50 (tenure cannot be determined)
 WEIGHT     : 0.08
@@ -1548,7 +1561,7 @@ P7 WEIGHT CHECK: 0.20+0.12+0.12+0.10+0.08+0.08+0.07+0.08
 
 
 ?????????????????????????????????????????????????????????????????????????????
-PILLAR 8 — TAX COMPLIANCE
+PILLAR 8 ï¿½ TAX COMPLIANCE
 Pillar Weight: 0.03 | Feature Count: 7 | All work types applicable
 ?????????????????????????????????????????????????????????????????????????????
 
@@ -1596,7 +1609,7 @@ F-P8-04 | gross_to_net_itr_ratio
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : Whether user claims deductions (tax awareness signal)
 SOURCE     : ITR ? Gross Total Income, Total Income
-FORMULA    : ratio = Gross Total Income ÷ Total Income
+FORMULA    : ratio = Gross Total Income ï¿½ Total Income
              gross_to_net_itr_ratio:
                ratio ? 1.3 ? 1.00 (significant deductions = tax-savvy)
                ratio ? 1.1 ? 0.75 (some deductions)
@@ -1619,12 +1632,12 @@ WEIGHT     : 0.08
 F-P8-06 | gst_filing_consistency
 ????????????????????????????????????????????????????????????????????????
 MEASURES   : GST return filing regularity and on-time compliance
-SOURCE     : GST Returns ? Status, Date of Filing (×6 months)
+SOURCE     : GST Returns ? Status, Date of Filing (ï¿½6 months)
 FORMULA    : filed_months = count(returns where Status ? "Not Filed")
              on_time_months = count(returns where Date of Filing
                ? 20th of following month)
              gst_filing_consistency =
-               (filed_months ÷ 6 × 0.50) + (on_time_months ÷ 6 × 0.50)
+               (filed_months ï¿½ 6 ï¿½ 0.50) + (on_time_months ï¿½ 6 ï¿½ 0.50)
 APPLICABLE : GST-registered users only
 FALLBACK   : 0.50 (neutral skip for non-GST users)
 WEIGHT     : 0.15
@@ -1658,11 +1671,11 @@ P8 WEIGHT CHECK: 0.20+0.18+0.15+0.12+0.08+0.15+0.12 = 1.00 ?
 
 
 ?????????????????????????????????????????????????????????????????????????????
-SECTION 3 — COMPLETE FEATURE VECTOR ASSEMBLY
+SECTION 3 ï¿½ COMPLETE FEATURE VECTOR ASSEMBLY
 ?????????????????????????????????????????????????????????????????????????????
 
 VECTOR SPECIFICATION:
-  Shape    : (95,) — single user, all features
+  Shape    : (95,) ï¿½ single user, all features
   DType    : Float32
   Range    : [0.0, 1.0] for all indices
   NaN Rule : Any NaN ? replaced with feature-specific FALLBACK before assembly
@@ -1768,17 +1781,17 @@ COMPLETE ORDERED INDEX TABLE:
   93  | F-P8-06     | gst_filing_consistency            | P8
   94  | F-P8-07     | itr_form_type_encoded             | P8
   ----|-------------|-----------------------------------|-------
-  TOTAL FEATURES: 95 (indices 0–94)
+  TOTAL FEATURES: 95 (indices 0ï¿½94)
 
 SHARED FEATURE NOTE:
-  itr_ontime_filing_binary — computed ONCE.
+  itr_ontime_filing_binary ï¿½ computed ONCE.
   Index 22 (F-P2-10) and Index 90 (F-P8-03) hold the SAME value.
   Compute during P2 preprocessing, copy value to P8 slot.
   Do NOT recompute.
 
 
 ?????????????????????????????????????????????????????????????????????????????
-SECTION 4 — RUNTIME WEIGHT REDISTRIBUTION ENGINE
+SECTION 4 ï¿½ RUNTIME WEIGHT REDISTRIBUTION ENGINE
 ?????????????????????????????????????????????????????????????????????????????
 
 PURPOSE:
@@ -1794,7 +1807,7 @@ REDISTRIBUTION ALGORITHM:
     2. removed_weight = sum(weights of non-applicable features)
     3. For each applicable feature f:
        redistributed_weight[f] = base_weight[f] +
-         (base_weight[f] ÷ sum_of_applicable_base_weights) × removed_weight
+         (base_weight[f] ï¿½ sum_of_applicable_base_weights) ï¿½ removed_weight
     4. Verify: sum(redistributed_weight) == 1.00 (assert before scoring)
 
 WORK TYPE RESTRICTION SUMMARY:
@@ -1827,24 +1840,24 @@ REDISTRIBUTION EXAMPLE:
 
 
 ?????????????????????????????????????????????????????????????????????????????
-SECTION 5 — FINAL SCORING ENGINE
+SECTION 5 ï¿½ FINAL SCORING ENGINE
 ?????????????????????????????????????????????????????????????????????????????
 
-STEP 1 — PRE-SCORE HARD BLOCK CHECKS:
+STEP 1 ï¿½ PRE-SCORE HARD BLOCK CHECKS:
   IF aadhaar_verified = false      ? RETURN ERROR "Identity not verified"
   IF face_similarity_score < 0.70  ? RETURN ERROR "Face match failed"
   IF bank_statement_absent = true  ? RETURN ERROR "Bank statement required"
   Only proceed to Step 2 if ALL three checks pass.
 
-STEP 2 — PREPROCESSING:
+STEP 2 ï¿½ PREPROCESSING:
   Execute all Section 2 global preprocessing computations.
   Populate pre-computed variables:
     income_series, monthly_balance, bounce_events,
     atm_debit_count, savings_debit_months, utility_match,
     upi monthly aggregates (if UPI submitted), FX rates.
 
-STEP 3 — COMPUTE ALL 95 FEATURES:
-  Iterate feature vector indices 0–94 in order.
+STEP 3 ï¿½ COMPUTE ALL 95 FEATURES:
+  Iterate feature vector indices 0ï¿½94 in order.
   For each feature:
     a. Apply FALLBACK if source document absent or OCR confidence < 0.85
     b. Compute formula as specified
@@ -1854,114 +1867,114 @@ STEP 3 — COMPUTE ALL 95 FEATURES:
     e. Store result in feature_vector[idx]
   Apply F-P2-07 modifier (premium frequency adjustment) after F-P2-07 computed.
 
-STEP 4 — APPLY RUNTIME WEIGHT REDISTRIBUTION (Section 4 algorithm):
+STEP 4 ï¿½ APPLY RUNTIME WEIGHT REDISTRIBUTION (Section 4 algorithm):
   For each pillar independently.
   Produce redistributed_weights[pillar][feature].
   Assert sum = 1.00 per pillar.
 
-STEP 5 — COMPUTE PILLAR SCORES:
+STEP 5 ï¿½ COMPUTE PILLAR SCORES:
   For each pillar P ? {P1, P2, P3, P4, P5, P6, P7, P8}:
-    pillar_score[P] = ? (feature_vector[f] × redistributed_weight[P][f])
+    pillar_score[P] = ? (feature_vector[f] ï¿½ redistributed_weight[P][f])
                       for all applicable features f in pillar P
   Each pillar_score ? [0.0, 1.0]
 
-STEP 6 — COMPUTE RAW SCORE:
-  raw_score = (pillar_score[P1] × 0.25)
-            + (pillar_score[P2] × 0.20)
-            + (pillar_score[P3] × 0.15)
-            + (pillar_score[P4] × 0.15)
-            + (pillar_score[P5] × 0.10)
-            + (pillar_score[P6] × 0.07)
-            + (pillar_score[P7] × 0.05)
-            + (pillar_score[P8] × 0.03)
+STEP 6 ï¿½ COMPUTE RAW SCORE:
+  raw_score = (pillar_score[P1] ï¿½ 0.25)
+            + (pillar_score[P2] ï¿½ 0.20)
+            + (pillar_score[P3] ï¿½ 0.15)
+            + (pillar_score[P4] ï¿½ 0.15)
+            + (pillar_score[P5] ï¿½ 0.10)
+            + (pillar_score[P6] ï¿½ 0.07)
+            + (pillar_score[P7] ï¿½ 0.05)
+            + (pillar_score[P8] ï¿½ 0.03)
   raw_score ? [0.0, 1.0]
 
-STEP 7 — APPLY DOCUMENT CONFIDENCE MULTIPLIER:
+STEP 7 ï¿½ APPLY DOCUMENT CONFIDENCE MULTIPLIER:
   submitted_steps = count(steps where at least one document was
     successfully verified AND OCR confidence ? 0.85)
   Max possible steps = 8
-  confidence = submitted_steps ÷ 8
+  confidence = submitted_steps ï¿½ 8
   IF confidence < 0.50:
     confidence_penalty = 0.85   (15% penalty for sparse submissions)
   ELSE:
     confidence_penalty = 1.00   (no penalty)
-  adjusted_score = raw_score × confidence_penalty
+  adjusted_score = raw_score ï¿½ confidence_penalty
   Clamp adjusted_score to [0.0, 1.0]
 
-STEP 8 — MAP TO GIGCREDIT SCALE:
-  gigcredit_score = round(300 + (adjusted_score × 600))
+STEP 8 ï¿½ MAP TO GIGCREDIT SCALE:
+  gigcredit_score = round(300 + (adjusted_score ï¿½ 600))
   Minimum possible: 300 | Maximum possible: 900
 
-STEP 9 — ASSIGN RISK BAND:
-  Score 750–900 ? BAND: LOW RISK        ? "Recommended for approval"
-  Score 600–749 ? BAND: MEDIUM RISK     ? "Approve with standard terms"
-  Score 500–599 ? BAND: MODERATE RISK   ? "Approve with enhanced monitoring"
-  Score 400–499 ? BAND: HIGH RISK       ? "Approve with collateral or guarantor"
-  Score 300–399 ? BAND: VERY HIGH RISK  ? "Decline or defer"
+STEP 9 ï¿½ ASSIGN RISK BAND:
+  Score 750ï¿½900 ? BAND: LOW RISK        ? "Recommended for approval"
+  Score 600ï¿½749 ? BAND: MEDIUM RISK     ? "Approve with standard terms"
+  Score 500ï¿½599 ? BAND: MODERATE RISK   ? "Approve with enhanced monitoring"
+  Score 400ï¿½499 ? BAND: HIGH RISK       ? "Approve with collateral or guarantor"
+  Score 300ï¿½399 ? BAND: VERY HIGH RISK  ? "Decline or defer"
 
-STEP 10 — SCORE EXPLAINABILITY OUTPUT:
+STEP 10 ï¿½ SCORE EXPLAINABILITY OUTPUT:
   For each pillar, emit:
     {
       pillar_name:      string,
-      pillar_score:     float (0.0–1.0),
+      pillar_score:     float (0.0ï¿½1.0),
       pillar_weight:    float,
-      weighted_contrib: float (pillar_score × pillar_weight),
+      weighted_contrib: float (pillar_score ï¿½ pillar_weight),
       top_3_features:   [feature_name, value, weight] sorted by
-                         (weight × abs(value ? 0.5)) descending
+                         (weight ï¿½ abs(value ? 0.5)) descending
     }
   Top 3 positive drivers  = features where value > 0.70, sorted by weighted impact
   Top 3 negative drivers  = features where value < 0.40, sorted by weighted impact
   These are returned in the API response for lender dashboard display.
 
-STEP 11 — FAIRNESS AUDIT LOG (mandatory):
+STEP 11 ï¿½ FAIRNESS AUDIT LOG (mandatory):
   Log separately (NOT in score computation):
     age_risk_band value + age_years
     eshram_occupation_match_binary value
-    gender (profile metadata only — NOT a feature, NOT in vector)
+    gender (profile metadata only ï¿½ NOT a feature, NOT in vector)
   Flag if age_risk_band is the sole reason for score < 400.
   This log is written to a separate audit collection in MongoDB.
   It must never influence re-scoring.
 
 
 ?????????????????????????????????????????????????????????????????????????????
-SECTION 6 — COMPLETE FEATURE SUMMARY TABLE
+SECTION 6 ï¿½ COMPLETE FEATURE SUMMARY TABLE
 ?????????????????????????????????????????????????????????????????????????????
 
   Pillar | Name                   | Features | Pillar Wt | UPI Features
   -------|------------------------|----------|-----------|-------------
   P1     | Income Stability       |    13    |   0.25    | F-P1-11
   P2     | Payment Discipline     |    15    |   0.20    | F-P2-03, F-P2-04
-  P3     | Debt Management        |     9    |   0.15    | —
+  P3     | Debt Management        |     9    |   0.15    | ï¿½
   P4     | Savings Behaviour      |    12    |   0.15    | F-P4-09
   P5     | Work & Identity        |    18    |   0.10    | F-P5-14
   P6     | Financial Resilience   |    11    |   0.07    | F-P6-11
   P7     | Social Accountability  |    10    |   0.05    | F-P7-08
-  P8     | Tax Compliance         |     7    |   0.03    | —
+  P8     | Tax Compliance         |     7    |   0.03    | ï¿½
   -------|------------------------|----------|-----------|-------------
   TOTAL  |                        |    95    |   1.00    | 7 UPI features
                                                            across 6 pillars
 
 GAPS CONFIRMED CLOSED:
-  ? Age risk — F-P5-18
-  ? Cheque/ECS bounce — F-P2-13
-  ? Bank SIP/RD savings — F-P4-11
-  ? OTT subscription — F-P2-14
-  ? Residential stability — F-P7-10
-  ? Rent burden — F-P4-12
-  ? ATM cash withdrawal ratio — F-P2-15
-  ? Secondary bank — F-P3-09
-  ? EB consumption consistency — F-P2-16
-  ? P5 weight error (was 1.05) — corrected to 1.00
-  ? F-P2-12 ambiguity — reclassified as modifier on F-P2-07
+  ? Age risk ï¿½ F-P5-18
+  ? Cheque/ECS bounce ï¿½ F-P2-13
+  ? Bank SIP/RD savings ï¿½ F-P4-11
+  ? OTT subscription ï¿½ F-P2-14
+  ? Residential stability ï¿½ F-P7-10
+  ? Rent burden ï¿½ F-P4-12
+  ? ATM cash withdrawal ratio ï¿½ F-P2-15
+  ? Secondary bank ï¿½ F-P3-09
+  ? EB consumption consistency ï¿½ F-P2-16
+  ? P5 weight error (was 1.05) ï¿½ corrected to 1.00
+  ? F-P2-12 ambiguity ï¿½ reclassified as modifier on F-P2-07
   ? UPI integrated across 6 pillars with 7 dedicated features
 
 BLOCKED DATA (never enters any feature or vector):
-  ? Social Category (Udyam) — fairness compliance
-  ? Client Names (Upwork transactions) — privacy compliance
-  ? Gender — profile metadata only, not scored
+  ? Social Category (Udyam) ï¿½ fairness compliance
+  ? Client Names (Upwork transactions) ï¿½ privacy compliance
+  ? Gender ï¿½ profile metadata only, not scored
 
 SHARED FEATURES (computed once, used in multiple pillars):
-  itr_ontime_filing_binary ? IDX 22 (P2) = IDX 90 (P8) — same value
+  itr_ontime_filing_binary ? IDX 22 (P2) = IDX 90 (P8) ï¿½ same value
   avg_monthly_income ? base input for P1, P2, P3, P4, P6 formulas
   avg_closing_balance ? base input for P4, P6 formulas
 
@@ -1974,6 +1987,6 @@ ALL INTRA-PILLAR WEIGHT SUMS:
   P5: 1.00 ?  P6: 1.00 ?  P7: 1.00 ?  P8: 1.00 ?
 
 ?????????????????????????????????????????????????????????????????????????????
-END OF SPECIFICATION — GigCredit Feature Engineering v2.0 FINAL
+END OF SPECIFICATION ï¿½ GigCredit Feature Engineering v2.0 FINAL
 95 Features | 8 Pillars | All Weights Verified | All Gaps Closed
 ?????????????????????????????????????????????????????????????????????????????
