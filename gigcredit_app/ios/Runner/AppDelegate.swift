@@ -6,6 +6,7 @@ import UIKit
   private let channelName = "gigcredit/ai_native"
   private let engineVersion = "ios-runtime-0.2.0"
   private let maxLatencySeconds: TimeInterval = 6
+  private let maxImageBytes = 5 * 1024 * 1024
   private let workerQueue = DispatchQueue(label: "com.gigcredit.ai_native", qos: .userInitiated)
   private let inferenceQueue = DispatchQueue(label: "com.gigcredit.ai_native.inference", qos: .userInitiated, attributes: .concurrent)
   private var modelsLoaded = false
@@ -59,6 +60,9 @@ import UIKit
         else {
           return respondError(result, code: "invalid_input", message: "imageBytes is required and must be non-empty")
         }
+        guard imageBytes.count <= maxImageBytes else {
+          return respondError(result, code: "invalid_input", message: "imageBytes exceeds size limit")
+        }
 
         let confidence = try runWithTimeout {
           self.runOcrInference(imageBytes)
@@ -79,6 +83,9 @@ import UIKit
           !imageBytes.isEmpty
         else {
           return respondError(result, code: "invalid_input", message: "imageBytes is required and must be non-empty")
+        }
+        guard imageBytes.count <= maxImageBytes else {
+          return respondError(result, code: "invalid_input", message: "imageBytes exceeds size limit")
         }
 
         let (label, confidence) = try runWithTimeout {
@@ -102,6 +109,9 @@ import UIKit
           !idBytes.isEmpty
         else {
           return respondError(result, code: "invalid_input", message: "selfieBytes/idBytes are required and must be non-empty")
+        }
+        guard selfieBytes.count <= maxImageBytes, idBytes.count <= maxImageBytes else {
+          return respondError(result, code: "invalid_input", message: "selfieBytes/idBytes exceed size limit")
         }
 
         let similarity = try runWithTimeout {

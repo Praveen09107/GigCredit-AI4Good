@@ -17,6 +17,7 @@ class MainActivity : FlutterActivity() {
     private val channelName = "gigcredit/ai_native"
     private val engineVersion = "android-runtime-0.2.0"
     private val maxLatencyMs = 6000L
+    private val maxImageBytes = 5 * 1024 * 1024
     private val mainHandler = Handler(Looper.getMainLooper())
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
     private val runtimeExecutor: ExecutorService = Executors.newFixedThreadPool(2)
@@ -57,6 +58,9 @@ class MainActivity : FlutterActivity() {
                     if (bytes.isEmpty()) {
                         return respondError(result, "invalid_input", "imageBytes cannot be empty")
                     }
+                    if (bytes.size > maxImageBytes) {
+                        return respondError(result, "invalid_input", "imageBytes exceeds size limit")
+                    }
 
                     val confidence = runWithTimeout { runOcrInference(bytes) }
                     val response = mapOf(
@@ -74,6 +78,9 @@ class MainActivity : FlutterActivity() {
                         ?: return respondError(result, "invalid_input", "imageBytes is required")
                     if (bytes.isEmpty()) {
                         return respondError(result, "invalid_input", "imageBytes cannot be empty")
+                    }
+                    if (bytes.size > maxImageBytes) {
+                        return respondError(result, "invalid_input", "imageBytes exceeds size limit")
                     }
 
                     val (label, confidence) = runWithTimeout { runAuthenticityInference(bytes) }
@@ -97,6 +104,9 @@ class MainActivity : FlutterActivity() {
 
                     if (selfieBytes.isEmpty() || idBytes.isEmpty()) {
                         return respondError(result, "invalid_input", "selfieBytes/idBytes cannot be empty")
+                    }
+                    if (selfieBytes.size > maxImageBytes || idBytes.size > maxImageBytes) {
+                        return respondError(result, "invalid_input", "selfieBytes/idBytes exceed size limit")
                     }
 
                     val similarity = runWithTimeout { runFaceMatchInference(selfieBytes, idBytes) }
