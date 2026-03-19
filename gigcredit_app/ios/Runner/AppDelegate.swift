@@ -11,6 +11,10 @@ import Vision
   private let workerQueue = DispatchQueue(label: "com.gigcredit.ai_native", qos: .userInitiated)
   private let inferenceQueue = DispatchQueue(label: "com.gigcredit.ai_native.inference", qos: .userInitiated, attributes: .concurrent)
   private var modelsLoaded = false
+  private var ocrRuntimeAvailable = false
+  private var tfliteRuntimeAvailable = false
+  private var authenticityModelAvailable = false
+  private var faceModelAvailable = false
 
   override func application(
     _ application: UIApplication,
@@ -47,7 +51,11 @@ import Vision
         respond(result, payload: [
           "ready": modelsLoaded,
           "engineVersion": engineVersion,
-          "modelsLoaded": modelsLoaded
+          "modelsLoaded": modelsLoaded,
+          "ocrRuntimeAvailable": ocrRuntimeAvailable,
+          "tfliteRuntimeAvailable": tfliteRuntimeAvailable,
+          "authenticityModelAvailable": authenticityModelAvailable,
+          "faceModelAvailable": faceModelAvailable
         ])
 
       case "ocr.extractText":
@@ -142,6 +150,28 @@ import Vision
   private func initializeModels() {
     let env = ProcessInfo.processInfo.environment
     modelsLoaded = env["GIGCREDIT_FORCE_MODEL_LOAD_FAIL"] != "1"
+
+    ocrRuntimeAvailable = true
+    tfliteRuntimeAvailable = hasTfliteRuntime()
+    authenticityModelAvailable = tfliteRuntimeAvailable && flutterAssetExists("assets/models/efficientnet_lite0.tflite")
+    faceModelAvailable = tfliteRuntimeAvailable && flutterAssetExists("assets/models/mobilefacenet.tflite")
+  }
+
+  private func hasTfliteRuntime() -> Bool {
+    NSClassFromString("TensorFlowLite.Interpreter") != nil || NSClassFromString("Interpreter") != nil
+  }
+
+  private func flutterAssetExists(_ relativePath: String) -> Bool {
+    let normalized = relativePath.hasPrefix("assets/") ? relativePath : "assets/\(relativePath)"
+    let flutterPath = "flutter_assets/\(normalized)"
+    if let bundlePath = Bundle.main.path(forResource: flutterPath, ofType: nil) {
+      return FileManager.default.fileExists(atPath: bundlePath)
+    }
+    if let resourceURL = Bundle.main.resourceURL {
+      let url = resourceURL.appendingPathComponent(flutterPath)
+      return FileManager.default.fileExists(atPath: url.path)
+    }
+    return false
   }
 
   private func runWithTimeout<T>(_ block: @escaping () throws -> T) throws -> T {

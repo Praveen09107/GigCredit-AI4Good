@@ -4,6 +4,38 @@ import 'package:flutter/services.dart';
 
 import 'ai_interfaces.dart';
 
+class NativeRuntimeHealth {
+  const NativeRuntimeHealth({
+    required this.ready,
+    required this.engineVersion,
+    required this.modelsLoaded,
+    required this.fetchedAt,
+    required this.ocrRuntimeAvailable,
+    required this.tfliteRuntimeAvailable,
+    required this.authenticityModelAvailable,
+    required this.faceModelAvailable,
+  });
+
+  final bool ready;
+  final String engineVersion;
+  final bool modelsLoaded;
+  final DateTime fetchedAt;
+  final bool? ocrRuntimeAvailable;
+  final bool? tfliteRuntimeAvailable;
+  final bool? authenticityModelAvailable;
+  final bool? faceModelAvailable;
+
+  bool get supportsOcr => ready && (ocrRuntimeAvailable ?? true);
+
+  bool get supportsAuthenticity =>
+      ready &&
+      (tfliteRuntimeAvailable ?? true) &&
+      (authenticityModelAvailable ?? true);
+
+  bool get supportsFaceMatch =>
+      ready && (tfliteRuntimeAvailable ?? true) && (faceModelAvailable ?? true);
+}
+
 class NativeBridgeException implements Exception {
   const NativeBridgeException(this.code, this.message);
 
@@ -19,19 +51,49 @@ class NativeAiBridge {
       : _channel = channel ?? const MethodChannel(_channelName);
 
   static const String _channelName = 'gigcredit/ai_native';
+  static const Duration _healthTtl = Duration(seconds: 30);
   final MethodChannel _channel;
+  NativeRuntimeHealth? _healthCache;
+  DateTime? _healthFetchedAt;
 
   Future<bool> isAvailable() async {
     try {
-      final payload = await _invoke<Map<dynamic, dynamic>>(
-        method: 'ai.health',
-        arguments: const {},
-        timeout: const Duration(seconds: 2),
-      );
-      return payload['ready'] == true;
+      final health = await getHealth();
+      return health.ready;
     } on NativeBridgeException {
       return false;
     }
+  }
+
+  Future<NativeRuntimeHealth> getHealth({bool forceRefresh = false}) async {
+    final now = DateTime.now();
+    if (!forceRefresh &&
+        _healthCache != null &&
+        _healthFetchedAt != null &&
+        now.difference(_healthFetchedAt!) <= _healthTtl) {
+      return _healthCache!;
+    }
+
+    final payload = await _invoke<Map<dynamic, dynamic>>(
+      method: 'ai.health',
+      arguments: const {},
+      timeout: const Duration(seconds: 2),
+    );
+
+    final health = NativeRuntimeHealth(
+      ready: payload['ready'] == true,
+      engineVersion: (payload['engineVersion'] ?? '').toString(),
+      modelsLoaded: payload['modelsLoaded'] == true,
+      fetchedAt: now,
+      ocrRuntimeAvailable: _boolOrNull(payload['ocrRuntimeAvailable']),
+      tfliteRuntimeAvailable: _boolOrNull(payload['tfliteRuntimeAvailable']),
+      authenticityModelAvailable: _boolOrNull(payload['authenticityModelAvailable']),
+      faceModelAvailable: _boolOrNull(payload['faceModelAvailable']),
+    );
+
+    _healthCache = health;
+    _healthFetchedAt = now;
+    return health;
   }
 
   Future<OcrResult> extractText(
@@ -111,5 +173,12 @@ class NativeAiBridge {
       return AuthenticityLabel.edited;
     }
     return AuthenticityLabel.suspicious;
+  }
+
+  static bool? _boolOrNull(Object? value) {
+    if (value is bool) {
+      return value;
+    }
+    return null;
   }
 }

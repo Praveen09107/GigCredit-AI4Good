@@ -93,6 +93,40 @@ class BackendContractSmokeTests(unittest.TestCase):
         self.assertIn('data', payload)
         self.assertIn('trace_id', payload)
 
+    def test_verify_alias_endpoint_accepts_signed_request(self):
+        mocked = ApiResponse(
+            status='FOUND',
+            data={'pan_number': 'ABCDE1234F', 'full_name': 'RAVI KUMAR'},
+            error=None,
+            trace_id='trace-pan-alias-success',
+        )
+
+        with patch('app.routers.verify.gov_service.verify_pan', new=AsyncMock(return_value=mocked)):
+            response = self._post_signed('/verify/pan', {'identifier': 'ABCDE1234F'})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['status'], 'FOUND')
+        self.assertIn('data', payload)
+        self.assertIn('trace_id', payload)
+
+    def test_verify_aadhaar_alias_endpoint_accepts_signed_request(self):
+        mocked = ApiResponse(
+            status='FOUND',
+            data={'aadhaar_last4': '4123', 'full_name': 'RAVI KUMAR'},
+            error=None,
+            trace_id='trace-aadhaar-alias-success',
+        )
+
+        with patch('app.routers.verify.gov_service.verify_aadhaar', new=AsyncMock(return_value=mocked)):
+            response = self._post_signed('/verify/aadhaar', {'identifier': 'XXXX4123'})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['status'], 'FOUND')
+        self.assertIn('data', payload)
+        self.assertIn('trace_id', payload)
+
     def test_verify_pan_rejects_replay_timestamp(self):
         old_timestamp = int((time.time() - 900) * 1000)
         body_bytes = json.dumps({'identifier': 'ABCDE1234F'}, separators=(',', ':')).encode('utf-8')

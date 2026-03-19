@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'app_router.dart';
 
 void main() {
-  runApp(const GigCreditApp());
+  runApp(const ProviderScope(child: GigCreditApp()));
 }
 
 class GigCreditApp extends StatelessWidget {
@@ -12,23 +15,11 @@ class GigCreditApp extends StatelessWidget {
     return MaterialApp(
       title: 'GigCredit',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E88E5)),
         useMaterial3: true,
       ),
-      home: const _PlaceholderHome(),
-    );
-  }
-}
-
-class _PlaceholderHome extends StatelessWidget {
-  const _PlaceholderHome();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('GigCredit app skeleton — wire routing & state next.'),
-      ),
+      initialRoute: AppRouter.initialRoute,
+      onGenerateRoute: AppRouter.routeFactory,
     );
   }
 }

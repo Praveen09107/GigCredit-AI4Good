@@ -1,8 +1,12 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import '../models/enums/document_type.dart';
 import 'ai_native_bridge.dart';
 import 'ai_interfaces.dart';
+import 'secure_cleanup_policy.dart';
+import 'transaction_engine.dart';
+import 'verification_validation_engine.dart';
 
 class NativeChannelOcrEngine implements OcrEngine {
   const NativeChannelOcrEngine({required this.bridge, required this.fallback});
@@ -12,6 +16,15 @@ class NativeChannelOcrEngine implements OcrEngine {
 
   @override
   Future<OcrResult> extractText(List<int> imageBytes) async {
+    try {
+      final health = await bridge.getHealth();
+      if (!health.supportsOcr) {
+        return fallback.extractText(imageBytes);
+      }
+    } on NativeBridgeException {
+      return fallback.extractText(imageBytes);
+    }
+
     try {
       return await bridge.extractText(
         imageBytes,
@@ -40,6 +53,15 @@ class NativeChannelAuthenticityDetector implements AuthenticityDetector {
   @override
   Future<AuthenticityResult> detect(List<int> imageBytes) async {
     try {
+      final health = await bridge.getHealth();
+      if (!health.supportsAuthenticity) {
+        return fallback.detect(imageBytes);
+      }
+    } on NativeBridgeException {
+      return fallback.detect(imageBytes);
+    }
+
+    try {
       return await bridge.detectAuthenticity(imageBytes);
     } on NativeBridgeException {
       return fallback.detect(imageBytes);
@@ -61,6 +83,15 @@ class NativeChannelFaceVerifier implements FaceVerifier {
     List<int> selfieBytes,
     List<int> idBytes,
   ) async {
+    try {
+      final health = await bridge.getHealth();
+      if (!health.supportsFaceMatch) {
+        return fallback.matchFaces(selfieBytes, idBytes);
+      }
+    } on NativeBridgeException {
+      return fallback.matchFaces(selfieBytes, idBytes);
+    }
+
     try {
       return await bridge.matchFaces(selfieBytes, idBytes);
     } on NativeBridgeException {
@@ -141,10 +172,16 @@ class NativeDocumentProcessor implements DocumentProcessor {
   const NativeDocumentProcessor({
     required this.ocrEngine,
     required this.authenticityDetector,
+    this.validationEngine = const VerificationValidationEngine(),
+    this.transactionEngine = const TransactionEngine(),
+    this.cleanupPolicy = const SecureCleanupPolicy(),
   });
 
   final OcrEngine ocrEngine;
   final AuthenticityDetector authenticityDetector;
+  final VerificationValidationEngine validationEngine;
+  final TransactionEngine transactionEngine;
+  final SecureCleanupPolicy cleanupPolicy;
 
   factory NativeDocumentProcessor.withDefaults() {
     const fallbackOcr = HeuristicOcrEngine();
@@ -167,15 +204,69 @@ class NativeDocumentProcessor implements DocumentProcessor {
     required DocumentType documentType,
     required List<int> imageBytes,
   }) async {
+    NativeRuntimeHealth? nativeHealth;
+    try {
+      nativeHealth = await (ocrEngine is NativeChannelOcrEngine
+          ? (ocrEngine as NativeChannelOcrEngine).bridge.getHealth()
+          : null);
+    } on NativeBridgeException {
+      nativeHealth = null;
+    }
+
     final authenticity = await authenticityDetector.detect(imageBytes);
     final ocr = await ocrEngine.extractText(imageBytes);
 
     final fields = _extractFields(documentType, ocr.rawText, imageBytes);
+    final validation = validationEngine.run(
+      documentType: documentType,
+      extractedFields: fields,
+    );
+
+    final metadata = <String, String>{
+      'authenticity_label': authenticity.label.name,
+      'authenticity_confidence': authenticity.confidence.toStringAsFixed(3),
+      'ocr_confidence': ocr.confidence.toStringAsFixed(3),
+      'validation_passed': validation.passed.toString(),
+      'validation_issue_count': validation.issues.length.toString(),
+      'native_runtime_ready': (nativeHealth?.ready ?? false).toString(),
+      'native_engine_version': nativeHealth?.engineVersion ?? 'unavailable',
+      'native_supports_ocr': (nativeHealth?.supportsOcr ?? false).toString(),
+      'native_supports_authenticity':
+          (nativeHealth?.supportsAuthenticity ?? false).toString(),
+      'native_supports_face_match':
+          (nativeHealth?.supportsFaceMatch ?? false).toString(),
+    };
+
+    if (documentType == DocumentType.bankStatement) {
+      final txResult = transactionEngine.processBankStatementOcr(ocr.rawText);
+      metadata['transaction_count'] = txResult.transactions.length.toString();
+      metadata['active_emi_count'] = txResult.emiProfile.activeEmiCount.toString();
+      metadata['total_monthly_emi'] = txResult.emiProfile.totalMonthlyEmi.toStringAsFixed(2);
+      metadata['utility_debit_count'] = txResult.utilityDebitCount.toString();
+      metadata['insurance_debit_count'] = txResult.insuranceDebitCount.toString();
+      fields['bank_transactions_csv'] = txResult.csv;
+    }
+
     return ProcessedDocument(
       documentType: documentType,
       ocr: ocr,
       authenticity: authenticity,
       fields: fields,
+      validation: validation,
+      metadata: metadata,
+    );
+  }
+
+  Future<CleanupReport> secureCleanup({
+    required List<String> rawArtifactPaths,
+    List<List<int>> sensitiveBuffers = const <List<int>>[],
+  }) {
+    final buffers = sensitiveBuffers
+        .map((value) => value is Uint8List ? value : Uint8List.fromList(value))
+        .toList(growable: false);
+    return cleanupPolicy.cleanup(
+      rawArtifactPaths: rawArtifactPaths,
+      inMemoryBuffers: buffers,
     );
   }
 

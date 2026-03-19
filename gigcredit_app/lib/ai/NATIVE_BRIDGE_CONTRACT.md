@@ -5,21 +5,33 @@ Channel name: `gigcredit/ai_native`
 ## Methods
 
 ### `ai.health`
+
 Request payload:
+
 ```json
 {}
 ```
+
 Response payload:
+
 ```json
 {
   "ready": true,
   "engineVersion": "string",
-  "modelsLoaded": true
+  "modelsLoaded": true,
+  "ocrRuntimeAvailable": true,
+  "tfliteRuntimeAvailable": true,
+  "authenticityModelAvailable": true,
+  "faceModelAvailable": true
 }
 ```
 
+Capability flags may be absent on older runtimes; Dart callers should treat absent flags as unknown and preserve backward compatibility.
+
 ### `ocr.extractText`
+
 Request payload:
+
 ```json
 {
   "imageBytes": [0, 1, 2],
@@ -38,7 +50,9 @@ Request payload:
   }
 }
 ```
+
 Response payload:
+
 ```json
 {
   "rawText": "string",
@@ -49,13 +63,17 @@ Response payload:
 `meta` is optional but strongly recommended for production OCR quality tuning and diagnostics.
 
 ### `authenticity.detect`
+
 Request payload:
+
 ```json
 {
   "imageBytes": [0, 1, 2]
 }
 ```
+
 Response payload:
+
 ```json
 {
   "label": "real|suspicious|edited",
@@ -64,14 +82,18 @@ Response payload:
 ```
 
 ### `face.match`
+
 Request payload:
+
 ```json
 {
   "selfieBytes": [0, 1, 2],
   "idBytes": [0, 1, 2]
 }
 ```
+
 Response payload:
+
 ```json
 {
   "similarity": 0.0,
@@ -82,6 +104,7 @@ Response payload:
 ## Error codes
 
 Method handlers should throw platform errors using these codes:
+
 - `model_load_failed`
 - `inference_failed`
 - `invalid_input`
