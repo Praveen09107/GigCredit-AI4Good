@@ -39,3 +39,4 @@ sample inputs/
 
 # Generated plugin Java stubs in Kotlin app setup
 gigcredit_app/android/app/src/main/java/
+gigcredit_app/pubspec.lock
