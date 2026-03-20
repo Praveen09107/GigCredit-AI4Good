@@ -4,6 +4,9 @@ Last Updated: 2026-03-20
 Owner: Release Lead
 Scope: Final Dev A deliverables required for production-grade closure
 
+## Related execution plans
+- `planning/32_DEV_A_SCORING_TFLITE_EXPORT_AND_PARITY_EXECUTION_PLAN.md` (use if scoring path is migrated to TFLite)
+
 ## How to use
 - Mark each item as PASS, FAIL, or BLOCKED.
 - Attach evidence links for every PASS item.

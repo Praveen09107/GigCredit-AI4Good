@@ -7,6 +7,9 @@ Status summary:
 - Resolved: Flutter analyze/full test evidence
 - Remaining blockers require external assets/environment
 
+Related plan:
+- `planning/32_DEV_A_SCORING_TFLITE_EXPORT_AND_PARITY_EXECUTION_PLAN.md` (Dev A plan for scoring-model TFLite export + contract + parity evidence)
+
 ## Blocker 1: Runtime model binaries missing
 
 Required files (exact names):

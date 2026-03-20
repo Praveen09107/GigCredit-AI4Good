@@ -111,6 +111,32 @@ First run behavior:
 Evidence bundle output:
 - `offline_ml/data/production_handoff_bundle.json`
 
+## Scoring model TFLite export (Dev A)
+
+Export the main scoring meta-learner to a deployable `.tflite` artifact:
+
+```bash
+python -m offline_ml.src.export_scoring_to_tflite
+```
+
+Default outputs:
+- `gigcredit_app/assets/models/scoring_model_v1.tflite`
+- `offline_ml/data/scoring_tflite_contract.json`
+- `offline_ml/data/scoring_tflite_export_report.json`
+
+Validate TFLite parity against the reference scorer and golden pack:
+
+```bash
+python -m offline_ml.src.validate_scoring_tflite_parity
+```
+
+Parity output:
+- `offline_ml/data/scoring_tflite_parity_report.json`
+
+Note:
+- TFLite export requires TensorFlow in a supported Python runtime environment.
+- If TensorFlow is unavailable, the exporter fails fast with guidance.
+
 This is the skeleton structure; implement logic following
 `planning/1_SCORING_ENGINE_SPEC_FREEZE.md` and
 `planning/4_IMPLEMENTATION_PLAN_20_PHASES.md`.
