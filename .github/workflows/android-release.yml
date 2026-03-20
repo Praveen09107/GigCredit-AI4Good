@@ -3,9 +3,17 @@ name: Android Release APK
 on:
   workflow_dispatch:
 
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g -Dkotlin.daemon.jvm.options=-Xmx2g
+      JAVA_TOOL_OPTIONS: -Xmx4g
     defaults:
       run:
         working-directory: gigcredit_app
@@ -28,11 +36,18 @@ jobs:
       - name: Flutter Pub Get
         run: flutter pub get
 
-      - name: Build Release APK
-        run: flutter build apk --release --target-platform android-arm64
+      - name: Build Release APK (Attempt 1)
+        id: build_apk
+        continue-on-error: true
+        run: flutter build apk --release --target-platform android-arm64 --no-shrink
+
+      - name: Build Release APK (Retry Once)
+        if: steps.build_apk.outcome == 'failure'
+        run: flutter build apk --release --target-platform android-arm64 --no-shrink
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: gigcredit_app/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
