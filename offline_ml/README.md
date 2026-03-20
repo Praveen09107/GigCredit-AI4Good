@@ -56,6 +56,61 @@ Generated targets:
 - `gigcredit_app/assets/constants/*.json`
 - `gigcredit_app/assets/constants/artifact_manifest.json`
 
+## Runtime model artifact packaging (production handoff)
+
+Validate runtime model files and write runtime metadata/checksums into app manifest:
+
+```bash
+# 1) copy template and fill real metadata values
+copy offline_ml/data/runtime_model_contract.template.json offline_ml/data/runtime_model_contract.json
+
+# 2) package runtime model entries into manifest
+python -m offline_ml.src.package_runtime_models_for_app
+```
+
+Defaults:
+- required runtime files: `efficientnet_lite0.tflite`, `mobilefacenet.tflite`
+- model directory: `gigcredit_app/assets/models`
+- manifest target: `gigcredit_app/assets/constants/artifact_manifest.json`
+- report output: `offline_ml/data/runtime_model_handoff_report.json`
+
+For additional required artifacts (for example Paddle OCR runtime files), repeat `--require-artifact`:
+
+```bash
+python -m offline_ml.src.package_runtime_models_for_app \
+	--require-artifact efficientnet_lite0.tflite \
+	--require-artifact mobilefacenet.tflite \
+	--require-artifact ppocr_det.onnx \
+	--require-artifact ppocr_rec.onnx
+```
+
+## Strict production readiness gate
+
+Fail fast unless all of these are green:
+- model evaluation production gate = PASS
+- stress gate = PASS
+- runtime model handoff report = PASS
+- required runtime models exist in app manifest runtime block
+
+```bash
+python -m offline_ml.src.check_production_readiness
+```
+
+## One-command production handoff workflow
+
+Run full handoff orchestration (train/evaluate/package/gate/evidence):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File offline_ml/scripts/run_production_handoff.ps1
+```
+
+First run behavior:
+- if `offline_ml/data/runtime_model_contract.json` is missing, script copies template and stops
+- fill real metadata values, then rerun script
+
+Evidence bundle output:
+- `offline_ml/data/production_handoff_bundle.json`
+
 This is the skeleton structure; implement logic following
 `planning/1_SCORING_ENGINE_SPEC_FREEZE.md` and
 `planning/4_IMPLEMENTATION_PLAN_20_PHASES.md`.

@@ -25,6 +25,12 @@ from .config import (
 )
 
 
+SCORE_BLOCK_START = 0
+SCORE_BLOCK_END = 8
+ONEHOT_BLOCK_START = 8
+ONEHOT_BLOCK_END = 12
+
+
 def _load_models() -> dict[str, object]:
     models: dict[str, object] = {}
     for key in ("p1", "p2", "p3", "p4", "p6"):
@@ -66,6 +72,50 @@ def _build_meta_x(p_adjusted: np.ndarray, work_type: pd.Series) -> np.ndarray:
     return meta_x
 
 
+def _split_meta_blocks(meta_x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    scores = meta_x[:, SCORE_BLOCK_START:SCORE_BLOCK_END]
+    onehot = meta_x[:, ONEHOT_BLOCK_START:ONEHOT_BLOCK_END]
+    return scores, onehot
+
+
+def _rebuild_meta_x(scores: np.ndarray, onehot: np.ndarray) -> np.ndarray:
+    interactions = []
+    for pillar_idx in range(8):
+        for work_idx in range(4):
+            interactions.append(scores[:, pillar_idx] * onehot[:, work_idx])
+    rebuilt = np.hstack([scores, onehot, np.column_stack(interactions)])
+    if rebuilt.shape[1] != META_INPUT_LENGTH:
+        raise RuntimeError(f"Expected {META_INPUT_LENGTH} meta features, got {rebuilt.shape[1]}")
+    return rebuilt
+
+
+def _augment_meta_training_data(meta_x: np.ndarray, y: np.ndarray, seed: int) -> tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(seed)
+    scores, onehot = _split_meta_blocks(meta_x)
+    row_neutral = np.repeat(scores.mean(axis=1, keepdims=True), scores.shape[1], axis=1)
+    score_std = np.clip(scores.std(axis=0, keepdims=True), 1e-3, None)
+
+    noise_1pct = np.clip(scores + rng.normal(0.0, 0.01 * score_std, size=scores.shape), 0.0, 1.0)
+    noise_2pct = np.clip(scores + rng.normal(0.0, 0.02 * score_std, size=scores.shape), 0.0, 1.0)
+    noise_3pct = np.clip(scores + rng.normal(0.0, 0.03 * score_std, size=scores.shape), 0.0, 1.0)
+    dropout_5pct = np.where(rng.random(size=scores.shape) < 0.05, row_neutral, scores)
+    dropout_10pct = np.where(rng.random(size=scores.shape) < 0.10, row_neutral, scores)
+    downshift_5pct = np.clip(scores * 0.95, 0.0, 1.0)
+
+    augmented_sets = [
+        scores,
+        noise_1pct,
+        noise_2pct,
+        noise_3pct,
+        dropout_5pct,
+        dropout_10pct,
+        downshift_5pct,
+    ]
+    x_aug = np.vstack([_rebuild_meta_x(block, onehot) for block in augmented_sets])
+    y_aug = np.concatenate([y for _ in augmented_sets])
+    return x_aug, y_aug
+
+
 def _binary_labels(final_label: np.ndarray, quantile: float) -> tuple[np.ndarray, float]:
     threshold = float(np.quantile(final_label, quantile))
     y = (final_label >= threshold).astype(int)
@@ -99,7 +149,6 @@ def main() -> None:
     final_label = df["final_label"].to_numpy(dtype=float)
 
     scaler = StandardScaler()
-    meta_x_scaled = scaler.fit_transform(meta_x)
 
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
     quantile_candidates = [0.40, 0.45, 0.50, 0.55, 0.60, 0.65]
@@ -130,10 +179,12 @@ def main() -> None:
                         class_weight=candidate_weight,
                         solver=candidate_solver,
                     )
+                    x_candidate_aug, y_candidate_aug = _augment_meta_training_data(meta_x, y_candidate, RANDOM_SEED)
+                    x_candidate_scaled = scaler.fit_transform(x_candidate_aug)
                     candidate_cv = cross_val_score(
                         candidate_model,
-                        meta_x_scaled,
-                        y_candidate,
+                        x_candidate_scaled,
+                        y_candidate_aug,
                         cv=cv,
                         scoring="roc_auc",
                     )
@@ -159,9 +210,12 @@ def main() -> None:
         solver=best_solver,
     )
 
-    model.fit(meta_x_scaled, y_best)
-    pred = model.predict_proba(meta_x_scaled)[:, 1]
-    train_auc = float(roc_auc_score(y_best, pred))
+    x_best_aug, y_best_aug = _augment_meta_training_data(meta_x, y_best, RANDOM_SEED)
+    x_best_scaled = scaler.fit_transform(x_best_aug)
+
+    model.fit(x_best_scaled, y_best_aug)
+    pred = model.predict_proba(x_best_scaled)[:, 1]
+    train_auc = float(roc_auc_score(y_best_aug, pred))
 
     coef = model.coef_[0].tolist()
     if len(coef) != META_INPUT_LENGTH:
@@ -189,6 +243,8 @@ def main() -> None:
         "cv_auc_mean": best_cv_auc,
         "cv_auc_folds": best_cv_auc_folds,
         "train_auc": train_auc,
+        "robust_meta_augmentation": True,
+        "train_rows_after_augmentation": int(len(y_best_aug)),
     }
     with META_TRAINING_REPORT_PATH.open("w", encoding="utf-8") as file:
         json.dump(report, file, indent=2)

@@ -23,15 +23,31 @@ def _assert_model_constraints(name: str, model: object) -> None:
 
 
 def _wrap_dart(name: str, body: str) -> str:
+    expression = _to_expression(body)
     fn = f"score{name.upper()}"
     return (
         "double clamp01(double value) => value < 0.0 ? 0.0 : (value > 1.0 ? 1.0 : value);\n\n"
         f"double {fn}(List<double> features) {{\n"
         "  final value = "
-        f"{body};\n"
+        f"{expression};\n"
         "  return clamp01(value);\n"
         "}\n"
     )
+
+
+def _to_expression(body: str) -> str:
+    trimmed = body.strip()
+    marker = "double score(List<double> input)"
+    if marker not in trimmed:
+        return trimmed
+
+    transformed = trimmed.replace(marker, "((List<double> input)", 1)
+    if transformed.endswith(";"):
+        transformed = transformed[:-1]
+
+    if transformed.endswith("}") and not transformed.endswith("})(features)"):
+        transformed = transformed + ")(features)"
+    return transformed
 
 
 def main() -> None:

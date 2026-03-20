@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-19T07:54:09.238606+00:00",
+  "generated_at": "2026-03-20T04:44:15.230585+00:00",
   "generator": "offline_ml.src.package_artifacts_for_app",
   "artifacts": {
     "scorer_p1": {
@@ -35,8 +35,8 @@
     "meta_coefficients": {
       "source": "D:\\Program Files\\GigCredit\\offline_ml\\data\\meta_coefficients.json",
       "target": "D:\\Program Files\\GigCredit\\gigcredit_app\\assets\\constants\\meta_coefficients.json",
-      "sha256": "76d5d9049f505c7d9dd819d6df4c5c0b7154becf3cff24128823f60241e5f12e",
-      "size_bytes": 3473
+      "sha256": "326daa5e64f191deb36cd02a22b0f42c03ad718c6a638e0ee8525673c2f322ab",
+      "size_bytes": 3479
     },
     "shap_lookup": {
       "source": "D:\\Program Files\\GigCredit\\offline_ml\\data\\shap_lookup.json",
