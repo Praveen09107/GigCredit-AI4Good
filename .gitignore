@@ -12,3 +12,30 @@ Thumbs.db
 offline_ml/data/
 offline_ml/models/
 .venv/
+
+# Local crash/log artifacts
+hs_err_pid*.log
+replay_pid*.log
+*.log
+
+# Local analysis/output folders
+temp/
+tools/
+
+# Flutter generated/build artifacts in app workspace
+gigcredit_app/.dart_tool/
+gigcredit_app/.flutter-plugins-dependencies
+gigcredit_app/build/
+gigcredit_app/android/local.properties
+gigcredit_app/ios/Flutter/
+gigcredit_app/ios/Runner/GeneratedPluginRegistrant.h
+gigcredit_app/ios/Runner/GeneratedPluginRegistrant.m
+
+# Local sample dump archive
+sample inputs ZIP.zip
+
+# Local raw sample dumps (keep curated tracked files as-is)
+sample inputs/
+
+# Generated plugin Java stubs in Kotlin app setup
+gigcredit_app/android/app/src/main/java/
