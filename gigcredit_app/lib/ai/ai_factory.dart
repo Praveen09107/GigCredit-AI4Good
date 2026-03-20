@@ -1,6 +1,7 @@
 import 'ai_interfaces.dart';
 import 'ai_native_bridge.dart';
-import 'mock_document_processor.dart';
+import 'ocr_engine.dart';
+import '../config/app_mode.dart';
 import 'native_document_processor.dart';
 
 enum AiRuntimeMode {
@@ -12,42 +13,34 @@ enum AiRuntimeMode {
 class AiFactory {
   const AiFactory._();
 
+  static const bool _requireProductionReadiness = AppMode.requireProductionReadiness;
+
   static DocumentProcessor documentProcessor({
     AiRuntimeMode mode = AiRuntimeMode.nativeBridge,
   }) {
-    switch (mode) {
-      case AiRuntimeMode.mock:
-        return const MockDocumentProcessor();
-      case AiRuntimeMode.heuristic:
-        return const NativeDocumentProcessor(
-          ocrEngine: HeuristicOcrEngine(),
-          authenticityDetector: HeuristicAuthenticityDetector(),
-        );
-      case AiRuntimeMode.nativeBridge:
-        return NativeDocumentProcessor.withDefaults();
+    if (mode != AiRuntimeMode.nativeBridge) {
+      throw StateError('Only nativeBridge AI runtime is supported for on-device processing.');
     }
+    return NativeDocumentProcessor.withDefaults();
   }
 
   static Future<DocumentProcessor> resolveDocumentProcessor({
     AiRuntimeMode preferredMode = AiRuntimeMode.nativeBridge,
   }) async {
-    if (preferredMode == AiRuntimeMode.mock) {
-      return const MockDocumentProcessor();
-    }
-    if (preferredMode == AiRuntimeMode.heuristic) {
-      return const NativeDocumentProcessor(
-        ocrEngine: HeuristicOcrEngine(),
-        authenticityDetector: HeuristicAuthenticityDetector(),
-      );
+    if (preferredMode != AiRuntimeMode.nativeBridge) {
+      throw StateError('Only nativeBridge AI runtime is supported for on-device processing.');
     }
 
     final bridge = NativeAiBridge();
     final nativeReady = await bridge.isAvailable();
     if (!nativeReady) {
-      return const NativeDocumentProcessor(
-        ocrEngine: HeuristicOcrEngine(),
-        authenticityDetector: HeuristicAuthenticityDetector(),
-      );
+      if (!_requireProductionReadiness) {
+        return const NativeDocumentProcessor(
+          ocrEngine: PdfTextStreamOcrEngine(),
+          authenticityDetector: HeuristicAuthenticityDetector(),
+        );
+      }
+      throw StateError('Native AI runtime is unavailable for on-device processing.');
     }
     return NativeDocumentProcessor.withDefaults();
   }

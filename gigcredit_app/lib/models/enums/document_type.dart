@@ -9,6 +9,7 @@ enum DocumentType {
   wifiBill,
   rc,
   insurance,
+  governmentScheme,
   itr,
 }
 

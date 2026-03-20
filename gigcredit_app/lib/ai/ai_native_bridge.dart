@@ -110,7 +110,19 @@ class NativeAiBridge {
     );
     final rawText = (payload['rawText'] ?? '').toString();
     final confidence = (payload['confidence'] as num?)?.toDouble() ?? 0.0;
-    return OcrResult(rawText: rawText, confidence: confidence.clamp(0.0, 1.0));
+    final blocks = _parseBlocks(payload['blocks']);
+    final avgConfidence = blocks.isEmpty
+        ? confidence.clamp(0.0, 1.0)
+        : blocks
+                .map((block) => block.confidence)
+                .reduce((a, b) => a + b) /
+            blocks.length;
+    return OcrResult(
+      rawText: rawText,
+      confidence: confidence.clamp(0.0, 1.0),
+      blocks: blocks,
+      lowConfidence: avgConfidence < 0.70,
+    );
   }
 
   Future<AuthenticityResult> detectAuthenticity(List<int> imageBytes) async {
@@ -137,6 +149,25 @@ class NativeAiBridge {
     final similarity = (payload['similarity'] as num?)?.toDouble() ?? 0.0;
     final passed = payload['passed'] == true;
     return FaceMatchResult(similarity: similarity.clamp(0.0, 1.0), passed: passed);
+  }
+
+  Future<void> configureModelPaths(Map<String, String> modelPaths) async {
+    if (modelPaths.isEmpty) {
+      return;
+    }
+
+    try {
+      await _invoke<Map<dynamic, dynamic>>(
+        method: 'ai.configureModels',
+        arguments: <String, Object?>{'modelPaths': modelPaths},
+        timeout: const Duration(seconds: 3),
+      );
+      _healthCache = null;
+      _healthFetchedAt = null;
+    } on NativeBridgeException {
+      // Configuration is best-effort for prototype compatibility.
+      return;
+    }
   }
 
   Future<T> _invoke<T>({
@@ -180,5 +211,23 @@ class NativeAiBridge {
       return value;
     }
     return null;
+  }
+
+  static List<OcrBlock> _parseBlocks(Object? rawBlocks) {
+    if (rawBlocks is! List) {
+      return const <OcrBlock>[];
+    }
+
+    final blocks = <OcrBlock>[];
+    for (final entry in rawBlocks) {
+      if (entry is Map) {
+        final text = (entry['text'] ?? '').toString();
+        final confidence = (entry['confidence'] as num?)?.toDouble() ?? 0.0;
+        if (text.trim().isNotEmpty) {
+          blocks.add(OcrBlock(text: text.trim(), confidence: confidence.clamp(0.0, 1.0)));
+        }
+      }
+    }
+    return blocks;
   }
 }

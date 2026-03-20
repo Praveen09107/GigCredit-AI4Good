@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "18354908500",
+    "project_id": "gigcredit-6e438",
+    "storage_bucket": "gigcredit-6e438.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:18354908500:android:c301b11e1920337fea6cc1",
+        "android_client_info": {
+          "package_name": "com.gigcredit.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbbMBzMRT1icPXIs2Uw8m11oZrJpVSr4U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

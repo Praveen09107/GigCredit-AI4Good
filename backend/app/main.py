@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from .database import close_client, ping_database
+from .database import close_client, ensure_indexes, indexes_ready, ping_database
 from .models.api import ApiResponse
 from .routers import report, verify
 from .utils.logging import get_logger
@@ -24,6 +24,7 @@ def _trace_id_from_request(request: Request) -> str:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    await ensure_indexes()
     yield
     close_client()
 
@@ -108,5 +109,6 @@ async def root() -> dict[str, str]:
 
 @app.get("/health")
 async def health() -> dict[str, bool]:
-    return {"ok": True, "db": await ping_database()}
+    db_ok = await ping_database()
+    return {"ok": True, "db": db_ok, "indexes_ready": db_ok and indexes_ready()}
 

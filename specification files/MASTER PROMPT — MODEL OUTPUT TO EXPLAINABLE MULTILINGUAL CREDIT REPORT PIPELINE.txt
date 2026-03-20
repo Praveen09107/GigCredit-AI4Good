@@ -104,10 +104,10 @@ IMPORTANT — SCORE COMPUTATION METHOD (AUTHORITATIVE)
 Final credit score MUST be computed using the Logistic Regression meta-learner.
 The older weighted-sum method is deprecated and MUST NOT be used.
 
-Meta-learner input (20 values):
+Meta-learner input (44 values):
   - 8 pillar scores: [P1..P8]
   - 4 work-type one-hot flags
-  - 8 interaction terms (pillar × work-type)
+  - 32 interaction terms (pillar × work-type)
 
 Meta-learner computation:
   logit = dot(input, coefficients) + intercept

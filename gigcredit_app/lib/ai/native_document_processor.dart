@@ -1,28 +1,33 @@
+import 'dart:convert';
+import 'dart:io' show zlib;
 import 'dart:math';
 import 'dart:typed_data';
 
 import '../models/enums/document_type.dart';
+import '../config/app_mode.dart';
 import 'ai_native_bridge.dart';
 import 'ai_interfaces.dart';
+import 'field_extractors.dart';
+import 'ocr_engine.dart';
 import 'secure_cleanup_policy.dart';
 import 'transaction_engine.dart';
 import 'verification_validation_engine.dart';
 
 class NativeChannelOcrEngine implements OcrEngine {
-  const NativeChannelOcrEngine({required this.bridge, required this.fallback});
+  const NativeChannelOcrEngine({required this.bridge});
 
   final NativeAiBridge bridge;
-  final OcrEngine fallback;
+  static const bool _requireProductionReadiness = AppMode.requireProductionReadiness;
 
   @override
   Future<OcrResult> extractText(List<int> imageBytes) async {
     try {
       final health = await bridge.getHealth();
       if (!health.supportsOcr) {
-        return fallback.extractText(imageBytes);
+        return const OcrResult(rawText: '', confidence: 0.0, lowConfidence: true);
       }
     } on NativeBridgeException {
-      return fallback.extractText(imageBytes);
+      return const OcrResult(rawText: '', confidence: 0.0, lowConfidence: true);
     }
 
     try {
@@ -36,47 +41,50 @@ class NativeChannelOcrEngine implements OcrEngine {
         },
       );
     } on NativeBridgeException {
-      return fallback.extractText(imageBytes);
+      return const OcrResult(rawText: '', confidence: 0.0, lowConfidence: true);
     }
   }
 }
 
 class NativeChannelAuthenticityDetector implements AuthenticityDetector {
-  const NativeChannelAuthenticityDetector({
-    required this.bridge,
-    required this.fallback,
-  });
+  const NativeChannelAuthenticityDetector({required this.bridge});
 
   final NativeAiBridge bridge;
-  final AuthenticityDetector fallback;
+  static const bool _requireProductionReadiness = AppMode.requireProductionReadiness;
 
   @override
   Future<AuthenticityResult> detect(List<int> imageBytes) async {
     try {
       final health = await bridge.getHealth();
       if (!health.supportsAuthenticity) {
-        return fallback.detect(imageBytes);
+        return const AuthenticityResult(
+          label: AuthenticityLabel.suspicious,
+          confidence: 0.0,
+        );
       }
     } on NativeBridgeException {
-      return fallback.detect(imageBytes);
+      return const AuthenticityResult(
+        label: AuthenticityLabel.suspicious,
+        confidence: 0.0,
+      );
     }
 
     try {
       return await bridge.detectAuthenticity(imageBytes);
     } on NativeBridgeException {
-      return fallback.detect(imageBytes);
+      return const AuthenticityResult(
+        label: AuthenticityLabel.suspicious,
+        confidence: 0.0,
+      );
     }
   }
 }
 
 class NativeChannelFaceVerifier implements FaceVerifier {
-  const NativeChannelFaceVerifier({
-    required this.bridge,
-    required this.fallback,
-  });
+  const NativeChannelFaceVerifier({required this.bridge});
 
   final NativeAiBridge bridge;
-  final FaceVerifier fallback;
+  static const bool _requireProductionReadiness = AppMode.requireProductionReadiness;
 
   @override
   Future<FaceMatchResult> matchFaces(
@@ -86,16 +94,16 @@ class NativeChannelFaceVerifier implements FaceVerifier {
     try {
       final health = await bridge.getHealth();
       if (!health.supportsFaceMatch) {
-        return fallback.matchFaces(selfieBytes, idBytes);
+        return const FaceMatchResult(similarity: 0.0, passed: false);
       }
     } on NativeBridgeException {
-      return fallback.matchFaces(selfieBytes, idBytes);
+      return const FaceMatchResult(similarity: 0.0, passed: false);
     }
 
     try {
       return await bridge.matchFaces(selfieBytes, idBytes);
     } on NativeBridgeException {
-      return fallback.matchFaces(selfieBytes, idBytes);
+      return const FaceMatchResult(similarity: 0.0, passed: false);
     }
   }
 }
@@ -107,8 +115,9 @@ class HeuristicOcrEngine implements OcrEngine {
   Future<OcrResult> extractText(List<int> imageBytes) async {
     final mean = _mean(imageBytes);
     final confidence = (0.60 + (mean / 255.0) * 0.35).clamp(0.60, 0.98);
+    final extracted = _bestEffortTextFromBytes(imageBytes);
     return OcrResult(
-      rawText: 'OCR extracted text block (heuristic engine).',
+      rawText: extracted.isEmpty ? 'OCR extraction unavailable for this document.' : extracted,
       confidence: confidence,
     );
   }
@@ -184,18 +193,10 @@ class NativeDocumentProcessor implements DocumentProcessor {
   final SecureCleanupPolicy cleanupPolicy;
 
   factory NativeDocumentProcessor.withDefaults() {
-    const fallbackOcr = HeuristicOcrEngine();
-    const fallbackAuth = HeuristicAuthenticityDetector();
     final bridge = NativeAiBridge();
     return NativeDocumentProcessor(
-      ocrEngine: NativeChannelOcrEngine(
-        bridge: bridge,
-        fallback: fallbackOcr,
-      ),
-      authenticityDetector: NativeChannelAuthenticityDetector(
-        bridge: bridge,
-        fallback: fallbackAuth,
-      ),
+      ocrEngine: BridgePaddleOcrEngine(bridge: bridge),
+      authenticityDetector: NativeChannelAuthenticityDetector(bridge: bridge),
     );
   }
 
@@ -206,8 +207,8 @@ class NativeDocumentProcessor implements DocumentProcessor {
   }) async {
     NativeRuntimeHealth? nativeHealth;
     try {
-      nativeHealth = await (ocrEngine is NativeChannelOcrEngine
-          ? (ocrEngine as NativeChannelOcrEngine).bridge.getHealth()
+      nativeHealth = await (ocrEngine is BridgePaddleOcrEngine
+          ? (ocrEngine as BridgePaddleOcrEngine).bridge.getHealth()
           : null);
     } on NativeBridgeException {
       nativeHealth = null;
@@ -226,6 +227,8 @@ class NativeDocumentProcessor implements DocumentProcessor {
       'authenticity_label': authenticity.label.name,
       'authenticity_confidence': authenticity.confidence.toStringAsFixed(3),
       'ocr_confidence': ocr.confidence.toStringAsFixed(3),
+      'ocr_low_confidence': (ocr.lowConfidence ?? false).toString(),
+      'ocr_block_count': ocr.blocks.length.toString(),
       'validation_passed': validation.passed.toString(),
       'validation_issue_count': validation.issues.length.toString(),
       'native_runtime_ready': (nativeHealth?.ready ?? false).toString(),
@@ -275,57 +278,239 @@ class NativeDocumentProcessor implements DocumentProcessor {
     String rawText,
     List<int> imageBytes,
   ) {
+    final normalized = rawText.replaceAll(RegExp(r'\s+'), ' ').trim();
     final token = _tokenFromBytes(imageBytes);
+    final parsed = FieldExtractors.parse(type, rawText);
+
+    if (type == DocumentType.aadhaarFront || type == DocumentType.aadhaarBack) {
+      final aadhaar = (parsed.fields['aadhaar_number'] ?? '').replaceAll(RegExp(r'\D'), '');
+      final last4 = aadhaar.length >= 4
+          ? aadhaar.substring(aadhaar.length - 4)
+          : '';
+      if (type == DocumentType.aadhaarFront) {
+        return {
+          'full_name': parsed.fields['name'] ?? '',
+          'aadhaar_last4': last4,
+          'ocr_summary': rawText,
+        };
+      }
+      return {
+        'address_line': parsed.fields['address'] ?? '',
+        'state': _extractIndianState(normalized),
+        'ocr_summary': rawText,
+      };
+    }
+
+    if (type == DocumentType.pan) {
+      return {
+        'pan_number': (parsed.fields['pan_number'] ?? '').toUpperCase(),
+        'full_name': parsed.fields['name'] ?? '',
+        'ocr_summary': rawText,
+      };
+    }
+
+    if (type == DocumentType.bankStatement) {
+      return {
+        'statement_id': parsed.fields['account_number']?.isNotEmpty == true
+            ? parsed.fields['account_number']!
+            : 'BS-$token',
+        'account_holder_name': parsed.fields['name'] ?? '',
+        'ifsc_code': parsed.fields['ifsc'] ?? '',
+        'ocr_summary': rawText,
+      };
+    }
+
+    if (type == DocumentType.electricityBill ||
+        type == DocumentType.lpgBill ||
+        type == DocumentType.mobileBill ||
+        type == DocumentType.wifiBill) {
+      final utilityId = parsed.fields['consumer_number']?.isNotEmpty == true
+          ? parsed.fields['consumer_number']!
+          : (parsed.fields['consumer_id']?.isNotEmpty == true
+              ? parsed.fields['consumer_id']!
+              : (parsed.fields['mobile_number'] ?? 'BILL-$token'));
+      final amount = parsed.fields['bill_amount']?.isNotEmpty == true
+          ? parsed.fields['bill_amount']!
+          : (parsed.fields['amount'] ?? '');
+
+      return {
+        'bill_id': utilityId,
+        'amount': amount,
+        'payment_status': _inferPaymentStatus(normalized),
+        'ocr_summary': rawText,
+      };
+    }
+
     switch (type) {
       case DocumentType.aadhaarFront:
-        return {
-          'full_name': 'Prototype User',
-          'aadhaar_last4': token.substring(0, 4),
-          'ocr_summary': rawText,
-        };
       case DocumentType.aadhaarBack:
-        return {
-          'address_line': 'Prototype Address',
-          'state': 'Karnataka',
-          'ocr_summary': rawText,
-        };
       case DocumentType.pan:
-        return {
-          'pan_number': 'ABCDE${token.substring(0, 4)}F',
-          'full_name': 'Prototype User',
-          'ocr_summary': rawText,
-        };
       case DocumentType.bankStatement:
-        return {
-          'statement_id': 'BS-$token',
-          'ocr_summary': rawText,
-        };
       case DocumentType.electricityBill:
       case DocumentType.lpgBill:
       case DocumentType.mobileBill:
       case DocumentType.wifiBill:
-        return {
-          'bill_id': 'BILL-$token',
-          'ocr_summary': rawText,
-        };
+        return {'ocr_summary': rawText};
       case DocumentType.rc:
+        final vehicleNumber = _firstMatch(
+          RegExp(r'\b[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{3,4}\b'),
+          normalized.toUpperCase(),
+        );
         return {
-          'vehicle_number': 'KA01${token.substring(0, 2)}${token.substring(2, 6)}',
+          'vehicle_number': vehicleNumber.isEmpty ? 'UNKNOWN' : vehicleNumber,
           'ocr_summary': rawText,
         };
       case DocumentType.insurance:
+        final policyNumber = _firstMatch(
+          RegExp(r'\b(?:policy\s*(?:no|number))\s*[:\-]?\s*([A-Z0-9\-]{6,})\b', caseSensitive: false),
+          normalized,
+          group: 1,
+        );
         return {
-          'policy_number': 'POL$token',
-          'status': 'ACTIVE',
+          'policy_number': policyNumber.isEmpty ? 'UNKNOWN' : policyNumber,
+          'status': normalized.toLowerCase().contains('active') ? 'ACTIVE' : 'UNKNOWN',
+          'ocr_summary': rawText,
+        };
+      case DocumentType.governmentScheme:
+        final labeledRef = _firstMatch(
+          RegExp(
+            r'\b(?:reference|ref|application|certificate|account|scheme|id)\s*(?:no|number|id)?\s*[:\-]?\s*([A-Z0-9\-]{6,30})\b',
+            caseSensitive: false,
+          ),
+          normalized,
+          group: 1,
+        );
+        final udyamRef = _firstMatch(
+          RegExp(r'\bUDYAM-[A-Z]{2}-\d{2}-\d{7}\b', caseSensitive: false),
+          normalized.toUpperCase(),
+        );
+        final fallbackRef = _firstMatch(
+          RegExp(r'\b[A-Z0-9][A-Z0-9\-]{5,29}\b'),
+          normalized.toUpperCase(),
+        );
+        final schemeReference = labeledRef.isNotEmpty
+            ? labeledRef.toUpperCase()
+            : (udyamRef.isNotEmpty ? udyamRef.toUpperCase() : (fallbackRef.isNotEmpty ? fallbackRef : 'UNKNOWN'));
+        return {
+          'scheme_reference': schemeReference,
           'ocr_summary': rawText,
         };
       case DocumentType.itr:
+        final itrAck = _firstMatch(
+          RegExp(r'\b(?:itr\s*(?:ack(?:nowledg(e)?ment)?\s*(?:no|number)?))\s*[:\-]?\s*([A-Z0-9\-]{6,})\b', caseSensitive: false),
+          normalized,
+          group: 2,
+        );
+        final annualIncome = _extractLargestAmount(normalized);
+        final annualIncomeValue = double.tryParse(annualIncome.replaceAll(',', '')) ?? 0.0;
+        final monthlyIncome = annualIncomeValue > 0 ? (annualIncomeValue / 12.0).toStringAsFixed(0) : '';
         return {
-          'itr_ack_number': 'ITR$token',
+          'itr_ack_number': itrAck.isEmpty ? 'UNKNOWN' : itrAck,
+          'annual_income': annualIncome,
+          'monthly_income': monthlyIncome,
           'ocr_summary': rawText,
         };
     }
   }
+}
+
+String _firstMatch(RegExp pattern, String input, {int group = 0}) {
+  final match = pattern.firstMatch(input);
+  if (match == null) {
+    return '';
+  }
+  return (match.group(group) ?? '').trim();
+}
+
+String _extractPersonName(String text) {
+  final labeled = _firstMatch(
+    RegExp(r'\b(?:name|account\s*holder|customer\s*name)\s*[:\-]?\s*([A-Z][A-Z\s\.]{2,40})\b', caseSensitive: false),
+    text,
+    group: 1,
+  );
+  if (labeled.isNotEmpty) {
+    return labeled.replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  final fallback = _firstMatch(RegExp(r'\b[A-Z][A-Z]+(?:\s+[A-Z][A-Z]+){1,3}\b'), text.toUpperCase());
+  return fallback.isEmpty ? 'UNKNOWN' : fallback;
+}
+
+String _extractAddressLine(String text) {
+  final labeled = _firstMatch(
+    RegExp(r'\b(?:address|addr)\s*[:\-]?\s*([^\n]{8,120})\b', caseSensitive: false),
+    text,
+    group: 1,
+  );
+  return labeled.isEmpty ? 'UNKNOWN' : labeled;
+}
+
+String _extractIndianState(String text) {
+  const states = <String>[
+    'ANDHRA PRADESH',
+    'ARUNACHAL PRADESH',
+    'ASSAM',
+    'BIHAR',
+    'CHHATTISGARH',
+    'GOA',
+    'GUJARAT',
+    'HARYANA',
+    'HIMACHAL PRADESH',
+    'JHARKHAND',
+    'KARNATAKA',
+    'KERALA',
+    'MADHYA PRADESH',
+    'MAHARASHTRA',
+    'MANIPUR',
+    'MEGHALAYA',
+    'MIZORAM',
+    'NAGALAND',
+    'ODISHA',
+    'PUNJAB',
+    'RAJASTHAN',
+    'SIKKIM',
+    'TAMIL NADU',
+    'TELANGANA',
+    'TRIPURA',
+    'UTTAR PRADESH',
+    'UTTARAKHAND',
+    'WEST BENGAL',
+    'DELHI',
+  ];
+
+  final upper = text.toUpperCase();
+  for (final state in states) {
+    if (upper.contains(state)) {
+      return state;
+    }
+  }
+  return 'UNKNOWN';
+}
+
+String _extractLargestAmount(String text) {
+  final matches = RegExp(r'\b\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?\b').allMatches(text);
+  var best = '';
+  var maxValue = 0.0;
+  for (final match in matches) {
+    final raw = match.group(0) ?? '';
+    final parsed = double.tryParse(raw.replaceAll(',', ''));
+    if (parsed != null && parsed > maxValue) {
+      maxValue = parsed;
+      best = raw;
+    }
+  }
+  return best;
+}
+
+String _inferPaymentStatus(String text) {
+  final lower = text.toLowerCase();
+  if (lower.contains('paid') || lower.contains('completed') || lower.contains('success')) {
+    return 'paid';
+  }
+  if (lower.contains('due') || lower.contains('pending')) {
+    return 'due';
+  }
+  return 'unknown';
 }
 
 double _mean(List<int> bytes) {
@@ -389,4 +574,112 @@ String _tokenFromBytes(List<int> bytes) {
   }
   final value = bytes.fold<int>(0, (acc, element) => ((acc * 31) + element) % 1000000);
   return value.toString().padLeft(6, '0');
+}
+
+String _bestEffortTextFromBytes(List<int> bytes) {
+  if (bytes.isEmpty) {
+    return '';
+  }
+
+  if (_looksLikePdf(bytes) && _isPasswordProtectedPdf(bytes)) {
+    return kPasswordProtectedPdfMarker;
+  }
+
+  final pdfText = _extractPdfText(bytes);
+  if (pdfText.isNotEmpty) {
+    return pdfText;
+  }
+
+  final utf8Text = utf8.decode(bytes, allowMalformed: true).trim();
+  if (_looksLikeReadableText(utf8Text)) {
+    return utf8Text;
+  }
+
+  final latinText = latin1.decode(bytes, allowInvalid: true).trim();
+  if (_looksLikeReadableText(latinText)) {
+    return latinText;
+  }
+
+  return '';
+}
+
+String _extractPdfText(List<int> bytes) {
+  final raw = latin1.decode(bytes, allowInvalid: true);
+  final out = StringBuffer();
+
+  final directTextMatches = RegExp(r'\(([^\)]{3,})\)\s*Tj').allMatches(raw);
+  for (final match in directTextMatches) {
+    out.writeln(_decodePdfEscaped(match.group(1) ?? ''));
+  }
+
+  final streamRegex = RegExp(r'stream\r?\n([\s\S]*?)\r?\nendstream');
+  for (final match in streamRegex.allMatches(raw)) {
+    final payloadText = match.group(1) ?? '';
+    if (payloadText.isEmpty) {
+      continue;
+    }
+
+    final streamBytes = Uint8List.fromList(payloadText.codeUnits.map((c) => c & 0xFF).toList());
+    final inflated = _tryInflate(streamBytes);
+    if (inflated == null || inflated.isEmpty) {
+      continue;
+    }
+
+    final content = latin1.decode(inflated, allowInvalid: true);
+    for (final tj in RegExp(r'\(([^\)]{2,})\)\s*Tj').allMatches(content)) {
+      out.writeln(_decodePdfEscaped(tj.group(1) ?? ''));
+    }
+    for (final tjArray in RegExp(r'\[(.*?)\]\s*TJ').allMatches(content)) {
+      final segment = tjArray.group(1) ?? '';
+      for (final textToken in RegExp(r'\(([^\)]*)\)').allMatches(segment)) {
+        final token = _decodePdfEscaped(textToken.group(1) ?? '');
+        if (token.isNotEmpty) {
+          out.write(token);
+          out.write(' ');
+        }
+      }
+      out.writeln();
+    }
+  }
+
+  final normalized = out.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
+  return _looksLikeReadableText(normalized) ? normalized : '';
+}
+
+List<int>? _tryInflate(Uint8List input) {
+  try {
+    return zlib.decode(input);
+  } catch (_) {
+    return null;
+  }
+}
+
+String _decodePdfEscaped(String value) {
+  return value
+      .replaceAll(r'\(', '(')
+      .replaceAll(r'\)', ')')
+      .replaceAll(r'\\', '\\')
+      .replaceAll(r'\n', ' ')
+      .replaceAll(r'\r', ' ')
+      .trim();
+}
+
+bool _looksLikeReadableText(String text) {
+  if (text.isEmpty || text.length < 16) {
+    return false;
+  }
+  final printable = RegExp(r'[A-Za-z0-9]').allMatches(text).length;
+  return printable >= 8;
+}
+
+bool _looksLikePdf(List<int> bytes) {
+  if (bytes.length < 4) {
+    return false;
+  }
+  return bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46;
+}
+
+bool _isPasswordProtectedPdf(List<int> bytes) {
+  final raw = latin1.decode(bytes, allowInvalid: true);
+  return RegExp(r'/Encrypt\b').hasMatch(raw) || RegExp(r'/Filter\s*/Standard\b').hasMatch(raw);
 }

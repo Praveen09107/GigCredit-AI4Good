@@ -45,7 +45,10 @@ MODEL_FILES = {
 	"p2": MODELS_DIR / "p2.pkl",
 	"p3": MODELS_DIR / "p3.pkl",
 	"p4": MODELS_DIR / "p4.pkl",
+	"p5": MODELS_DIR / "p5.pkl",
 	"p6": MODELS_DIR / "p6.pkl",
+	"p7": MODELS_DIR / "p7.pkl",
+	"p8": MODELS_DIR / "p8.pkl",
 }
 
 OUTPUT_DART_FILES = {
@@ -53,7 +56,10 @@ OUTPUT_DART_FILES = {
 	"p2": OUTPUT_DIR / "p2_scorer.dart",
 	"p3": OUTPUT_DIR / "p3_scorer.dart",
 	"p4": OUTPUT_DIR / "p4_scorer.dart",
+	"p5": OUTPUT_DIR / "p5_scorer.dart",
 	"p6": OUTPUT_DIR / "p6_scorer.dart",
+	"p7": OUTPUT_DIR / "p7_scorer.dart",
+	"p8": OUTPUT_DIR / "p8_scorer.dart",
 }
 
 DATASET_PATH = DATA_DIR / "synthetic_profiles.csv"

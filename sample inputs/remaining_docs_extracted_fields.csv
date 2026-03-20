@@ -1,0 +1,106 @@
+file_name,document_type,field_name,extracted_value,confidence,needs_user_confirmation
+E sharm card.jpeg,e_shram_card,date_candidates,05/01/20,medium,yes
+E sharm card.jpeg,e_shram_card,pincode_candidate,843330,medium,yes
+E sharm card.jpeg,e_shram_card,name_candidate,G M  RNU R,medium,yes
+E sharm card.jpeg,e_shram_card,date_candidate,05/01/20,medium,yes
+EMI screenshots\screnshot template1.jpeg,emi_proof,amount_candidate,5523.34,medium,yes
+EMI screenshots\screnshot template1.jpeg,emi_proof,earnings_or_amount,5523.34,medium,yes
+EMI screenshots\screnshot template2.jpeg,emi_proof,amount_candidate,93.89,medium,yes
+EMI screenshots\screnshot template2.jpeg,emi_proof,earnings_or_amount,93.89,medium,yes
+EMI screenshots\screnshot template3.jpeg,emi_proof,amount_candidate,1879.35,medium,yes
+EMI screenshots\screnshot template3.jpeg,emi_proof,earnings_or_amount,1879.35,medium,yes
+FSSAI.jpeg,fssai_certificate,date_candidates,"12/12/2020, 13/12/2019",medium,yes
+FSSAI.jpeg,fssai_certificate,name_candidate,AND PERMANENT ADDRESS OF FOOD BUSINESS,medium,yes
+FSSAI.jpeg,fssai_certificate,date_candidate,13/12/2019,medium,yes
+Four wheeler vehicle isurance part 1.jpeg,insurance,amount_candidate,1106.0,medium,yes
+Four wheeler vehicle isurance part 1.jpeg,insurance,pincode_candidate,400034,medium,yes
+Four wheeler vehicle isurance part 1.jpeg,insurance,policy_number,3005/W-2011959/00/000,medium,yes
+Four wheeler vehicle isurance part 1.jpeg,insurance,insurer,LIC,medium,yes
+Four wheeler vehicle isurance part 1.jpeg,insurance,premium_amount,1106.0,medium,yes
+Four wheeler vehicle isurance part 2(continuation).jpeg,insurance,date_candidates,"14/12/2009, 23/08/2010",medium,yes
+Four wheeler vehicle isurance part 2(continuation).jpeg,insurance,amount_candidate,1106.0,medium,yes
+Four wheeler vehicle isurance part 2(continuation).jpeg,insurance,pincode_candidate,400034,medium,yes
+Four wheeler vehicle isurance part 2(continuation).jpeg,insurance,insurer,LIC,medium,yes
+Four wheeler vehicle isurance part 2(continuation).jpeg,insurance,premium_amount,1106.0,medium,yes
+ITR Acknowledgement.jpeg,itr,pincode_candidate,675484,medium,yes
+ITR Acknowledgement.jpeg,itr,name_candidate,ADDRESS,medium,yes
+Mobile bill airtel.jpeg,mobile_bill,amount_candidate,1824.28,medium,yes
+Mobile bill airtel.jpeg,mobile_bill,mobile_candidate,9790988180,medium,yes
+Mobile bill airtel.jpeg,mobile_bill,pincode_candidate,600056,medium,yes
+Mobile bill airtel.jpeg,mobile_bill,provider,AIRTEL,medium,yes
+No due form which represents the loan completion proof for pm svanidhi and another scheme part 1.jpeg,loan_closure_proof,date_candidates,10/07/2021,medium,yes
+No due form which represents the loan completion proof for pm svanidhi and another scheme part 1.jpeg,loan_closure_proof,mobile_candidate,8587090624,medium,yes
+No due form which represents the loan completion proof for pm svanidhi and another scheme part 1.jpeg,loan_closure_proof,name_candidate,OFTHEBORROWER,medium,yes
+No due form which represents the loan completion proof for pm svanidhi and another scheme part 1.jpeg,loan_closure_proof,date_candidate,10/07/2021,medium,yes
+Online Platform worker screenshots\WhatsApp Image 2026-03-19 at 12.41.56 AM.jpeg,platform_activity_proof,orders_or_trips,1,medium,yes
+Online Platform worker screenshots\WhatsApp Image 2026-03-19 at 12.41.57 AM.jpeg,platform_activity_proof,date_candidates,11-01-2019,medium,yes
+Online Platform worker screenshots\WhatsApp Image 2026-03-19 at 12.41.57 AM.jpeg,platform_activity_proof,amount_candidate,140.26,medium,yes
+Online Platform worker screenshots\WhatsApp Image 2026-03-19 at 12.41.57 AM.jpeg,platform_activity_proof,platform_or_app,RAPIDO,medium,yes
+Online Platform worker screenshots\WhatsApp Image 2026-03-19 at 12.41.57 AM.jpeg,platform_activity_proof,earnings_or_amount,140.26,medium,yes
+Online Platform worker screenshots\WhatsApp Image 2026-03-19 at 12.41.57 AM.jpeg,platform_activity_proof,orders_or_trips,19,medium,yes
+PMJJBY part 1.jpeg,insurance,date_candidates,"13/07/1985, 24/10/2024, 31/05/2025",medium,yes
+PMJJBY part 1.jpeg,insurance,mobile_candidate,8798034719,medium,yes
+PMJJBY part 1.jpeg,insurance,pincode_candidate,798603,medium,yes
+PMJJBY part 1.jpeg,insurance,insurer,SBILIFE,medium,yes
+PMJJBY part 2(continuation).jpeg,insurance,date_candidates,31/05/2025,medium,yes
+PMJJBY part 2(continuation).jpeg,insurance,amount_candidate,342.0,medium,yes
+PMJJBY part 2(continuation).jpeg,insurance,pincode_candidate,797116,medium,yes
+PMJJBY part 2(continuation).jpeg,insurance,premium_amount,342.0,medium,yes
+Pm svanidhi letter of recommendation.jpeg,recommendation_letter,date_candidates,05/01/1977,medium,yes
+Pm svanidhi letter of recommendation.jpeg,recommendation_letter,pincode_candidate,251135,medium,yes
+Pm svanidhi letter of recommendation.jpeg,recommendation_letter,name_candidate,SOLANKI RITABEN,medium,yes
+Pm svanidhi letter of recommendation.jpeg,recommendation_letter,date_candidate,05/01/1977,medium,yes
+RC.jpeg,rc,date_candidates,"02-07-2028, 03-07-2013",medium,yes
+RC.jpeg,rc,mobile_candidate,9933239382,medium,yes
+RC.jpeg,rc,registration_number,AN01H7125,medium,yes
+RC.jpeg,rc,owner_name,GLATA,medium,yes
+Rent receipt.jpeg,residence_proof,tenant_name,PROPERTY ADDRESS,medium,yes
+SBI PPF passbook.jpeg,ppf_passbook,date_candidates,03/01/2015,medium,yes
+SBI PPF passbook.jpeg,ppf_passbook,pincode_candidate,400086,medium,yes
+SBI PPF passbook.jpeg,ppf_passbook,date_candidate,03/01/2015,medium,yes
+Shops & Establishments Registration.jpeg,shop_establishment_certificate,date_candidates,18-1-350,medium,yes
+Shops & Establishments Registration.jpeg,shop_establishment_certificate,mobile_candidate,9693544464,medium,yes
+Shops & Establishments Registration.jpeg,shop_establishment_certificate,pincode_candidate,500058,medium,yes
+Shops & Establishments Registration.jpeg,shop_establishment_certificate,primary_id_number,NEST2020280327,medium,yes
+Shops & Establishments Registration.jpeg,shop_establishment_certificate,name_candidate,OF SHOP,medium,yes
+Shops & Establishments Registration.jpeg,shop_establishment_certificate,date_candidate,18-1-350,medium,yes
+Skill india ndsc certificate.jpeg,skill_certificate,primary_id_number,ANISO9001,medium,yes
+Udyam Registration Certificate.jpeg,udyam_certificate,date_candidates,"10/09/2019, 11/10/2023, 14/99/2015, 16/05/2021, 21/09/2020",medium,yes
+Udyam Registration Certificate.jpeg,udyam_certificate,pincode_candidate,500038,medium,yes
+Udyam Registration Certificate.jpeg,udyam_certificate,name_candidate,OFENTERPRISE,medium,yes
+Udyam Registration Certificate.jpeg,udyam_certificate,date_candidate,11/10/2023,medium,yes
+Vehicle insurance.jpeg,insurance,date_candidates,"01/08/2019, 31/07/2020",medium,yes
+Vehicle insurance.jpeg,insurance,mobile_candidate,9535805677,medium,yes
+Vehicle insurance.jpeg,insurance,insurer,LIC,medium,yes
+Vehicle insurance.jpeg,insurance,registration_number,KA32EB5608,medium,yes
+broadband bill 2(wifi).jpeg,wifi_bill,amount_candidate,2161.15,medium,yes
+broadband bill 2(wifi).jpeg,wifi_bill,pincode_candidate,756003,medium,yes
+broadband bill 2(wifi).jpeg,wifi_bill,provider,JIO,medium,yes
+broadband bill(wifi).jpeg,wifi_bill,date_candidates,"01-04-06, 01/04/2014, 1/04/2014, 13/04/2014, 30/04/2014",medium,yes
+broadband bill(wifi).jpeg,wifi_bill,amount_candidate,853.37,medium,yes
+broadband bill(wifi).jpeg,wifi_bill,pincode_candidate,969366,medium,yes
+broadband bill(wifi).jpeg,wifi_bill,account_or_consumer_number,23031895,medium,yes
+broadband bill(wifi).jpeg,wifi_bill,due_date,13/04/2014,medium,yes
+broadband bill(wifi).jpeg,wifi_bill,bill_date,01/04/2014,medium,yes
+broadband bill(wifi).jpeg,wifi_bill,provider,HATHWAY,medium,yes
+eb bill.jpeg,electricity_bill,date_candidates,05/11/2025,medium,yes
+eb bill.jpeg,electricity_bill,amount_candidate,905.0,medium,yes
+eb bill.jpeg,electricity_bill,mobile_candidate,9498794987,medium,yes
+eb bill.jpeg,electricity_bill,pincode_candidate,996912,medium,yes
+eb bill.jpeg,electricity_bill,name,RAKIMMA BEEVI,medium,yes
+eb bill.jpeg,electricity_bill,provider,VI,medium,yes
+heath isurance.jpeg,insurance,date_candidates,"02/07/2014, 03/07/2014",medium,yes
+heath isurance.jpeg,insurance,amount_candidate,5400.0,medium,yes
+heath isurance.jpeg,insurance,mobile_candidate,9013246272,medium,yes
+heath isurance.jpeg,insurance,pincode_candidate,700002,medium,yes
+heath isurance.jpeg,insurance,insurer,STARHEALTH,medium,yes
+heath isurance.jpeg,insurance,premium_amount,5400.0,medium,yes
+life issurance part-1.jpeg,insurance,insurer,LIC,medium,yes
+life issurance part-2.jpeg,insurance,amount_candidate,550500.0,medium,yes
+life issurance part-2.jpeg,insurance,pincode_candidate,550500,medium,yes
+life issurance part-2.jpeg,insurance,insurer,LIC,medium,yes
+life issurance part-2.jpeg,insurance,premium_amount,550500.0,medium,yes
+mobile recharge screenshot.jpeg,mobile_bill,amount_candidate,2026.7,medium,yes
+mobile recharge screenshot.jpeg,mobile_bill,provider,JIO,medium,yes
+rent agreement.jpeg,residence_proof,mobile_candidate,9362895090,medium,yes
+rent agreement.jpeg,residence_proof,pincode_candidate,305214,medium,yes

@@ -21,6 +21,7 @@ APP_ROOT = ROOT.parent / "gigcredit_app"
 TARGET_SCORING_DIR = APP_ROOT / "lib" / "scoring" / "generated"
 TARGET_CONSTANTS_DIR = APP_ROOT / "assets" / "constants"
 MANIFEST_PATH = TARGET_CONSTANTS_DIR / "artifact_manifest.json"
+RUNTIME_CONTRACT_PATH = TARGET_CONSTANTS_DIR / "runtime_model_contract.json"
 
 
 def _sha256_file(path: Path) -> str:
@@ -69,15 +70,31 @@ def main() -> None:
     manifest = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "generator": "offline_ml.src.package_artifacts_for_app",
+        "runtime_strategy": {
+            "runtime_model_artifacts_required": False,
+        },
+        "runtime_models": {},
         "artifacts": copied,
     }
     TARGET_CONSTANTS_DIR.mkdir(parents=True, exist_ok=True)
     with MANIFEST_PATH.open("w", encoding="utf-8") as file:
         json.dump(manifest, file, indent=2)
 
+    runtime_contract = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generator": "offline_ml.src.package_artifacts_for_app",
+        "runtime_strategy": {
+            "runtime_model_artifacts_required": False,
+        },
+        "required_models": {},
+    }
+    with RUNTIME_CONTRACT_PATH.open("w", encoding="utf-8") as file:
+        json.dump(runtime_contract, file, indent=2)
+
     print(f"Packaged artifacts into: {TARGET_SCORING_DIR}")
     print(f"Packaged constants into: {TARGET_CONSTANTS_DIR}")
     print(f"Manifest: {MANIFEST_PATH}")
+    print(f"Runtime contract: {RUNTIME_CONTRACT_PATH}")
 
 
 if __name__ == "__main__":

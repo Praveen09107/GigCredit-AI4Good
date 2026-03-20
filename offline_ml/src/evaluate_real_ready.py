@@ -50,17 +50,10 @@ class SplitData:
 
 def _load_models() -> dict[str, object]:
     models: dict[str, object] = {}
-    for key in ("p1", "p2", "p3", "p4", "p6"):
+    for key in ("p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"):
         with MODEL_FILES[key].open("rb") as file:
             models[key] = pickle.load(file)
     return models
-
-
-def _scorecards(features: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    p5 = np.clip(features[:, FEATURE_SLICES["p5"][0]:FEATURE_SLICES["p5"][1]].mean(axis=1), 0.0, 1.0)
-    p7 = np.clip(features[:, FEATURE_SLICES["p7"][0]:FEATURE_SLICES["p7"][1]].mean(axis=1), 0.0, 1.0)
-    p8 = np.clip(features[:, FEATURE_SLICES["p8"][0]:FEATURE_SLICES["p8"][1]].mean(axis=1), 0.0, 1.0)
-    return p5, p7, p8
 
 
 def _build_meta_x(features: np.ndarray, work_type: pd.Series, models: dict[str, object]) -> np.ndarray:
@@ -68,16 +61,17 @@ def _build_meta_x(features: np.ndarray, work_type: pd.Series, models: dict[str, 
     for idx, key in enumerate(("p1", "p2", "p3", "p4")):
         start, end = FEATURE_SLICES[key]
         p_raw[:, idx] = np.clip(models[key].predict(features[:, start:end]), 0.0, 1.0)
+    start, end = FEATURE_SLICES["p5"]
+    p_raw[:, 4] = np.clip(models["p5"].predict(features[:, start:end]), 0.0, 1.0)
     p_raw[:, 5] = np.clip(
         models["p6"].predict(features[:, FEATURE_SLICES["p6"][0]:FEATURE_SLICES["p6"][1]]),
         0.0,
         1.0,
     )
-
-    p5, p7, p8 = _scorecards(features)
-    p_raw[:, 4] = p5
-    p_raw[:, 6] = p7
-    p_raw[:, 7] = p8
+    start, end = FEATURE_SLICES["p7"]
+    p_raw[:, 6] = np.clip(models["p7"].predict(features[:, start:end]), 0.0, 1.0)
+    start, end = FEATURE_SLICES["p8"]
+    p_raw[:, 7] = np.clip(models["p8"].predict(features[:, start:end]), 0.0, 1.0)
 
     mapping = {
         "platform": 0,

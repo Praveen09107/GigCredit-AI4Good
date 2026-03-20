@@ -5,4 +5,9 @@ xgboost
 optuna
 shap
 m2cgen
+tensorflow-cpu==2.16.1
+paddle2onnx
+onnx
+onnxsim
+onnx2tf
 

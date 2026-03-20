@@ -1,0 +1,50 @@
+{
+  "aadhaar_front": {
+    "chars": 651,
+    "aadhaar_candidates": [
+      "7494 2006 7990",
+      "749420067990"
+    ],
+    "pan_candidates": [],
+    "dob_candidates": [
+      "09/01/2007",
+      "18/11/2015"
+    ],
+    "pincode_candidates": [],
+    "sample_text": "Government ofIndia\nABLE\nAadhaar no.issued:18/11/2015\nPraveen Kumar P\n ITGT/DOB:09/01/2007\n/Male\n749420067990\nAadhaar is proof of identity,not of citizenship\nor date of birth.It should be used with verification online\nauthentication,or scanning of QR code / offline XML).\n749420067990\n开3\nHTET,\nGovernment of India\nARLe.\nAadhaar no. Issued: 18/11/2015\nPraveen Kumar P\nmD5 5T6IT / DOB : 09/01/2007\n6ot / Male\n7494 2006 7990\ng6U6g OR 5DLmL 6C&6 QFU5U/aU606U6T XML)\nAadhaar is proof of identity, not of citizenship\nor date of birth. It should be used with verification (online\nauthentication, or scanning of QR code / offline XML).\n74942006\n67990\n 3T，3\nhgh"
+  },
+  "aadhaar_back": {
+    "chars": 600,
+    "aadhaar_candidates": [
+      "74942006\n7990"
+    ],
+    "pan_candidates": [],
+    "dob_candidates": [
+      "08/04/2024"
+    ],
+    "pincode_candidates": [
+      "600057"
+    ],
+    "sample_text": "Unique Identification Authority of ndia\nAADHAAR\nhh\n205，\non08/04/2024\n乐，，，\n,600057\nAddress:S/O:Prabhakaran,205F,SRIRANGAMNEW\nDetails as\nTOWNWIMCONAGAR,SAKTHIPURAM,Kattivakkam,\nPO:Ennore Thermal Station,DiST:Tiruvallur,Tamil Nadu,\n600057\n74942006\n7990\n1947\nhelp@uidai.gov.in\nwww.uidai.gov.in\nCUnique Identification Authorityxoflndia\nAADHAAR\n2056心.   L, 6j,\non 08/04/2024\n5IC. 600057\nAddress: S/O: Prabhakaran, 205F, SRIRANGAM NEW\nDetails as \nTOWN, WImCO NAGAR, SAKTHIPURAM, Kativakkam,\nPO:Ennore Thermal Station, DiST:Tiruvallur, Tamil Nadu,\n600057\n74942006\n7990\n1947\nhelp@uidai.gov.in\nwww.uidai.gov.in"
+  },
+  "pan_front": {
+    "chars": 423,
+    "aadhaar_candidates": [],
+    "pan_candidates": [
+      "IPZPP3254R"
+    ],
+    "dob_candidates": [
+      "09/01/2007"
+    ],
+    "pincode_candidates": [],
+    "sample_text": "可 /DatefBir\nINCOME TAX DEPARTMENT\nT TaT/Father'sName\nIH/Name\n09/01/2007\nPRABAKARAN\nPRAVEEN KUMAR P\nPermanent Account Number Card\nIPZPP3254R\nTgR/ Signature\npacenk\nKuuro\nHRT O\nGOVT.OF INDLA\n32593\n可 at amlg / Date of.Uirth\nINCOME TAX DEPARTMENT\nT T IH / Father's Name\nIH/ Name\n09/01/2007\nPRABAKARAN\nPRAVEEN KUMAR P\nPermanent Account Number Card\np 上o 龙 hbr\nIPZPP3254R\nFFT&T / Signature\nfuenh\nKuirro\nHRA ARR\nGOVT. OF INDIA\n32593"
+  },
+  "pan_back": {
+    "chars": 663,
+    "aadhaar_candidates": [],
+    "pan_candidates": [],
+    "dob_candidates": [],
+    "pincode_candidates": [],
+    "sample_text": "：03340802999\n6300-\n：，99，，\n/\nHelpline Number:033-40802999\nNavi Mumbai-400 614.\nPlot No.3,Sector 11, CBD Belapur,\nIncome Tax PAN Services Unit,UTIITSL\nIn case this card is lost / found,kindly inform / return to:\nito.systems1.1@incometax.gov.in\npangrievance@incometax.gov.in\nFor Income Tax Related\nE-Mail:\nQueries\nqcIST qR : 033-40802999\nHdt gas-xoo e9x..'\n3  AaT T, UTITSL\nHelpline Number : 033-40802999\nNavi Mumbai - 400 614.\nPlot No. 3, Sector 11, CBD Belapur,\nIncome Tax PAN Services Unit, UTIITSL\nIn case this card is lost / found, kindly inform / return to ?\nito.systems1.1@incometax.gov.in\npangrievance@incometax.gov.in\nFor Income Tax Related\nE-Mail :\nQueries"
+  }
+}

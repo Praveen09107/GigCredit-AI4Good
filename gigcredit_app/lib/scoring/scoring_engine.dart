@@ -5,7 +5,10 @@ import 'generated/p1_scorer.dart' as p1;
 import 'generated/p2_scorer.dart' as p2;
 import 'generated/p3_scorer.dart' as p3;
 import 'generated/p4_scorer.dart' as p4;
+import 'generated/p5_scorer.dart' as p5;
 import 'generated/p6_scorer.dart' as p6;
+import 'generated/p7_scorer.dart' as p7;
+import 'generated/p8_scorer.dart' as p8;
 import 'meta_learner.dart';
 
 class ScoringOutcome {
@@ -25,6 +28,8 @@ class ScoringOutcome {
 }
 
 class ScoringEngine {
+  static const int _expectedMetaInputLength = 44;
+
   ScoringEngine({MetaLearnerService? metaLearnerService})
       : _metaLearnerService = metaLearnerService ?? MetaLearnerService();
 
@@ -69,10 +74,10 @@ class ScoringEngine {
     var p2Score = p2.scoreP2(p2Input);
     var p3Score = p3.scoreP3(p3Input);
     var p4Score = p4.scoreP4(p4Input);
-    final p5Score = _scorecardMean(p5Input);
+    final p5Score = p5.scoreP5(p5Input);
     final p6Score = p6.scoreP6(p6Input);
-    final p7Score = _scorecardMean(p7Input);
-    final p8Score = _scorecardMean(p8Input);
+    final p7Score = p7.scoreP7(p7Input);
+    final p8Score = p8.scoreP8(p8Input);
 
     final debtToIncomeRatio = features[36];
     if (debtToIncomeRatio > 0.80) {
@@ -92,6 +97,12 @@ class ScoringEngine {
       for (final workFlag in oneHot) {
         metaInput.add(pillar * workFlag);
       }
+    }
+
+    if (metaInput.length != _expectedMetaInputLength) {
+      throw StateError(
+        'Scoring meta-input length drift detected. Expected $_expectedMetaInputLength, got ${metaInput.length}.',
+      );
     }
 
     final probability = await _metaLearnerService.predictProbability(metaInput);
@@ -114,14 +125,6 @@ class ScoringEngine {
       },
       riskBand: _riskBand(finalScore),
     );
-  }
-
-  double _scorecardMean(List<double> values) {
-    if (values.isEmpty) {
-      return 0.5;
-    }
-    final sum = values.fold<double>(0.0, (previousValue, element) => previousValue + element);
-    return (sum / values.length).clamp(0.0, 1.0);
   }
 
   double _confidenceAdjust(double raw, {double confidence = 1.0}) {

@@ -111,11 +111,14 @@ def main() -> None:
         "p2": df["p2_label"].to_numpy(dtype=float),
         "p3": df["p3_label"].to_numpy(dtype=float),
         "p4": df["p4_label"].to_numpy(dtype=float),
+        "p5": df["p5_label"].to_numpy(dtype=float),
         "p6": df["p6_label"].to_numpy(dtype=float),
+        "p7": df["p7_label"].to_numpy(dtype=float),
+        "p8": df["p8_label"].to_numpy(dtype=float),
     }
 
     metrics: dict[str, dict[str, float]] = {}
-    for pillar in ("p1", "p2", "p3", "p4"):
+    for pillar in ("p1", "p2", "p3", "p4", "p5", "p7", "p8"):
         start, end = FEATURE_SLICES[pillar]
         x = features[:, start:end]
         model, result = _train_xgb(x, targets[pillar], params[pillar])

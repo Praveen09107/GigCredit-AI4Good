@@ -16,7 +16,7 @@ from .config import MODEL_FILES, OUTPUT_DART_FILES, ensure_directories
 
 
 def _assert_model_constraints(name: str, model: object) -> None:
-    if name in {"p1", "p2", "p3", "p4"}:
+    if name in {"p1", "p2", "p3", "p4", "p5", "p7", "p8"}:
         params = model.get_params()
         if params.get("tree_method") != "exact":
             raise RuntimeError(f"{name}: tree_method must be exact")
@@ -24,13 +24,15 @@ def _assert_model_constraints(name: str, model: object) -> None:
 
 def _wrap_dart(name: str, body: str) -> str:
     fn = f"score{name.upper()}"
+    impl_name = f"_{fn}Impl"
+    impl_body = body.replace("double score(", f"double {impl_name}(", 1)
     return (
         "double clamp01(double value) => value < 0.0 ? 0.0 : (value > 1.0 ? 1.0 : value);\n\n"
         f"double {fn}(List<double> features) {{\n"
-        "  final value = "
-        f"{body};\n"
-        "  return clamp01(value);\n"
+        f"  return clamp01({impl_name}(features));\n"
         "}\n"
+        "\n"
+        f"{impl_body}\n"
     )
 
 

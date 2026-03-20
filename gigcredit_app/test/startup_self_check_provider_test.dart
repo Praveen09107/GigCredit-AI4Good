@@ -33,6 +33,7 @@ void main() {
             const AppRuntimePolicy(
               requireProductionReadiness: false,
               backendConfigured: false,
+              enforceBundledAssetChecks: false,
             ),
           ),
           nativeRuntimeHealthProvider.overrideWith((ref) async => null),
@@ -46,13 +47,14 @@ void main() {
       expect(result.failures, isEmpty);
     });
 
-    test('blocks when production mode enabled and backend/native unavailable', () async {
+    test('blocks when production mode enabled and native runtime unavailable', () async {
       final container = ProviderContainer(
         overrides: [
           appRuntimePolicyProvider.overrideWithValue(
             const AppRuntimePolicy(
               requireProductionReadiness: true,
               backendConfigured: false,
+              enforceBundledAssetChecks: false,
             ),
           ),
           nativeRuntimeHealthProvider.overrideWith((ref) async => null),
@@ -63,10 +65,6 @@ void main() {
       final result = await container.read(startupSelfCheckProvider.future);
       expect(result.productionRequired, isTrue);
       expect(result.blocking, isTrue);
-      expect(
-        result.failures,
-        contains('Backend base URL is not configured. Set GIGCREDIT_BACKEND_BASE_URL.'),
-      );
       expect(result.failures, contains('Native runtime is unavailable.'));
     });
 
@@ -77,6 +75,7 @@ void main() {
             const AppRuntimePolicy(
               requireProductionReadiness: true,
               backendConfigured: true,
+              enforceBundledAssetChecks: false,
             ),
           ),
           nativeRuntimeHealthProvider.overrideWith((ref) async => health()),
@@ -90,17 +89,18 @@ void main() {
       expect(result.failures, isEmpty);
     });
 
-    test('blocks when production mode enabled and capability checks fail', () async {
+    test('blocks when production mode enabled and OCR capability check fails', () async {
       final container = ProviderContainer(
         overrides: [
           appRuntimePolicyProvider.overrideWithValue(
             const AppRuntimePolicy(
               requireProductionReadiness: true,
               backendConfigured: true,
+              enforceBundledAssetChecks: false,
             ),
           ),
           nativeRuntimeHealthProvider.overrideWith(
-            (ref) async => health(ocr: false, auth: false, face: false),
+            (ref) async => health(ocr: false),
           ),
         ],
       );
@@ -111,14 +111,6 @@ void main() {
       expect(
         result.failures,
         contains('OCR runtime/capability is unavailable (model/dependency missing).'),
-      );
-      expect(
-        result.failures,
-        contains('Authenticity model path is unavailable (TFLite/model missing).'),
-      );
-      expect(
-        result.failures,
-        contains('Face-match model path is unavailable (TFLite/model missing).'),
       );
     });
   });

@@ -1,0 +1,11 @@
+{
+  "description": "Golden score outputs for frozen LR score transform",
+  "cases": [
+    { "logit": -20.0, "expectedScore": 300 },
+    { "logit": -2.0, "expectedScore": 372 },
+    { "logit": 0.0, "expectedScore": 600 },
+    { "logit": 1.0, "expectedScore": 739 },
+    { "logit": 2.0, "expectedScore": 828 },
+    { "logit": 20.0, "expectedScore": 900 }
+  ]
+}

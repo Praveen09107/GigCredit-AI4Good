@@ -118,7 +118,10 @@ def _build_labels(features: np.ndarray) -> pd.DataFrame:
             "p2_label": p2,
             "p3_label": p3,
             "p4_label": p4,
+            "p5_label": p5,
             "p6_label": p6,
+            "p7_label": p7,
+            "p8_label": p8,
         }
     )
 
@@ -155,7 +158,17 @@ def main() -> None:
         "profiles": n,
         "feature_count": FEATURE_COUNT,
         "feature_columns": feature_columns,
-        "label_columns": ["final_label", "p1_label", "p2_label", "p3_label", "p4_label", "p6_label"],
+        "label_columns": [
+            "final_label",
+            "p1_label",
+            "p2_label",
+            "p3_label",
+            "p4_label",
+            "p5_label",
+            "p6_label",
+            "p7_label",
+            "p8_label",
+        ],
         "work_type_values": sorted(set(work_type.tolist())),
     }
     with SCHEMA_MANIFEST_PATH.open("w", encoding="utf-8") as file:

@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import '../ai/ai_native_bridge.dart';
+import '../services/model_bundle_service.dart';
 import 'app_runtime_policy_provider.dart';
+import 'model_bundle_provider.dart';
 import 'native_runtime_provider.dart';
 
 class StartupSelfCheckResult {
@@ -26,30 +29,53 @@ final startupSelfCheckProvider = FutureProvider<StartupSelfCheckResult>((ref) as
   final productionRequired = policy.requireProductionReadiness;
 
   NativeRuntimeHealth? health;
+  ModelBundleResult? bundleResult;
   try {
     health = await ref.watch(nativeRuntimeHealthProvider.future);
   } catch (_) {
     health = null;
   }
 
+  try {
+    bundleResult = await ref.watch(modelBundleProvider.future);
+  } catch (_) {
+    bundleResult = null;
+  }
+
   final failures = <String>[];
 
   if (productionRequired) {
-    if (!policy.backendConfigured) {
-      failures.add('Backend base URL is not configured. Set GIGCREDIT_BACKEND_BASE_URL.');
+    if (policy.enforceBundledAssetChecks) {
+      final requiredAssets = <String>[
+        'assets/models/ppocrv3_mobile_ocr.tflite',
+        'assets/models/scoring_meta.tflite',
+        'assets/models/scoring_model.tflite',
+        'assets/models/scoring_model_v1.tflite',
+        'assets/constants/shap_lookup.json',
+      ];
+      for (final asset in requiredAssets) {
+        if (!await _assetExists(asset)) {
+          if (asset == 'assets/models/scoring_model_v1.tflite') {
+            // Allow scoring_model.tflite as primary alias.
+            continue;
+          }
+          failures.add('Required bundled asset missing: $asset');
+        }
+      }
+
+      if (bundleResult == null) {
+        failures.add('Model bundle bootstrap failed unexpectedly.');
+      } else if (!bundleResult.ok) {
+        failures.addAll(bundleResult.failures);
+      }
     }
 
     if (health == null || health.ready != true) {
       failures.add('Native runtime is unavailable.');
     } else {
-      if (health.supportsOcr != true) {
+      // OCR is the only required on-device runtime capability.
+      if (health.ocrRuntimeAvailable != true) {
         failures.add('OCR runtime/capability is unavailable (model/dependency missing).');
-      }
-      if (health.supportsAuthenticity != true) {
-        failures.add('Authenticity model path is unavailable (TFLite/model missing).');
-      }
-      if (health.supportsFaceMatch != true) {
-        failures.add('Face-match model path is unavailable (TFLite/model missing).');
       }
     }
   }
@@ -62,3 +88,12 @@ final startupSelfCheckProvider = FutureProvider<StartupSelfCheckResult>((ref) as
     health: health,
   );
 });
+
+Future<bool> _assetExists(String assetPath) async {
+  try {
+    await rootBundle.load(assetPath);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}

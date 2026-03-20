@@ -50,7 +50,7 @@ def main() -> None:
     report: dict[str, object] = {"models": {}, "artifacts": {}, "status": "PASS"}
     tolerance = 0.005
 
-    for pillar in ("p1", "p2", "p3", "p4", "p6"):
+    for pillar in ("p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"):
         with MODEL_FILES[pillar].open("rb") as file:
             model = pickle.load(file)
         start, end = FEATURE_SLICES[pillar]
@@ -79,7 +79,10 @@ def main() -> None:
         "dart_p2": OUTPUT_DART_FILES["p2"],
         "dart_p3": OUTPUT_DART_FILES["p3"],
         "dart_p4": OUTPUT_DART_FILES["p4"],
+        "dart_p5": OUTPUT_DART_FILES["p5"],
         "dart_p6": OUTPUT_DART_FILES["p6"],
+        "dart_p7": OUTPUT_DART_FILES["p7"],
+        "dart_p8": OUTPUT_DART_FILES["p8"],
     }
     for name, path in required_files.items():
         exists = path.exists()

@@ -16,16 +16,72 @@ class SecureStorage {
   }
 
   Future<VerifiedProfile?> readProfile() async {
-    final raw = await _storage.read(key: _profileKey);
-    if (raw == null || raw.isEmpty) {
+    String? raw;
+    try {
+      raw = await _storage.read(key: _profileKey);
+    } catch (_) {
+      // If decrypt fails (e.g. WRONG_FINAL_BLOCK_LENGTH), the stored value is corrupted.
+      // Purge the key so login/OTP flow can proceed.
+      await _storage.delete(key: _profileKey);
       return null;
     }
-    final parsed = jsonDecode(raw) as Map<String, dynamic>;
-    return VerifiedProfile.fromJson(parsed);
+
+    if (raw == null || raw.isEmpty) return null;
+
+    try {
+      final parsed = jsonDecode(raw) as Map<String, dynamic>;
+      return VerifiedProfile.fromJson(parsed);
+    } catch (_) {
+      // Corrupted JSON payload; delete and fall back to empty state.
+      await _storage.delete(key: _profileKey);
+      return null;
+    }
   }
 
   Future<void> clearProfile() {
     return _storage.delete(key: _profileKey);
+  }
+
+  // ── Generic JSON helpers used by queue / recovery services ──
+  Future<Map<String, dynamic>?> readJson(String key) async {
+    String? raw;
+    try {
+      raw = await _storage.read(key: key);
+    } catch (_) {
+      // Decrypt can fail if app/keystore changed between runs.
+      // Delete the corrupted key and return null to allow recovery.
+      await _storage.delete(key: key);
+      return null;
+    }
+
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> writeJson(String key, Map<String, dynamic> value) async {
+    await _storage.write(key: key, value: jsonEncode(value));
+  }
+
+  Future<void> deleteKey(String key) {
+    return _storage.delete(key: key);
+  }
+
+  Future<void> writeString(String key, String value) {
+    return _storage.write(key: key, value: value);
+  }
+
+  Future<String?> readString(String key) async {
+    try {
+      return await _storage.read(key: key);
+    } catch (_) {
+      // Best-effort recovery: delete corrupted value then treat as missing.
+      await _storage.delete(key: key);
+      return null;
+    }
   }
 }
 

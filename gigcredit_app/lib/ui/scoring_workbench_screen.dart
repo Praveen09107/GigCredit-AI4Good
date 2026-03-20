@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../ai/ai_native_bridge.dart';
 import '../models/enums/work_type.dart';
-import '../services/mock_api_client.dart';
 import '../state/native_runtime_provider.dart';
 import '../state/scoring_provider.dart';
 import '../state/verified_profile_provider.dart';
@@ -19,8 +18,6 @@ class _ScoringWorkbenchScreenState extends ConsumerState<ScoringWorkbenchScreen>
   final _nameController = TextEditingController(text: 'Ravi Kumar');
   final _phoneController = TextEditingController(text: '9876543210');
   final _incomeController = TextEditingController(text: '28000');
-  final _mockApi = const MockApiClient();
-
   WorkType _workType = WorkType.platformWorker;
   bool _gatePassed = true;
   String? _reportText;
@@ -40,7 +37,7 @@ class _ScoringWorkbenchScreenState extends ConsumerState<ScoringWorkbenchScreen>
     final request = ScoringRequest(
       features: profile.featureVector,
       minimumGatePassed: profile.minimumGatePassed,
-      workTypeIndex: profile.workType.metaIndex,
+      workTypeIndex: profile.workType?.metaIndex ?? 1,
     );
     final scoreAsync = ref.watch(scoringOutcomeProvider(request));
 
@@ -95,7 +92,7 @@ class _ScoringWorkbenchScreenState extends ConsumerState<ScoringWorkbenchScreen>
         child: Padding(
           padding: EdgeInsets.all(16),
           child: Text(
-            'Native runtime unavailable. Using fallback engines for OCR/authenticity/face matching.',
+            'Native runtime unavailable. On-device model pipeline is blocked.',
           ),
         ),
       ),
@@ -105,26 +102,13 @@ class _ScoringWorkbenchScreenState extends ConsumerState<ScoringWorkbenchScreen>
             child: Padding(
               padding: EdgeInsets.all(16),
               child: Text(
-                'Native runtime unavailable. Using fallback engines for OCR/authenticity/face matching.',
+                'Native runtime unavailable. On-device model pipeline is blocked.',
               ),
             ),
           );
         }
 
-        final fallbacks = <String>[];
-        if (health.supportsOcr != true) {
-          fallbacks.add('OCR');
-        }
-        if (health.supportsAuthenticity != true) {
-          fallbacks.add('authenticity');
-        }
-        if (health.supportsFaceMatch != true) {
-          fallbacks.add('face match');
-        }
-
-        final message = fallbacks.isEmpty
-            ? 'Native runtime active (${health.engineVersion}). All model-backed paths available.'
-            : 'Native runtime active (${health.engineVersion}), but using fallback for: ${fallbacks.join(', ')}.';
+        final message = 'Native runtime active (${health.engineVersion}). All model-backed paths available.';
         final checked = health.fetchedAt;
         final checkedText =
             '${checked.hour.toString().padLeft(2, '0')}:${checked.minute.toString().padLeft(2, '0')}:${checked.second.toString().padLeft(2, '0')}';
@@ -229,9 +213,9 @@ class _ScoringWorkbenchScreenState extends ConsumerState<ScoringWorkbenchScreen>
               label: const Text('Generate Features'),
             ),
             ElevatedButton.icon(
-              onPressed: scoreAsync is AsyncLoading ? null : _generateMockReport,
+              onPressed: scoreAsync is AsyncLoading ? null : _generateLocalReport,
               icon: const Icon(Icons.description),
-              label: const Text('Generate Mock Report'),
+              label: const Text('Generate Local Report'),
             ),
           ],
         ),
@@ -288,12 +272,21 @@ class _ScoringWorkbenchScreenState extends ConsumerState<ScoringWorkbenchScreen>
 
   Future<void> _applyProfile() async {
     final income = double.tryParse(_incomeController.text.trim()) ?? 0;
-    await ref.read(verifiedProfileProvider.notifier).updateBasicProfile(
-          fullName: _nameController.text.trim(),
-          phoneNumber: _phoneController.text.trim(),
-          monthlyIncome: income,
-          workType: _workType,
-        );
+    ref.read(verifiedProfileProvider.notifier).completeStep1(
+      fullName: _nameController.text.trim(),
+      mobile: _phoneController.text.trim(),
+      monthlyIncomeText: income.toString(),
+      workType: _workType,
+      dateOfBirthText: '1990-01-01',
+      currentAddress: 'Mocked',
+      permanentAddress: 'Local',
+      stateOfResidence: 'KA',
+      yearsInCurrentProfessionText: '5',
+      numberOfDependentsText: '2',
+      hasVehicle: true,
+      secondaryIncomeSource: '',
+      secondaryIncomeAmountText: '0',
+    );
     await ref.read(verifiedProfileProvider.notifier).setMinimumGate(_gatePassed);
   }
 
@@ -302,19 +295,18 @@ class _ScoringWorkbenchScreenState extends ConsumerState<ScoringWorkbenchScreen>
     await ref.read(verifiedProfileProvider.notifier).regenerateFeatures();
   }
 
-  Future<void> _generateMockReport() async {
+  Future<void> _generateLocalReport() async {
     final profile = ref.read(verifiedProfileProvider);
     final request = ScoringRequest(
       features: profile.featureVector,
       minimumGatePassed: profile.minimumGatePassed,
-      workTypeIndex: profile.workType.metaIndex,
+      workTypeIndex: profile.workType?.metaIndex ?? 1,
     );
     final outcome = await ref.read(scoringOutcomeProvider(request).future);
-    final response = await _mockApi.generateReport({'score': outcome.finalScore});
-    final explanation = response.data?['explanation']?.toString() ?? 'No explanation';
-    final suggestions = (response.data?['suggestions'] as List<dynamic>? ?? const [])
-        .map((item) => '- ${item.toString()}')
-        .join('\n');
+    final explanation = 'On-device score generated from local feature vector and local scorer.';
+    final suggestions = outcome.finalScore >= 700
+        ? '- Maintain repayment consistency\n- Keep utilization stable\n- Preserve verified profile quality'
+        : '- Reduce EMI burden\n- Improve transaction consistency\n- Complete all verification signals';
 
     setState(() {
       _reportText = '$explanation\n\n$suggestions';

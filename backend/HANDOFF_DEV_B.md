@@ -96,8 +96,7 @@ Signature formula:
     "p4": 0.75,
     "p5": 0.65,
     "p6": 0.7,
-    "p7": 0.6,
-    "p8": 0.72
+    "p7": 0.6
   },
   "shap_factors": [
     {

@@ -11,7 +11,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
-import java.lang.reflect.Array
+import java.lang.reflect.Array as ReflectArray
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.Callable
@@ -39,7 +39,10 @@ class MainActivity : FlutterActivity() {
     private var authenticityModelAvailable: Boolean = false
     @Volatile
     private var faceModelAvailable: Boolean = false
+    @Volatile
+    private var configuredModelPathCount: Int = 0
 
+    private val ocrModelAsset = "models/ocr_model.tflite"
     private val authenticityModelAsset = "models/efficientnet_lite0.tflite"
     private val faceModelAsset = "models/mobilefacenet.tflite"
 
@@ -68,6 +71,21 @@ class MainActivity : FlutterActivity() {
                             "tfliteRuntimeAvailable" to tfliteRuntimeAvailable,
                             "authenticityModelAvailable" to authenticityModelAvailable,
                             "faceModelAvailable" to faceModelAvailable,
+                            "configuredModelPathCount" to configuredModelPathCount,
+                        ),
+                    )
+                }
+
+                "ai.configureModels" -> {
+                    val modelPaths = call.argument<Map<*, *>>("modelPaths") ?: emptyMap<Any?, Any?>()
+                    configuredModelPathCount = modelPaths.values.count {
+                        it is String && it.isNotBlank()
+                    }
+                    respondSuccess(
+                        result,
+                        mapOf(
+                            "configured" to (configuredModelPathCount > 0),
+                            "configuredModelPathCount" to configuredModelPathCount,
                         ),
                     )
                 }
@@ -173,12 +191,13 @@ class MainActivity : FlutterActivity() {
             return
         }
 
-        ocrRuntimeAvailable = hasClass("com.google.mlkit.vision.text.TextRecognition") &&
-            hasClass("com.google.android.gms.tasks.Tasks")
         tfliteRuntimeAvailable = hasClass("org.tensorflow.lite.Interpreter")
+        val ocrModelAvailable = tfliteRuntimeAvailable && assetExists(ocrModelAsset)
+        ocrRuntimeAvailable = ocrModelAvailable
         authenticityModelAvailable = tfliteRuntimeAvailable && assetExists(authenticityModelAsset)
         faceModelAvailable = tfliteRuntimeAvailable && assetExists(faceModelAsset)
-        modelsLoaded = true
+        // OCR is mandatory for the on-device document pipeline.
+        modelsLoaded = ocrRuntimeAvailable
     }
 
     private fun <T> runWithTimeout(block: () -> T): T {
@@ -198,15 +217,9 @@ class MainActivity : FlutterActivity() {
             return mlKit
         }
 
-        val signature = imageSignature(bitmap)
-        val confidence = when {
-            signature.edgeIntensity >= 22.0 && signature.entropyLike >= 0.22 -> 0.82
-            signature.edgeIntensity >= 16.0 && signature.entropyLike >= 0.16 -> 0.70
-            signature.edgeIntensity >= 10.0 && signature.entropyLike >= 0.10 -> 0.58
-            else -> 0.42
-        }
-        val text = buildHeuristicOcrText(bitmap, signature)
-        return Pair(text, confidence)
+        throw UnsupportedOperationException(
+            "OCR model runtime unavailable. Provide models/ocr_model.tflite or enable ML Kit OCR dependency.",
+        )
     }
 
     private fun runAuthenticityInference(bitmap: Bitmap): Pair<String, Double> {
@@ -292,7 +305,7 @@ class MainActivity : FlutterActivity() {
         return try {
             val modelBytes = loadAssetBytes(authenticityModelAsset) ?: return null
             val input = createImageInput(bitmap, 224, 224)
-            val output = Array.newInstance(FloatArray::class.java, 1) as Array<FloatArray>
+            val output = ReflectArray.newInstance(FloatArray::class.java, 1) as Array<FloatArray>
             output[0] = FloatArray(2)
             val ok = runTfliteModel(modelBytes, input, output)
             if (!ok) {
@@ -339,7 +352,7 @@ class MainActivity : FlutterActivity() {
     private fun runFaceEmbedding(modelBytes: ByteArray, input: Any): DoubleArray? {
         val outputSizes = intArrayOf(128, 192, 256, 512)
         for (size in outputSizes) {
-            val output = Array.newInstance(FloatArray::class.java, 1) as Array<FloatArray>
+            val output = ReflectArray.newInstance(FloatArray::class.java, 1) as Array<FloatArray>
             output[0] = FloatArray(size)
             val ok = runTfliteModel(modelBytes, input, output)
             if (ok) {

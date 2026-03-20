@@ -8,11 +8,25 @@ enum ValidationLayer {
   crossStep,
 }
 
+class OcrBlock {
+  const OcrBlock({required this.text, required this.confidence});
+
+  final String text;
+  final double confidence;
+}
+
 class OcrResult {
-  const OcrResult({required this.rawText, required this.confidence});
+  const OcrResult({
+    required this.rawText,
+    required this.confidence,
+    this.blocks = const <OcrBlock>[],
+    this.lowConfidence = false,
+  });
 
   final String rawText;
   final double confidence;
+  final List<OcrBlock> blocks;
+  final bool lowConfidence;
 }
 
 class AuthenticityResult {

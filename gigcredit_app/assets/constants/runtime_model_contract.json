@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-03-20T23:40:00+00:00",
+  "generator": "offline_ml.src.convert_paddleocr_to_tflite",
+  "runtime_strategy": {
+    "runtime_model_artifacts_required": true,
+    "local_only_core_pipeline": true
+  },
+  "required_models": {
+    "ocr": {
+      "asset_path": "assets/models/ocr_model.tflite",
+      "required": true,
+      "type": "tflite"
+    },
+    "scoring": {
+      "asset_path": "assets/models/scoring_model.tflite",
+      "required": true,
+      "type": "tflite"
+    },
+    "shap_lookup": {
+      "asset_path": "assets/constants/shap_lookup.json",
+      "required": true,
+      "type": "json"
+    }
+  }
+}

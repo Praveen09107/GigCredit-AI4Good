@@ -12,6 +12,17 @@ dependencies:
   flutter_riverpod: ^2.5.1
   http: ^1.2.2
   flutter_secure_storage: ^9.2.2
+  file_picker: ^8.0.0
+  firebase_auth: ^6.2.0
+  cloud_firestore: ^6.1.3
+  firebase_core: ^4.5.0
+  pdf: ^3.12.0
+  printing: ^5.14.3
+  barcode: ^2.2.9
+  crypto: ^3.0.6
+  image_picker: ^1.1.2
+  path_provider: ^2.1.4
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -23,3 +34,4 @@ flutter:
   assets:
     - assets/constants/
     - assets/models/
+    - assets/home/
