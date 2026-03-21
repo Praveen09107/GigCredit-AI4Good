@@ -6,6 +6,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: gigcredit_app
@@ -28,11 +29,16 @@ jobs:
       - name: Flutter Pub Get
         run: flutter pub get
 
-      - name: Build Release APK
-        run: flutter build apk --release --target-platform android-arm64
+      - name: Configure Gradle
+        run: |
+          echo "org.gradle.jvmargs=-Xmx2048M -XX:MaxMetaspaceSize=512M" >> android/gradle.properties
+          echo "org.gradle.parallel=false" >> android/gradle.properties
 
-      - name: Upload APK Artifact
+      - name: Build APK
+        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: gigcredit_app/build/app/outputs/flutter-apk/app-release.apk
+          path: gigcredit_app/build/app/outputs/flutter-apk/*.apk
